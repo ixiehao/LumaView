@@ -12,7 +12,7 @@ LumaView 打开图片后持续专注于看图：前后浏览、查看大图、�
 
 | 本地开始浏览 | 无侧栏专注看图 |
 | --- | --- |
-| ![LumaView 中文欢迎界面，仅保留一个打开文件入口](docs/assets/lumaview-welcome.png) | ![LumaView 深色图片浏览界面，显示文件夹位置和前后浏览操作](docs/assets/lumaview-browse.png) |
+| ![LumaView 中文欢迎界面，仅保留一个打开文件入口](docs/assets/lumaview-welcome.png) | ![LumaView 图片浏览界面，显示文件夹位置和前后浏览操作](docs/assets/lumaview-browse.png) |
 
 截图来自真实运行的 LumaView，只使用原创测试图，不含用户照片、文件名、文件夹或桌面内容。
 

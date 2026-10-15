@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0b1020" />
     <meta name="description" content="LumaView 是一款极简的本地原生看图软件，面向 Apple Silicon Mac。" />
     <title>LumaView · 极简的本地原生看图软件</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=20261015-real" />
   </head>
   <body>
     <div class="aurora aurora-one" aria-hidden="true"></div>
@@ -19,7 +19,7 @@
       </a>
       <nav aria-label="Primary navigation">
         <a href="#experience" data-i18n="navExperience">体验</a>
-        <a href="#local" data-i18n="navLocal">本地优先</a>
+        <a href="#principles" data-i18n="navPrinciples">优势</a>
         <a href="#download" data-i18n="navDownload">下载</a>
       </nav>
       <button class="language-switch" type="button" aria-label="Switch to English" aria-pressed="false">
@@ -32,7 +32,7 @@
         <div class="hero-copy reveal">
           <p class="eyebrow"><i></i><span data-i18n="eyebrow">仅为 Apple Silicon Mac 打造</span></p>
           <h1 data-i18n="heroTitle">让图片，<br /><em>占满注意力。</em></h1>
-          <p class="lede" data-i18n="heroLede">LumaView 是一款极简的本地原生看图软件：打开一张图片，即刻沿同级文件夹前后浏览。没有侧栏、没有图片库、没有上传。</p>
+          <p class="lede" data-i18n="heroLede">LumaView 是一款极简的本地原生看图软件：打开一张图片，即刻沿同级文件夹前后浏览。</p>
           <div class="hero-actions">
             <a class="button button-primary" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">下载 v1.2.1</span><b aria-hidden="true">↗</b></a>
             <a class="button button-secondary" href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer"><span data-i18n="sourceButton">查看源码</span><b aria-hidden="true">→</b></a>
@@ -42,15 +42,15 @@
 
         <figure class="hero-shot reveal">
           <div class="shot-glow" aria-hidden="true"></div>
-          <img src="assets/lumaview-browse.png" alt="LumaView 正在深色界面中浏览测试图片，顶部有上一个、下一个、缩放和旋转操作" data-i18n-alt="heroImageAlt" />
+          <img src="assets/lumaview-browse.png?v=20261015-real" alt="LumaView 在原生窗口中浏览原创测试图，顶部有上一张、下一张、缩放和旋转操作" data-i18n-alt="heroImageAlt" />
           <figcaption data-i18n="heroCaption">真实运行截图 · 使用原创测试图</figcaption>
         </figure>
       </section>
 
       <section class="proof wrap" aria-label="LumaView highlights">
-        <div><b>01</b><span data-i18n="proofOne">打开即看，不建立图库</span></div>
+        <div><b>01</b><span data-i18n="proofOne">打开即看，画面居中</span></div>
         <div><b>02</b><span data-i18n="proofTwo">方向键快速前后浏览</span></div>
-        <div><b>03</b><span data-i18n="proofThree">图片始终留在你的 Mac</span></div>
+        <div><b>03</b><span data-i18n="proofThree">为 Apple Silicon 优化</span></div>
       </section>
 
       <section class="experience wrap section" id="experience">
@@ -60,7 +60,7 @@
         </div>
         <div class="experience-layout">
           <figure class="welcome-shot reveal">
-            <img src="assets/lumaview-welcome.png" alt="LumaView 深色欢迎界面，中央只保留打开文件按钮" data-i18n-alt="welcomeImageAlt" loading="lazy" />
+            <img src="assets/lumaview-welcome.png?v=20261015-real" alt="LumaView 原生欢迎界面，中央保留一个打开文件操作" data-i18n-alt="welcomeImageAlt" loading="lazy" />
             <figcaption data-i18n="welcomeCaption">真实运行截图 · 欢迎界面</figcaption>
           </figure>
           <div class="feature-list">
@@ -80,17 +80,15 @@
         </div>
       </section>
 
-      <section class="local wrap section" id="local">
-        <div class="local-mark reveal" aria-hidden="true"><span class="lock"></span><small>LOCAL<br />ONLY</small></div>
-        <div class="local-copy reveal">
-          <p class="eyebrow"><i></i><span data-i18n="localEyebrow">私密是默认行为</span></p>
-          <h2 data-i18n="localTitle">图像不离开<br />你的设备。</h2>
-          <p data-i18n="localBody">LumaView 不创建图片库，不复制源文件，不要求账户，也不上传你的图像。可选更新检查只读取公开版本元数据。</p>
-          <ul>
-            <li><span>✓</span><span data-i18n="localOne">无账户、无广告、无遥测</span></li>
-            <li><span>✓</span><span data-i18n="localTwo">内存缓存有严格上限</span></li>
-            <li><span>✓</span><span data-i18n="localThree">原生 Finder、打印与快捷键习惯</span></li>
-          </ul>
+      <section class="principles wrap section" id="principles">
+        <div class="section-heading reveal">
+          <p class="eyebrow"><i></i><span data-i18n="principlesEyebrow">为顺畅浏览而做</span></p>
+          <h2 data-i18n="principlesTitle">极简。极速。<br />极致轻量化。</h2>
+        </div>
+        <div class="principle-grid">
+          <article class="principle-card reveal"><b>01</b><h3 data-i18n="principleOneTitle">极简</h3><p data-i18n="principleOneBody">一张画布，一组常用操作。打开即看，让画面保持中心。</p></article>
+          <article class="principle-card reveal"><b>02</b><h3 data-i18n="principleTwoTitle">极速</h3><p data-i18n="principleTwoBody">优先呈现当前图片；前后浏览围绕键盘与工具栏自然衔接。</p></article>
+          <article class="principle-card reveal"><b>03</b><h3 data-i18n="principleThreeTitle">极致轻量化</h3><p data-i18n="principleThreeBody">受控缓存与按需渲染，把资源留给正在看的那一张图。</p></article>
         </div>
       </section>
 
@@ -112,6 +110,6 @@
       <p data-i18n="footerTagline">本地原生图片浏览器 · 由 ixiehao 制作</p>
       <div><a href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer">GitHub</a><a href="https://github.com/ixiehao/LumaView/issues" target="_blank" rel="noreferrer" data-i18n="footerIssues">反馈</a><a href="https://github.com/ixiehao/LumaView/releases" target="_blank" rel="noreferrer" data-i18n="footerReleases">版本</a></div>
     </footer>
-    <script src="app.js"></script>
+    <script src="app.js?v=20261015-real"></script>
   </body>
 </html>
