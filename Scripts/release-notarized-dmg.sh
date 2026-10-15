@@ -75,6 +75,12 @@ VALIDATION_DEVICE="$(print -r -- "$ATTACH_OUTPUT" | awk '/Apple_APFS|Apple_HFS/ 
 [[ "$(readlink "$MOUNT_DIR/Applications")" == "/Applications" ]] || { print -u2 "Final DMG Applications link is invalid."; exit 1; }
 "$PROJECT_DIR/build/dmg-tools/bin/python3" "$PROJECT_DIR/Scripts/verify-dmg-layout.py" "$MOUNT_DIR" "LumaView.app"
 codesign --verify --deep --strict --verbose=2 "$MOUNT_DIR/LumaView.app"
+MOUNTED_ARCHITECTURES="$(lipo -archs "$MOUNT_DIR/LumaView.app/Contents/MacOS/LumaView")"
+[[ "$MOUNTED_ARCHITECTURES" == "$ARCHITECTURES" ]] || { print -u2 "Mounted DMG architecture differs from build."; exit 1; }
+[[ " $MOUNTED_ARCHITECTURES " == *" arm64 "* && " $MOUNTED_ARCHITECTURES " == *" x86_64 "* ]] || {
+  print -u2 "Mounted DMG must contain both arm64 and x86_64 slices."
+  exit 1
+}
 spctl --assess --type execute --verbose=4 "$MOUNT_DIR/LumaView.app"
 hdiutil detach "$VALIDATION_DEVICE" -quiet
 VALIDATION_DEVICE=""
