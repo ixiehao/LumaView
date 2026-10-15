@@ -1,8 +1,8 @@
 # LumaView release and QA gate
 
-Run this checklist before creating an `arm64` release DMG.
+Run this checklist before creating a universal (`arm64` + `x86_64`) release DMG.
 
-- [ ] `./Scripts/validate-project.sh` passes on an Apple Silicon Mac.
+- [ ] `./Scripts/validate-project.sh` passes on an Apple Silicon Mac and verifies both universal Release slices.
 - [ ] The automated real-window 1 / 4 / 8 5K rendering gate passes: first canvas appears within 25 seconds; all canvases appear within `30 + 12 × window count` seconds; every source has exactly one AppKit window, stable document accessibility scope, and an independent initial canvas/viewport state; target RSS stays below 1.2 GiB. These are broad lifecycle safety limits, not a device benchmark.
 - [ ] The automated Finder-style opening test passes: a file opened at launch shows before directory indexing completes, and `←` / `→` moves between its natural-order siblings. The router unit test separately covers buffered pre-launch URLs, duplicate filtering, unsupported URLs, and a new open event while the app is already running.
 - [ ] English and Simplified Chinese have been checked in Light and Dark appearance, including every visible toolbar label.
@@ -14,11 +14,11 @@ Run this checklist before creating an `arm64` release DMG.
 - [ ] A large image and a non-private `.sketch` document preview correctly.
 - [ ] `LICENSE`, `THIRD-PARTY-NOTICES.md`, `PRIVACY.md`, `SECURITY.md`, and `CHANGELOG.md` describe the shipped build accurately.
 - [ ] Marketing version, build number, annotated Git tag, release notes, DMG filename, and SHA-256 agree.
-- [ ] The internal QA DMG installs on a clean Apple Silicon account.
+- [ ] The internal QA DMG installs on a clean Apple Silicon account and its contained executable reports both architectures with `lipo -archs`.
+- [ ] On an Intel Mac, open a supported image and verify previous/next, zoom, rotation, print, quit, and reopen. Cross-compilation and `lipo` validation do not replace this hardware smoke check.
 - [ ] Before public distribution: Developer ID signature, notarization, stapling, Gatekeeper assessment, and a clean-machine install all pass.
 
-LumaView does not support Intel Macs. A package containing `x86_64` is a
-release failure, not a compatibility improvement.
+A release package missing either `arm64` or `x86_64` is a release failure.
 
 ## LaunchServices coverage boundary
 

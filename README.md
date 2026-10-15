@@ -1,13 +1,13 @@
 # LumaView
 
-**A local, native image browser for Apple Silicon Macs.**
+**A local, native image browser for Intel and Apple Silicon Macs.**
 
 LumaView opens an image and keeps the focus on it: browse forward and back
 within its folder, inspect large files, zoom, rotate, print, and reveal the
 current item in Finder. It does not create an image library, copy source files,
 require an account, or upload images.
 
-[**Latest release: v1.2.1 arm64 DMG**](https://github.com/ixiehao/LumaView/releases/tag/v1.2.1) · macOS 13+ · Apple Silicon only
+[**Latest release: v1.2.2 universal DMG**](https://github.com/ixiehao/LumaView/releases/tag/v1.2.2) · macOS 13+ · Intel + Apple Silicon
 
 [Official site](https://ixiehao.github.io/LumaView/) · [简体中文](README.zh-CN.md) · [Contributing](CONTRIBUTING.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Release guide](docs/RELEASE.md) · [Changelog](CHANGELOG.md)
 
@@ -22,7 +22,7 @@ test artwork and contain no user photo, filename, folder, or desktop content.
 
 ## Highlights
 
-- Native SwiftUI viewer for macOS 13+ on **Apple Silicon**. Intel Macs are not supported.
+- Native SwiftUI viewer for macOS 13+ on **Intel and Apple Silicon**.
 - Open from Finder, choose a file, or drag it in; browse the current folder with `←` / `→` or the toolbar.
 - View JPEG, PNG, HEIC, GIF, TIFF, BMP, ICO, WebP, PDF, many system RAW formats, and `.sketch` previews.
 - Zoom, fit, pan, rotate, and print large images; the status bar shows the true percentage of the source image.
@@ -30,16 +30,16 @@ test artwork and contain no user photo, filename, folder, or desktop content.
 
 ## Requirements
 
-- Apple Silicon Mac (arm64)
+- Intel Mac (x86_64) or Apple Silicon Mac (arm64)
 - macOS 13 Ventura or later
 - Xcode 15 or later for source builds
 
 ## Download
 
 Open [the latest release](https://github.com/ixiehao/LumaView/releases/latest)
-and download **`LumaView-1.2.1-arm64.dmg`** together with its matching
-`LumaView-1.2.1-arm64.dmg.sha256` checksum. This build is for Apple Silicon
-only; it will not run on an Intel Mac.
+and download **`LumaView-1.2.2-universal.dmg`** together with its matching
+`LumaView-1.2.2-universal.dmg.sha256` checksum. This universal build contains
+both Intel (`x86_64`) and Apple Silicon (`arm64`) slices.
 
 ## Install safely
 
@@ -56,8 +56,8 @@ Applications to Trash. Your image files remain where they are.
 open LumaView.xcodeproj
 ```
 
-Select the **LumaView** scheme and run with `⌘R`. The project deliberately
-builds only an `arm64` application.
+Select the **LumaView** scheme and run with `⌘R`. Release builds contain both
+`arm64` and `x86_64` application slices.
 
 ## Shortcuts
 
@@ -84,11 +84,11 @@ and independent initial viewport state; Finder-style `←` / `→` navigation is
 covered in its own end-to-end test. See [QA](docs/QA.md) for the manual LaunchServices, drag,
 print, VoiceOver, and corrupt-file checks that macOS cannot drive reliably in
 headless XCTest.
-`package-dmg.sh` creates an ad-hoc-signed DMG. The v1.2.1 GitHub release uses
+`package-dmg.sh` creates an ad-hoc-signed universal DMG. The v1.2.2 GitHub release uses
 the transparent preview path also used by ShotMap: it attaches the exact DMG
 and its SHA-256 file, and states the non-notarized first-run recovery step.
 The Developer ID, notarization, stapling, and Gatekeeper path for a future
-formal arm64 release remains documented in [docs/RELEASE.md](docs/RELEASE.md).
+formal universal release remains documented in [docs/RELEASE.md](docs/RELEASE.md).
 The current 5K multi-window RSS and latency baseline is recorded in
 [docs/PERFORMANCE_BASELINE.md](docs/PERFORMANCE_BASELINE.md).
 Public releases require an auditable initial commit and an annotated `vX.Y.Z`

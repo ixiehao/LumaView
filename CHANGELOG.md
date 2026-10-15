@@ -4,6 +4,16 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
+## 1.2.2 — 2026-10-15
+
+- Added a universal macOS build with both Apple Silicon (`arm64`) and Intel (`x86_64`) slices.
+- Updated build, packaging, mounted-DMG verification, installer, documentation, and release guidance to require and describe the universal artifact.
+
+### 中文
+
+- 新增同时支持 Apple Silicon（`arm64`）与 Intel（`x86_64`）的 macOS 通用版。
+- 更新构建、打包、挂载后 DMG 校验、安装界面、文档与发布流程，统一要求并说明通用安装包。
+
 ## 1.2.1 — 2026-10-15
 
 - Restored source-build compatibility with Xcode 15.4 by removing a Swift name-shadowing ambiguity in the canvas and explicitly selecting Darwin trigonometry for rotated bounds.

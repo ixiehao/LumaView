@@ -11,8 +11,8 @@ permissions:
 
 jobs:
   validate:
-    # LumaView is arm64-only; use an Apple Silicon macOS image for both build
-    # and test execution instead of treating an Intel cross-build as coverage.
+    # UI tests execute on Apple Silicon; validate-project.sh also compiles and
+    # verifies the x86_64 slice in the universal Release app.
     runs-on: macos-14
     steps:
       - name: Check out source

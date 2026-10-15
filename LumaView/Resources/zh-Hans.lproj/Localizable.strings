@@ -8,7 +8,7 @@
 "settings.currentVersion" = "当前版本";
 "settings.updatePrivacy" = "仅检查 GitHub 的公开发布元数据；图片和文件路径始终留在这台 Mac 上。";
 "about.menu" = "关于 LumaView";
-"about.description" = "一款面向 Apple Silicon Mac 的本地原生图片浏览器。";
+"about.description" = "一款支持 Intel 与 Apple Silicon Mac 的本地原生图片浏览器。";
 "about.developer" = "开发者";
 "about.project" = "在 GitHub 查看 LumaView";
 "about.feedback" = "在 GitHub 反馈问题";
