@@ -16,6 +16,6 @@ jobs:
     runs-on: macos-14
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Validate project
         run: ./Scripts/validate-project.sh
