@@ -15,7 +15,7 @@ require an account, or upload images.
 
 | Start locally | Browse without a sidebar |
 | --- | --- |
-| ![Real LumaView welcome screen in Chinese, with one Open File action](docs/assets/lumaview-welcome.png) | ![Real LumaView dark image browser showing folder position and previous-next controls](docs/assets/lumaview-browse.png) |
+| ![Real LumaView welcome screen in Chinese, with one Open File action](docs/assets/lumaview-welcome.png) | ![Real LumaView image browser showing folder position and previous-next controls](docs/assets/lumaview-browse.png) |
 
 These are screenshots from a running LumaView build. They use only original
 test artwork and contain no user photo, filename, folder, or desktop content.
