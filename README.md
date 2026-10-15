@@ -9,16 +9,16 @@ require an account, or upload images.
 
 [**Latest release: v1.2.1 arm64 DMG**](https://github.com/ixiehao/LumaView/releases/tag/v1.2.1) · macOS 13+ · Apple Silicon only
 
-[简体中文](README.zh-CN.md) · [Contributing](CONTRIBUTING.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Release guide](docs/RELEASE.md) · [Changelog](CHANGELOG.md)
+[Official site](https://ixiehao.github.io/LumaView/) · [简体中文](README.zh-CN.md) · [Contributing](CONTRIBUTING.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Release guide](docs/RELEASE.md) · [Changelog](CHANGELOG.md)
 
-## Interface previews
+## Application screenshots
 
 | Start locally | Browse without a sidebar |
 | --- | --- |
-| ![LumaView welcome screen in Chinese, with one Open File action](docs/assets/readme-welcome-zh.svg) | ![LumaView dark image browser showing folder position and previous-next controls](docs/assets/readme-viewer-en.svg) |
+| ![Real LumaView welcome screen in Chinese, with one Open File action](docs/assets/lumaview-welcome.png) | ![Real LumaView dark image browser showing folder position and previous-next controls](docs/assets/lumaview-browse.png) |
 
-These are original product interface previews made with generated artwork. They
-contain no user photo, filename, folder, or desktop content.
+These are screenshots from a running LumaView build. They use only original
+test artwork and contain no user photo, filename, folder, or desktop content.
 
 ## Highlights
 

@@ -1,6 +1,7 @@
-# README product previews
+# README screenshot assets
 
-These two SVGs are original, non-interactive product interface previews. They
-use generated artwork rather than a user photo, filename, folder, or desktop
-content. They are maintained as documentation visuals for the public README;
-they do not claim to be a pixel-for-pixel screenshot of every macOS release.
+`lumaview-welcome.png` and `lumaview-browse.png` are screenshots from a
+running LumaView build. They use only original test artwork and contain no user
+photo, filename, folder, or desktop content. The older SVG previews remain in
+this folder as design-history assets; the public README and GitHub Pages site
+use the real screenshots.

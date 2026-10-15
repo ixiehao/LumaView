@@ -6,15 +6,15 @@ LumaView 打开图片后持续专注于看图：前后浏览、查看大图、�
 
 [**最新发布：v1.2.1 arm64 DMG**](https://github.com/ixiehao/LumaView/releases/tag/v1.2.1) · macOS 13+ · 仅 Apple Silicon
 
-[English](README.md) · [贡献说明](CONTRIBUTING.md) · [隐私](PRIVACY.md) · [安全](SECURITY.md) · [发布说明](docs/RELEASE.md) · [变更记录](CHANGELOG.md)
+[官网](https://ixiehao.github.io/LumaView/) · [English](README.md) · [贡献说明](CONTRIBUTING.md) · [隐私](PRIVACY.md) · [安全](SECURITY.md) · [发布说明](docs/RELEASE.md) · [变更记录](CHANGELOG.md)
 
-## 界面预览
+## 软件实机截图
 
 | 本地开始浏览 | 无侧栏专注看图 |
 | --- | --- |
-| ![LumaView 中文欢迎界面，仅保留一个打开文件入口](docs/assets/readme-welcome-zh.svg) | ![LumaView 深色图片浏览界面，显示文件夹位置和前后浏览操作](docs/assets/readme-viewer-en.svg) |
+| ![LumaView 中文欢迎界面，仅保留一个打开文件入口](docs/assets/lumaview-welcome.png) | ![LumaView 深色图片浏览界面，显示文件夹位置和前后浏览操作](docs/assets/lumaview-browse.png) |
 
-预览图使用原创生成图形制作，不含用户照片、文件名、文件夹或桌面内容。
+截图来自真实运行的 LumaView，只使用原创测试图，不含用户照片、文件名、文件夹或桌面内容。
 
 ## 功能
 
