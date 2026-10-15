@@ -1,8 +1,8 @@
 const content = {
   zh: {
     navExperience: "体验", navPrinciples: "优势", navDownload: "下载", eyebrow: "支持 Intel 与 Apple Silicon Mac",
-    seoTitle: "LumaView · 极简的本地原生看图软件", seoDescription: "LumaView 是一款极简、极速、极致轻量化的 macOS 原生看图软件，支持 Intel 与 Apple Silicon Mac、文件夹前后浏览、大图缩放、旋转与打印。", seoSocialDescription: "极简、极速、极致轻量化的 macOS 原生看图软件，支持 Intel 与 Apple Silicon Mac。",
-    heroTitle: "让图片，<br /><em>占满注意力。</em>", heroLede: "LumaView 是一款极简的本地原生看图软件：打开一张图片，即刻沿同级文件夹前后浏览。",
+    seoTitle: "LumaView · 极简的Mac原生看图软件", seoDescription: "一款极简的Mac原生看图软件。", seoSocialDescription: "一款极简的Mac原生看图软件。",
+    heroTitle: "让图片，<br /><em>占满注意力。</em>", heroLede: "一款极简的Mac原生看图软件。",
     downloadButton: "下载 v1.2.2", sourceButton: "查看源码", compatibility: "macOS 13+ · Intel + Apple Silicon · 完全本地处理", heroCaption: "真实运行截图 · 使用原创测试图", heroImageAlt: "LumaView 在原生窗口中浏览原创测试图，顶部有上一张、下一张、缩放和旋转操作", welcomeImageAlt: "LumaView 原生欢迎界面，中央保留一个打开文件操作",
     proofOne: "打开即看，画面居中", proofTwo: "方向键快速前后浏览", proofThree: "Intel + Apple Silicon 通用版",
     experienceEyebrow: "为看图而存在", experienceTitle: "少一点界面，<br />多一点画面。", welcomeCaption: "真实运行截图 · 欢迎界面",
@@ -14,8 +14,8 @@ const content = {
   },
   en: {
     navExperience: "Experience", navPrinciples: "Principles", navDownload: "Download", eyebrow: "For Intel and Apple Silicon Macs",
-    seoTitle: "LumaView · Minimal native image viewer for macOS", seoDescription: "LumaView is a minimal, fast, and lightweight native macOS image viewer for Intel and Apple Silicon Macs, with folder navigation, large-image zoom, rotation, and printing.", seoSocialDescription: "A minimal, fast, and lightweight native macOS image viewer for Intel and Apple Silicon Macs.",
-    heroTitle: "Let the image<br /><em>take your attention.</em>", heroLede: "LumaView is a minimal, native image viewer: open one image and move through its folder immediately.",
+    seoTitle: "LumaView · Minimal native image viewer for Mac", seoDescription: "A minimal native image viewer for Mac.", seoSocialDescription: "A minimal native image viewer for Mac.",
+    heroTitle: "Let the image<br /><em>take your attention.</em>", heroLede: "A minimal native image viewer for Mac.",
     downloadButton: "Download v1.2.2", sourceButton: "View source", compatibility: "macOS 13+ · Intel + Apple Silicon · Local by default", heroCaption: "Real application screenshot · original test art", heroImageAlt: "LumaView browsing original test art in its native window, with previous, next, zoom, and rotate controls", welcomeImageAlt: "LumaView native welcome screen with a single Open File action",
     proofOne: "Open and view immediately", proofTwo: "Arrow-key folder browsing", proofThree: "Universal for Intel + Apple Silicon",
     experienceEyebrow: "Made to view", experienceTitle: "Less interface.<br />More image.", welcomeCaption: "Real application screenshot · welcome screen",

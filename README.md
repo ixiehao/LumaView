@@ -1,6 +1,6 @@
 # LumaView
 
-**A local, native image browser for Intel and Apple Silicon Macs.**
+**A minimal native image viewer for Mac.**
 
 LumaView opens an image and keeps the focus on it: browse forward and back
 within its folder, inspect large files, zoom, rotate, print, and reveal the

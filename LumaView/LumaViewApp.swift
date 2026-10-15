@@ -32,7 +32,7 @@ private enum AboutCredits {
         }
 
         appendBody("\(l.text("about.description"))\n\n")
-        appendBody("\(l.text("about.developer")) · LumaView contributors\n")
+        appendBody("\(l.text("about.developer")) · ixiehao\n")
         appendLink("github.com/\(LumaViewProjectLinks.repositorySlug)\n", destination: LumaViewProjectLinks.repository)
         appendLink(l.text("about.feedback"), destination: LumaViewProjectLinks.issues)
         if let availableUpdate {
