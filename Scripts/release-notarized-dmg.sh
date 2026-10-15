@@ -45,19 +45,19 @@ xcodebuild \
   -scheme LumaView \
   -configuration Release \
   -derivedDataPath "$DERIVED_DATA" \
-  ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
+  ARCHS='arm64 x86_64' ONLY_ACTIVE_ARCH=NO CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
   build
 
 ditto "$DERIVED_DATA/Build/Products/Release/LumaView.app" "$APP_PATH"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Contents/Info.plist")"
-DMG_PATH="$OUTPUT_DIR/LumaView-$VERSION-arm64-notarized.dmg"
+DMG_PATH="$OUTPUT_DIR/LumaView-$VERSION-universal-notarized.dmg"
 
 # Sign the final, immutable app bundle with hardened runtime and a secure timestamp.
 codesign --force --sign "$DEVELOPER_ID_APPLICATION" --options runtime --timestamp "$APP_PATH"
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 ARCHITECTURES="$(lipo -archs "$APP_PATH/Contents/MacOS/LumaView")"
-[[ " $ARCHITECTURES " == *" arm64 "* && " $ARCHITECTURES " != *" x86_64 "* ]] || {
-  print -u2 "Release must be Apple-silicon only (arm64; no x86_64 slice)."
+[[ " $ARCHITECTURES " == *" arm64 "* && " $ARCHITECTURES " == *" x86_64 "* ]] || {
+  print -u2 "Release must contain both arm64 and x86_64 slices."
   exit 1
 }
 

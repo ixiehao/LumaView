@@ -32,8 +32,15 @@ xcodebuild \
   -scheme LumaView \
   -configuration Release \
   -derivedDataPath "$DERIVED_DATA" \
-  ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO \
+  ARCHS='arm64 x86_64' ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO \
   build
+
+RELEASE_BINARY="$DERIVED_DATA/Build/Products/Release/LumaView.app/Contents/MacOS/LumaView"
+RELEASE_ARCHITECTURES="$(lipo -archs "$RELEASE_BINARY")"
+[[ " $RELEASE_ARCHITECTURES " == *" arm64 "* && " $RELEASE_ARCHITECTURES " == *" x86_64 "* ]] || {
+  print -u2 "Release build must contain both arm64 and x86_64 slices; found: $RELEASE_ARCHITECTURES"
+  exit 1
+}
 
 swiftc -O -parse-as-library \
   LumaView/Localization.swift \

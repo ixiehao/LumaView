@@ -1,10 +1,10 @@
 # LumaView
 
-**一款面向 Apple Silicon Mac 的本地原生图片浏览器。**
+**一款支持 Intel 与 Apple Silicon Mac 的本地原生图片浏览器。**
 
 LumaView 打开图片后持续专注于看图：前后浏览、查看大图、缩放、旋转、打印，以及在访达中定位当前文件。它不会创建图片库、复制源文件、要求登录或上传图片。
 
-[**最新发布：v1.2.1 arm64 DMG**](https://github.com/ixiehao/LumaView/releases/tag/v1.2.1) · macOS 13+ · 仅 Apple Silicon
+[**最新发布：v1.2.2 通用 DMG**](https://github.com/ixiehao/LumaView/releases/tag/v1.2.2) · macOS 13+ · Intel + Apple Silicon
 
 [官网](https://ixiehao.github.io/LumaView/) · [English](README.md) · [贡献说明](CONTRIBUTING.md) · [隐私](PRIVACY.md) · [安全](SECURITY.md) · [发布说明](docs/RELEASE.md) · [变更记录](CHANGELOG.md)
 
@@ -18,7 +18,7 @@ LumaView 打开图片后持续专注于看图：前后浏览、查看大图、�
 
 ## 功能
 
-- 原生 SwiftUI 看图器，支持 macOS 13+ 的 **Apple Silicon** Mac；不支持 Intel Mac。
+- 原生 SwiftUI 看图器，支持 macOS 13+ 的 **Intel 与 Apple Silicon** Mac。
 - 可从访达打开、选择文件或直接拖入；通过 `←` / `→` 和工具栏浏览当前文件夹。
 - 支持 JPEG、PNG、HEIC、GIF、TIFF、BMP、ICO、WebP、PDF、多数 macOS 支持的 RAW 与 `.sketch` 预览。
 - 支持大图缩放、适合窗口、平移、旋转与原生打印；底部显示相对原图的真实百分比。
@@ -26,16 +26,16 @@ LumaView 打开图片后持续专注于看图：前后浏览、查看大图、�
 
 ## 环境要求
 
-- Apple Silicon Mac（arm64）
+- Intel Mac（x86_64）或 Apple Silicon Mac（arm64）
 - macOS 13 Ventura 或更高版本
 - 从源码构建需 Xcode 15 或更新版本
 
 ## 下载
 
 请打开[最新发布页](https://github.com/ixiehao/LumaView/releases/latest)，下载
-**`LumaView-1.2.1-arm64.dmg`** 和同名的
-`LumaView-1.2.1-arm64.dmg.sha256` 校验文件。该版本仅适用于 Apple Silicon，
-不能在 Intel Mac 上运行。
+**`LumaView-1.2.2-universal.dmg`** 和同名的
+`LumaView-1.2.2-universal.dmg.sha256` 校验文件。通用版同时含 Intel（`x86_64`）
+与 Apple Silicon（`arm64`）架构。
 
 ## 安全安装
 
@@ -51,7 +51,7 @@ LumaView 打开图片后持续专注于看图：前后浏览、查看大图、�
 open LumaView.xcodeproj
 ```
 
-选择 **LumaView** scheme 后按 `⌘R`。工程会始终生成 `arm64` 应用。
+选择 **LumaView** scheme 后按 `⌘R`。Release 构建会同时生成 `arm64` 与 `x86_64` 应用架构。
 
 ## 快捷键
 
@@ -71,7 +71,7 @@ open LumaView.xcodeproj
 ./Scripts/package-dmg.sh
 ```
 
-验证脚本会运行核心测试、UI 测试（含真实 1 / 4 / 8 窗口 5K 渲染门禁）、Release 构建和合成图库压力测试。真实窗口门禁会记录首图/全量渲染时间、RSS、文档身份和各窗口独立的初始视图状态；访达方式打开后的 `←` / `→` 浏览有独立的端到端覆盖。不能在无头 XCTest 中可靠驱动的 LaunchServices、拖放、打印、VoiceOver 与损坏文件验收步骤见 [docs/QA.md](docs/QA.md)。`package-dmg.sh` 会生成 ad-hoc 签名 DMG；v1.2.1 GitHub 发布沿用 ShotMap 的透明预览方式，附上同一 DMG 的 SHA-256，并明确非公证状态与首次启动指引。面向正式公开稳定版的 Developer ID 签名、公证、staple 和 Gatekeeper 验证流程仍见 [docs/RELEASE.md](docs/RELEASE.md)。
+验证脚本会运行核心测试、UI 测试（含真实 1 / 4 / 8 窗口 5K 渲染门禁）、Release 构建和合成图库压力测试。真实窗口门禁会记录首图/全量渲染时间、RSS、文档身份和各窗口独立的初始视图状态；访达方式打开后的 `←` / `→` 浏览有独立的端到端覆盖。不能在无头 XCTest 中可靠驱动的 LaunchServices、拖放、打印、VoiceOver 与损坏文件验收步骤见 [docs/QA.md](docs/QA.md)。`package-dmg.sh` 会生成 ad-hoc 签名通用 DMG；v1.2.2 GitHub 发布沿用 ShotMap 的透明预览方式，附上同一 DMG 的 SHA-256，并明确非公证状态与首次启动指引。面向正式公开稳定版的 Developer ID 签名、公证、staple 和 Gatekeeper 验证流程仍见 [docs/RELEASE.md](docs/RELEASE.md)。
 当前 5K 多窗口的 RSS 与切换延迟基线见 [docs/PERFORMANCE_BASELINE.md](docs/PERFORMANCE_BASELINE.md)。
 公开发布前必须有可审计的首个提交，并以指向实际发布源码的 annotated `vX.Y.Z` tag 标记；流程见 [docs/RELEASE.md](docs/RELEASE.md)。打包脚本绝不会自动创建提交、tag、凭据或伪造签名。
 

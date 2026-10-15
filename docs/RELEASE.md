@@ -1,10 +1,10 @@
 # LumaView release procedure
 
-LumaView supports **Apple-silicon Macs only**: macOS 13+ with an `arm64` processor. Intel Macs are not supported, and every release script rejects an `x86_64` slice.
+LumaView supports **Intel and Apple Silicon Macs** on macOS 13+. Every release script requires both `arm64` and `x86_64` slices.
 
 There are two deliberately distinct paths:
 
-- **Transparent public preview (current v1.2.1):** the ShotMap pattern—an
+- **Transparent public preview (current v1.2.2):** the ShotMap pattern—an
   ad-hoc-signed DMG plus its SHA-256 file, with the Release and README clearly
   saying that it is not Apple-notarized and explaining the one-time Gatekeeper
   recovery action. This is useful for early open-source testing, but must never
@@ -19,7 +19,7 @@ There are two deliberately distinct paths:
 ./Scripts/package-dmg.sh
 ```
 
-This produces `dist/LumaView-<version>-arm64.dmg` and its SHA-256 file. The
+This produces `dist/LumaView-<version>-universal.dmg` and its SHA-256 file. The
 installer has an original LumaView background, clear drag-to-install guidance,
 and only `LumaView.app` plus an `Applications` shortcut. The script writes its
 Finder presentation deterministically (window, icon locations and image alias),
@@ -39,12 +39,12 @@ Developer ID/notarization is available. Run the full test and packaging gate
 from a clean `main` checkout, then upload exactly these two generated files to
 the matching GitHub Release:
 
-- `LumaView-<version>-arm64.dmg`
-- `LumaView-<version>-arm64.dmg.sha256`
+- `LumaView-<version>-universal.dmg`
+- `LumaView-<version>-universal.dmg.sha256`
 
 The release title and bilingual notes must state all of the following:
 
-1. macOS 13+ and **Apple Silicon only**; Intel Macs are unsupported.
+1. macOS 13+ on both **Intel and Apple Silicon** Macs; the package contains `x86_64` and `arm64` slices.
 2. The DMG is ad-hoc signed and **not Apple-notarized**.
 3. If macOS cannot verify the developer: copy the app to Applications,
    Control-click it, select **Open**, then select **Open** once more. Never
@@ -76,7 +76,7 @@ It preflights the exact Developer ID identity and the named Keychain
 `notarytool` profile before building anything. A missing identity or profile is
 a release blocker; the script never falls back to an ad-hoc signature.
 
-Before publishing, test the resulting DMG on a clean Apple-silicon Mac with Gatekeeper enabled and retain the notarization submission ID and validation record privately.
+Before publishing, test the resulting DMG on clean Intel and Apple Silicon Macs with Gatekeeper enabled and retain the notarization submission ID and validation record privately.
 
 ## Auditable source identity
 
