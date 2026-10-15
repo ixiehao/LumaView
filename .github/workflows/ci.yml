@@ -1,0 +1,21 @@
+name: Verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    # LumaView is arm64-only; use an Apple Silicon macOS image for both build
+    # and test execution instead of treating an Intel cross-build as coverage.
+    runs-on: macos-14
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Validate project
+        run: ./Scripts/validate-project.sh

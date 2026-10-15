@@ -1,0 +1,12 @@
+.DS_Store
+DerivedData/
+build/
+.build/
+dist/
+xcuserdata/
+*.xcuserstate
+.env
+*.p8
+*.mobileprovision
+*.dmg
+*.dmg.sha256

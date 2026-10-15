@@ -1,0 +1,13 @@
+{
+  "images" : [
+    {
+      "filename" : "LumaLogo-RoundedFrame.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

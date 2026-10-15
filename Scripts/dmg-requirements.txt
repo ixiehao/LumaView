@@ -1,0 +1,6 @@
+# Build-time packaging tools. They are never bundled with LumaView.
+# dmgbuild 1.6.7 writes a modern Finder background alias without the obsolete
+# pBBk bookmark that can cause Finder to fall back to a plain white window.
+dmgbuild==1.6.7
+ds-store==1.3.3
+mac-alias==2.2.3
