@@ -2,7 +2,16 @@
 
 LumaView supports **Apple-silicon Macs only**: macOS 13+ with an `arm64` processor. Intel Macs are not supported, and every release script rejects an `x86_64` slice.
 
-This follows the two-stage model used by MP4Flow: first create an internal, ad-hoc-signed package for QA; then re-sign the exact final app with Developer ID, notarize the final DMG, staple its ticket, and validate Gatekeeper. A checksum is published only for the completed notarized DMG.
+There are two deliberately distinct paths:
+
+- **Transparent public preview (current v1.2.1):** the ShotMap pattern—an
+  ad-hoc-signed DMG plus its SHA-256 file, with the Release and README clearly
+  saying that it is not Apple-notarized and explaining the one-time Gatekeeper
+  recovery action. This is useful for early open-source testing, but must never
+  be presented as a notarized stable release.
+- **Formal stable release:** the MP4Flow pattern—re-sign the exact final app
+  with Developer ID, notarize the final DMG, staple its ticket, validate
+  Gatekeeper, and publish its checksum.
 
 ## Internal QA package
 
@@ -16,11 +25,36 @@ and only `LumaView.app` plus an `Applications` shortcut. The script writes its
 Finder presentation deterministically (window, icon locations and image alias),
 then validates it after mounting the compressed DMG. It also validates the app
 signature, checksum and architecture. Build-only Python dependencies are held
-in `build/dmg-tools` and are never included in the app. This is not a public
-release and will not satisfy Gatekeeper on a clean Mac.
+in `build/dmg-tools` and are never included in the app. This package will not
+satisfy Gatekeeper on a clean Mac by itself. It can stay internal, or may be
+published only through the transparent preview procedure below.
 
 See [INSTALLER-BUILD.md](INSTALLER-BUILD.md) for the installer-artwork and
 Finder-layout guarantees.
+
+## Transparent public preview (ShotMap-compatible)
+
+Use this only when the project owner explicitly chooses a public preview before
+Developer ID/notarization is available. Run the full test and packaging gate
+from a clean `main` checkout, then upload exactly these two generated files to
+the matching GitHub Release:
+
+- `LumaView-<version>-arm64.dmg`
+- `LumaView-<version>-arm64.dmg.sha256`
+
+The release title and bilingual notes must state all of the following:
+
+1. macOS 13+ and **Apple Silicon only**; Intel Macs are unsupported.
+2. The DMG is ad-hoc signed and **not Apple-notarized**.
+3. If macOS cannot verify the developer: copy the app to Applications,
+   Control-click it, select **Open**, then select **Open** once more. Never
+   ask users to disable system-wide security.
+4. The SHA-256 file is attached and matches the DMG. The source commit and
+   annotated `vX.Y.Z` tag identify the build.
+
+Keep existing stable assets available. Do not replace a released preview DMG
+without a clearly recorded packaging correction; when formal signing becomes
+available, publish a new version rather than rewriting the old artifact.
 
 ## Public notarized release
 

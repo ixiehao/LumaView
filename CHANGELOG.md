@@ -14,6 +14,7 @@ marketing version.
 - Bound Sketch preview extraction to a 64 MiB output limit and a four-second timeout, with cooperative cancellation of the archive process.
 - Added a 1/4/8-window 5K synthetic baseline to the validation harness for RSS, first-image time, and navigation latency.
 - Renamed the app-specific image-controls menu to Image / 图像 and preserved macOS Help instead of replacing it.
+- Published the first Apple-silicon DMG through the documented transparent preview path, with a matching SHA-256 asset and non-notarized first-run guidance.
 
 ### English
 

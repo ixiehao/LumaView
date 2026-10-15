@@ -7,7 +7,18 @@ within its folder, inspect large files, zoom, rotate, print, and reveal the
 current item in Finder. It does not create an image library, copy source files,
 require an account, or upload images.
 
+[**Latest release: v1.2.1 arm64 DMG**](https://github.com/ixiehao/LumaView/releases/tag/v1.2.1) · macOS 13+ · Apple Silicon only
+
 [简体中文](README.zh-CN.md) · [Contributing](CONTRIBUTING.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Release guide](docs/RELEASE.md) · [Changelog](CHANGELOG.md)
+
+## Interface previews
+
+| Start locally | Browse without a sidebar |
+| --- | --- |
+| ![LumaView welcome screen in Chinese, with one Open File action](docs/assets/readme-welcome-zh.svg) | ![LumaView dark image browser showing folder position and previous-next controls](docs/assets/readme-viewer-en.svg) |
+
+These are original product interface previews made with generated artwork. They
+contain no user photo, filename, folder, or desktop content.
 
 ## Highlights
 
@@ -27,6 +38,22 @@ require an account, or upload images.
 - Apple Silicon Mac (arm64)
 - macOS 13 Ventura or later
 - Xcode 15 or later for source builds
+
+## Download
+
+Open [the latest release](https://github.com/ixiehao/LumaView/releases/latest)
+and download **`LumaView-1.2.1-arm64.dmg`** together with its matching
+`LumaView-1.2.1-arm64.dmg.sha256` checksum. This build is for Apple Silicon
+only; it will not run on an Intel Mac.
+
+## Install safely
+
+1. Double-click the downloaded `.dmg`, then drag **LumaView.app** to **Applications**.
+2. After the copy finishes, eject or delete the DMG. It is only the installer and does not remove the installed app.
+3. This first public preview is ad-hoc signed and is **not Apple-notarized**. If macOS cannot verify the developer, open **Applications**, Control-click **LumaView**, choose **Open**, then choose **Open** once more. Do not disable macOS system-wide security.
+
+To remove LumaView later, quit it and move only `LumaView.app` from
+Applications to Trash. Your image files remain where they are.
 
 ## Run from source
 
@@ -62,9 +89,11 @@ and independent initial viewport state; Finder-style `←` / `→` navigation is
 covered in its own end-to-end test. See [QA](docs/QA.md) for the manual LaunchServices, drag,
 print, VoiceOver, and corrupt-file checks that macOS cannot drive reliably in
 headless XCTest.
-The DMG created by `package-dmg.sh` is ad-hoc signed for internal QA only. The
-Developer ID, notarization, stapling, and Gatekeeper steps for a public arm64
-release are documented in [docs/RELEASE.md](docs/RELEASE.md).
+`package-dmg.sh` creates an ad-hoc-signed DMG. The v1.2.1 GitHub release uses
+the transparent preview path also used by ShotMap: it attaches the exact DMG
+and its SHA-256 file, and states the non-notarized first-run recovery step.
+The Developer ID, notarization, stapling, and Gatekeeper path for a future
+formal arm64 release remains documented in [docs/RELEASE.md](docs/RELEASE.md).
 The current 5K multi-window RSS and latency baseline is recorded in
 [docs/PERFORMANCE_BASELINE.md](docs/PERFORMANCE_BASELINE.md).
 Public releases require an auditable initial commit and an annotated `vX.Y.Z`
