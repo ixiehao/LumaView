@@ -1,0 +1,113 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* LumaViewApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* LumaViewApp.swift */; };
+		A10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* ContentView.swift */; };
+		A10000000000000000000003 /* ImageBrowserStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* ImageBrowserStore.swift */; };
+		A10000000000000000000004 /* ImageCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* ImageCanvasView.swift */; };
+		A10000000000000000000006 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* Localization.swift */; };
+		A10000000000000000000007 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* Assets.xcassets */; };
+		A10000000000000000000008 /* ImagePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* ImagePipeline.swift */; };
+		A10000000000000000000009 /* LumaIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* LumaIcon.swift */; };
+		A10000000000000000000010 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* UpdateChecker.swift */; };
+		A1000000000000000000000F /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* Localizable.strings */; };
+		A1000000000000000000000B /* LumaViewCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* LumaViewCoreTests.swift */; };
+		A1000000000000000000000C /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* XCTest.framework */; };
+		A1000000000000000000000D /* LumaViewLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* LumaViewLaunchTests.swift */; };
+		A1000000000000000000000E /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000F /* XCTest.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A20000000000000000000001 /* LumaViewApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LumaViewApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A20000000000000000000003 /* ImageBrowserStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageBrowserStore.swift; sourceTree = "<group>"; };
+		A20000000000000000000004 /* ImageCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCanvasView.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
+		A20000000000000000000007 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A20000000000000000000008 /* ImagePipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePipeline.swift; sourceTree = "<group>"; };
+		A20000000000000000000009 /* LumaIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LumaIcon.swift; sourceTree = "<group>"; };
+		A20000000000000000000016 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
+		A20000000000000000000013 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Resources/en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A20000000000000000000014 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = Resources/zh-Hans.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A2000000000000000000000C /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
+		A2000000000000000000000D /* LumaViewCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LumaViewCoreTests.swift; sourceTree = "<group>"; };
+		A2000000000000000000000E /* LumaViewTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LumaViewTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2000000000000000000000F /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
+		A20000000000000000000012 /* LumaViewLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LumaViewLaunchTests.swift; sourceTree = "<group>"; };
+		A20000000000000000000011 /* LumaViewUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LumaViewUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000010 /* LumaView.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LumaView.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A30000000000000000000001 /* Frameworks */ = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A3000000000000000000000C /* Frameworks */ = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000C /* XCTest.framework in Frameworks */); runOnlyForDeploymentPostprocessing = 0; };
+		A3000000000000000000000E /* Frameworks */ = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000E /* XCTest.framework in Frameworks */); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A40000000000000000000001 = { isa = PBXGroup; children = (A40000000000000000000002 /* LumaView */, A4000000000000000000000C /* LumaViewTests */, A4000000000000000000000D /* LumaViewUITests */, A40000000000000000000003 /* Products */); sourceTree = "<group>"; };
+		A40000000000000000000002 /* LumaView */ = { isa = PBXGroup; children = (A20000000000000000000001 /* LumaViewApp.swift */, A20000000000000000000002 /* ContentView.swift */, A20000000000000000000004 /* ImageCanvasView.swift */, A20000000000000000000003 /* ImageBrowserStore.swift */, A20000000000000000000008 /* ImagePipeline.swift */, A20000000000000000000009 /* LumaIcon.swift */, A20000000000000000000016 /* UpdateChecker.swift */, A20000000000000000000006 /* Localization.swift */, A20000000000000000000015 /* Localizable.strings */, A20000000000000000000007 /* Assets.xcassets */); path = LumaView; sourceTree = "<group>"; };
+		A40000000000000000000003 /* Products */ = { isa = PBXGroup; children = (A20000000000000000000010 /* LumaView.app */, A2000000000000000000000E /* LumaViewTests.xctest */, A20000000000000000000011 /* LumaViewUITests.xctest */); name = Products; sourceTree = "<group>"; };
+		A4000000000000000000000C /* LumaViewTests */ = { isa = PBXGroup; children = (A2000000000000000000000D /* LumaViewCoreTests.swift */); path = LumaViewTests; sourceTree = "<group>"; };
+		A4000000000000000000000D /* LumaViewUITests */ = { isa = PBXGroup; children = (A20000000000000000000012 /* LumaViewLaunchTests.swift */); path = LumaViewUITests; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXVariantGroup section */
+		A20000000000000000000015 /* Localizable.strings */ = {isa = PBXVariantGroup; children = (A20000000000000000000013 /* en */, A20000000000000000000014 /* zh-Hans */); name = Localizable.strings; sourceTree = "<group>"; };
+/* End PBXVariantGroup section */
+
+/* Begin PBXNativeTarget section */
+		A50000000000000000000001 /* LumaView */ = { isa = PBXNativeTarget; buildConfigurationList = A60000000000000000000001 /* Build configuration list for PBXNativeTarget "LumaView" */; buildPhases = (A30000000000000000000002 /* Sources */, A30000000000000000000001 /* Frameworks */, A30000000000000000000003 /* Resources */); buildRules = (); dependencies = (); name = LumaView; productName = LumaView; productReference = A20000000000000000000010 /* LumaView.app */; productType = "com.apple.product-type.application"; };
+		A5000000000000000000000B /* LumaViewTests */ = { isa = PBXNativeTarget; buildConfigurationList = A6000000000000000000000B /* Build configuration list for PBXNativeTarget "LumaViewTests" */; buildPhases = (A3000000000000000000000B /* Sources */, A3000000000000000000000C /* Frameworks */); buildRules = (); dependencies = (AA0000000000000000000000B /* PBXTargetDependency */); name = LumaViewTests; productName = LumaViewTests; productReference = A2000000000000000000000E /* LumaViewTests.xctest */; productType = "com.apple.product-type.bundle.unit-test"; };
+		A5000000000000000000000C /* LumaViewUITests */ = { isa = PBXNativeTarget; buildConfigurationList = A6000000000000000000000C /* Build configuration list for PBXNativeTarget "LumaViewUITests" */; buildPhases = (A3000000000000000000000D /* Sources */, A3000000000000000000000E /* Frameworks */); buildRules = (); dependencies = (AA0000000000000000000000C /* PBXTargetDependency */); name = LumaViewUITests; productName = LumaViewUITests; productReference = A20000000000000000000011 /* LumaViewUITests.xctest */; productType = "com.apple.product-type.bundle.ui-testing"; };
+/* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		A9000000000000000000000B /* PBXContainerItemProxy */ = { isa = PBXContainerItemProxy; containerPortal = A70000000000000000000001 /* Project object */; proxyType = 1; remoteGlobalIDString = A50000000000000000000001; remoteInfo = LumaView; };
+		A9000000000000000000000C /* PBXContainerItemProxy */ = { isa = PBXContainerItemProxy; containerPortal = A70000000000000000000001 /* Project object */; proxyType = 1; remoteGlobalIDString = A50000000000000000000001; remoteInfo = LumaView; };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXProject section */
+		A70000000000000000000001 /* Project object */ = { isa = PBXProject; attributes = { BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 1600; LastUpgradeCheck = 1600; TargetAttributes = { A50000000000000000000001 = { CreatedOnToolsVersion = 16.0; }; A5000000000000000000000B = { CreatedOnToolsVersion = 16.0; TestTargetID = A50000000000000000000001; }; A5000000000000000000000C = { CreatedOnToolsVersion = 16.0; TestTargetID = A50000000000000000000001; }; }; }; buildConfigurationList = A60000000000000000000002 /* Build configuration list for PBXProject "LumaView" */; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base, "zh-Hans"); mainGroup = A40000000000000000000001; productRefGroup = A40000000000000000000003 /* Products */; projectDirPath = ""; projectRoot = ""; targets = (A50000000000000000000001 /* LumaView */, A5000000000000000000000B /* LumaViewTests */, A5000000000000000000000C /* LumaViewUITests */); };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A30000000000000000000003 /* Resources */ = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000007 /* Assets.xcassets in Resources */, A1000000000000000000000F /* Localizable.strings in Resources */); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A30000000000000000000002 /* Sources */ = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001 /* LumaViewApp.swift in Sources */, A10000000000000000000002 /* ContentView.swift in Sources */, A10000000000000000000003 /* ImageBrowserStore.swift in Sources */, A10000000000000000000004 /* ImageCanvasView.swift in Sources */, A10000000000000000000006 /* Localization.swift in Sources */, A10000000000000000000008 /* ImagePipeline.swift in Sources */, A10000000000000000000009 /* LumaIcon.swift in Sources */, A10000000000000000000010 /* UpdateChecker.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
+		A3000000000000000000000B /* Sources */ = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000B /* LumaViewCoreTests.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
+		A3000000000000000000000D /* Sources */ = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000000D /* LumaViewLaunchTests.swift in Sources */); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AA0000000000000000000000B /* PBXTargetDependency */ = { isa = PBXTargetDependency; target = A50000000000000000000001 /* LumaView */; targetProxy = A9000000000000000000000B /* PBXContainerItemProxy */; };
+		AA0000000000000000000000C /* PBXTargetDependency */ = { isa = PBXTargetDependency; target = A50000000000000000000001 /* LumaView */; targetProxy = A9000000000000000000000C /* PBXContainerItemProxy */; };
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A80000000000000000000001 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; GCC_C_LANGUAGE_STANDARD = gnu17; MACOSX_DEPLOYMENT_TARGET = 13.0; SDKROOT = macosx; }; name = Debug; };
+		A80000000000000000000002 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; GCC_C_LANGUAGE_STANDARD = gnu17; MACOSX_DEPLOYMENT_TARGET = 13.0; SDKROOT = macosx; }; name = Release; };
+		A80000000000000000000003 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ARCHS = arm64; ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_IDENTITY = "-"; CODE_SIGN_STYLE = Manual; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 4; ENABLE_HARDENED_RUNTIME = YES; ENABLE_TESTABILITY = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = LumaView/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MARKETING_VERSION = 1.2.1; PRODUCT_BUNDLE_IDENTIFIER = com.lumaview.browser; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; }; name = Debug; };
+		A80000000000000000000004 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ARCHS = arm64; ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_IDENTITY = "-"; CODE_SIGN_STYLE = Manual; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 4; ENABLE_HARDENED_RUNTIME = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = LumaView/Info.plist; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MARKETING_VERSION = 1.2.1; PRODUCT_BUNDLE_IDENTIFIER = com.lumaview.browser; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_STRICT_CONCURRENCY = minimal; SWIFT_VERSION = 5.0; }; name = Release; };
+		A8000000000000000000000B /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ARCHS = arm64; BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_IDENTITY = "-"; CODE_SIGN_STYLE = Manual; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 13.0; PRODUCT_BUNDLE_IDENTIFIER = com.lumaview.browser.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; SWIFT_VERSION = 5.0; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LumaView.app/Contents/MacOS/LumaView"; }; name = Debug; };
+		A8000000000000000000000C /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ARCHS = arm64; BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_IDENTITY = "-"; CODE_SIGN_STYLE = Manual; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 13.0; PRODUCT_BUNDLE_IDENTIFIER = com.lumaview.browser.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LumaView.app/Contents/MacOS/LumaView"; }; name = Release; };
+		A8000000000000000000000D /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ARCHS = arm64; CODE_SIGN_IDENTITY = "-"; CODE_SIGN_STYLE = Manual; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 13.0; PRODUCT_BUNDLE_IDENTIFIER = com.lumaview.browser.uitests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; SWIFT_VERSION = 5.0; TEST_TARGET_NAME = LumaView; }; name = Debug; };
+		A8000000000000000000000E /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ARCHS = arm64; CODE_SIGN_IDENTITY = "-"; CODE_SIGN_STYLE = Manual; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 13.0; PRODUCT_BUNDLE_IDENTIFIER = com.lumaview.browser.uitests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; TEST_TARGET_NAME = LumaView; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A60000000000000000000001 /* Build configuration list for PBXNativeTarget "LumaView" */ = { isa = XCConfigurationList; buildConfigurations = (A80000000000000000000003 /* Debug */, A80000000000000000000004 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A60000000000000000000002 /* Build configuration list for PBXProject "LumaView" */ = { isa = XCConfigurationList; buildConfigurations = (A80000000000000000000001 /* Debug */, A80000000000000000000002 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A6000000000000000000000B /* Build configuration list for PBXNativeTarget "LumaViewTests" */ = { isa = XCConfigurationList; buildConfigurations = (A8000000000000000000000B /* Debug */, A8000000000000000000000C /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A6000000000000000000000C /* Build configuration list for PBXNativeTarget "LumaViewUITests" */ = { isa = XCConfigurationList; buildConfigurations = (A8000000000000000000000D /* Debug */, A8000000000000000000000E /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = A70000000000000000000001 /* Project object */;
+}

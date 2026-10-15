@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="frame" x1="86" y1="70" x2="946" y2="958" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#20D8E7"/>
+      <stop offset=".29" stop-color="#2E8FFF"/>
+      <stop offset=".54" stop-color="#8A4DFF"/>
+      <stop offset=".73" stop-color="#EB36CC"/>
+      <stop offset="1" stop-color="#FF6B5E"/>
+    </linearGradient>
+    <linearGradient id="backMountain" x1="284" y1="442" x2="692" y2="786" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#39CBF7"/>
+      <stop offset="1" stop-color="#3E69F4"/>
+    </linearGradient>
+    <linearGradient id="frontMountain" x1="432" y1="684" x2="787" y2="773" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BB3EED"/>
+      <stop offset=".58" stop-color="#F23BAA"/>
+      <stop offset="1" stop-color="#FF7466"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0" cy="0" r="1" gradientTransform="translate(711 337) rotate(48.2) scale(101.4)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE46B"/>
+      <stop offset="1" stop-color="#FF9F18"/>
+    </radialGradient>
+    <mask id="frameCutout" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="black"/>
+      <rect x="56" y="56" width="912" height="912" rx="212" fill="white"/>
+      <rect x="178" y="178" width="668" height="668" rx="126" fill="black"/>
+    </mask>
+  </defs>
+  <rect width="1024" height="1024" fill="#FFFFFF"/>
+  <g transform="translate(102 102) scale(.8)">
+    <rect width="1024" height="1024" fill="url(#frame)" mask="url(#frameCutout)"/>
+    <circle cx="712" cy="338" r="83" fill="url(#sun)"/>
+    <path d="M242 776V680L447 470C466 451 497 451 516 470L727 682V776H242Z" fill="url(#backMountain)"/>
+    <path d="M416 776L626 565C647 544 681 544 702 565L813 676C831 694 818 776 789 776H416Z" fill="url(#frontMountain)"/>
+  </g>
+</svg>
