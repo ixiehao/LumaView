@@ -9,7 +9,7 @@ const content = {
     featureOneTitle: "文件夹里的上一张 / 下一张", featureOneBody: "直接从访达或“打开文件”进入。LumaView 先显示当前图，再轻量索引同级文件，工具栏和方向键都能自然切换。",
     featureTwoTitle: "大图按屏幕而生", featureTwoBody: "适合窗口、连续缩放、平移与旋转围绕画布本身设计；状态栏显示相对于原图的真实百分比。",
     featureThreeTitle: "不止 PNG 和 JPG", featureThreeBody: "JPEG、PNG、HEIC、GIF、TIFF、WebP、PDF、许多系统 RAW 格式与 Sketch 文档预览，都在本地完成。",
-    principlesEyebrow: "为顺畅浏览而做", principlesTitle: "极简。极速。<br />极致轻量化。", principleOneTitle: "极简", principleOneBody: "一张画布，一组常用操作。打开即看，让画面保持中心。", principleTwoTitle: "极速", principleTwoBody: "优先呈现当前图片；前后浏览围绕键盘与工具栏自然衔接。", principleThreeTitle: "极致轻量化", principleThreeBody: "受控缓存与按需渲染，把资源留给正在看的那一张图。",
+    principlesEyebrow: "为顺畅浏览而做", principlesTitle: "极简。极速。<br />极致轻量化。", principleOneTitle: "极简", principleOneBody: "一个浏览框，一组常用操作。打开即看，让画面保持中心。", principleTwoTitle: "极速", principleTwoBody: "迅捷浏览图片；上一张/下一张/放大/缩小/旋转...工具栏自然衔接。", principleThreeTitle: "极致轻量化", principleThreeBody: "安装包仅2M，将代码轻量化到极致。",
     readyEyebrow: "准备好只看图片了吗？", downloadTitle: "打开一张图。<br />剩下的，交给方向键。", downloadNote: "macOS 13+ · Universal (arm64 + x86_64)", securityNote: "当前为公开预览版，采用 ad-hoc 签名，尚未经过 Apple 公证。若首次启动出现验证提示，请在“应用程序”中 Control 点按 LumaView → “打开” → 再次“打开”；无需关闭系统级安全设置。", footerTagline: "本地原生图片浏览器 · 由 ixiehao 制作", footerIssues: "反馈", footerReleases: "版本"
   },
   en: {
@@ -22,7 +22,7 @@ const content = {
     featureOneTitle: "Previous / next in the folder", featureOneBody: "Open from Finder or choose a file. LumaView shows it first, then lightly indexes sibling files for natural toolbar and arrow-key navigation.",
     featureTwoTitle: "Large images meet the screen", featureTwoBody: "Fit, continuous zoom, pan, and rotation are designed around the canvas; the status bar reports an honest percentage of the source image.",
     featureThreeTitle: "More than PNG and JPG", featureThreeBody: "JPEG, PNG, HEIC, GIF, TIFF, WebP, PDF, many system RAW formats, and Sketch document previews all stay local.",
-    principlesEyebrow: "Built for fluid viewing", principlesTitle: "Minimal.<br />Fast. Lightweight.", principleOneTitle: "Minimal", principleOneBody: "One canvas and a focused set of controls. Open an image and let it remain the center.", principleTwoTitle: "Fast", principleTwoBody: "The current image comes first; keyboard and toolbar navigation flow naturally from there.", principleThreeTitle: "Extremely lightweight", principleThreeBody: "Bounded caching and on-demand rendering keep resources focused on the image in view.",
+    principlesEyebrow: "Built for fluid viewing", principlesTitle: "Minimal.<br />Fast. Lightweight.", principleOneTitle: "Minimal", principleOneBody: "One viewer and one set of essential controls. Open an image and let it remain the center.", principleTwoTitle: "Fast", principleTwoBody: "Browse swiftly; previous, next, zoom, and rotation flow naturally through the toolbar.", principleThreeTitle: "Extremely lightweight", principleThreeBody: "A 2 MB installer, with the code made as lightweight as possible.",
     readyEyebrow: "Ready to just view?", downloadTitle: "Open one image.<br />Let the arrow keys do the rest.", downloadNote: "macOS 13+ · Universal (arm64 + x86_64)", securityNote: "This public preview is ad-hoc signed and not Apple-notarized. If macOS shows a verification prompt on first launch, Control-click LumaView in Applications → Open → Open once more. Do not disable system-wide security.", footerTagline: "A local native image viewer · by ixiehao", footerIssues: "Feedback", footerReleases: "Releases"
   }
 };
