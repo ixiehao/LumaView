@@ -8,7 +8,7 @@
 "settings.currentVersion" = "Current version";
 "settings.updatePrivacy" = "Checks only public GitHub release metadata. Your images and file paths stay on this Mac.";
 "about.menu" = "About LumaView";
-"about.description" = "A native local image browser for Intel and Apple Silicon Macs.";
+"about.description" = "A minimal native image viewer for Mac.";
 "about.developer" = "Developer";
 "about.project" = "LumaView on GitHub";
 "about.feedback" = "Report an issue on GitHub";

@@ -1,7 +1,7 @@
 {
   "name": "LumaView",
   "short_name": "LumaView",
-  "description": "A minimal native image viewer for Intel and Apple Silicon Macs.",
+  "description": "A minimal native image viewer for Mac.",
   "start_url": "./",
   "display": "browser",
   "background_color": "#0b1020",
