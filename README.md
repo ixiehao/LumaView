@@ -22,16 +22,11 @@ test artwork and contain no user photo, filename, folder, or desktop content.
 
 ## Highlights
 
-- Native SwiftUI interface for macOS 13 or later on **Apple Silicon only**. Intel Macs are not supported.
-- Choose one image, open it from Finder, or drag it into the window. LumaView shows that image first, then indexes only its immediate folder so previous/next works without a persistent file list.
-- LumaView registers with Finder as an optional Viewer for macOS image types, PDFs, and `.sketch` documents. Choose **LumaView** in Finder’s **Open with** menu, then use **Change All…** when you want it as the default for that file type.
-- View JPEG, PNG, HEIC, GIF, TIFF, BMP, ICO, WebP, PDF, many system-supported RAW formats, and `.sketch` documents. Sketch files use their embedded page preview; supported bitmap formats still depend on macOS codecs.
-- Zoom, fit, rotate, scroll/pan large images, and print with standard shortcuts. The status bar reports the rendered size as an absolute percentage of the source image.
-- Immediate English / 简体中文 / System language and Light / Dark / System appearance controls.
-- A native About panel covers version, privacy, license, project, feedback, and a checked release update. The updater checks only public GitHub release metadata and validates that download links belong to the configured project repository.
-- Tabler Icons Outline assets are bundled locally and share one 24 × 24 / 2 pt visual language. The LumaView mark is an original project asset.
-- Previous/next is optimized as a first-class viewer action: only the two adjacent images are predecoded into compact, memory-only bridge frames, while visible images use two bounded render workers.
-- Bounded, memory-only image cache: 24 MiB adjacent-image previews, 120 MiB renders, one utility prefetch worker, two full-image workers, and a 5K decode ceiling.
+- Native SwiftUI viewer for macOS 13+ on **Apple Silicon**. Intel Macs are not supported.
+- Open from Finder, choose a file, or drag it in; browse the current folder with `←` / `→` or the toolbar.
+- View JPEG, PNG, HEIC, GIF, TIFF, BMP, ICO, WebP, PDF, many system RAW formats, and `.sketch` previews.
+- Zoom, fit, pan, rotate, and print large images; the status bar shows the true percentage of the source image.
+- Switch instantly between English / 简体中文 and Light / Dark / System appearance.
 
 ## Requirements
 
