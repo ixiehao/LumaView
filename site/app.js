@@ -1,6 +1,7 @@
 const content = {
   zh: {
     navExperience: "体验", navPrinciples: "优势", navDownload: "下载", eyebrow: "仅为 Apple Silicon Mac 打造",
+    seoTitle: "LumaView · 极简的本地原生看图软件", seoDescription: "LumaView 是一款极简、极速、极致轻量化的 macOS 原生看图软件，支持文件夹前后浏览、大图缩放、旋转与打印。仅支持 Apple Silicon Mac。", seoSocialDescription: "极简、极速、极致轻量化的 macOS 原生看图软件：文件夹前后浏览、大图缩放、旋转与打印。",
     heroTitle: "让图片，<br /><em>占满注意力。</em>", heroLede: "LumaView 是一款极简的本地原生看图软件：打开一张图片，即刻沿同级文件夹前后浏览。",
     downloadButton: "下载 v1.2.1", sourceButton: "查看源码", compatibility: "macOS 13+ · Apple Silicon · 完全本地处理", heroCaption: "真实运行截图 · 使用原创测试图", heroImageAlt: "LumaView 在原生窗口中浏览原创测试图，顶部有上一张、下一张、缩放和旋转操作", welcomeImageAlt: "LumaView 原生欢迎界面，中央保留一个打开文件操作",
     proofOne: "打开即看，画面居中", proofTwo: "方向键快速前后浏览", proofThree: "为 Apple Silicon 优化",
@@ -13,6 +14,7 @@ const content = {
   },
   en: {
     navExperience: "Experience", navPrinciples: "Principles", navDownload: "Download", eyebrow: "Built for Apple Silicon Macs",
+    seoTitle: "LumaView · Minimal native image viewer for macOS", seoDescription: "LumaView is a minimal, fast, and lightweight native macOS image viewer with folder navigation, large-image zoom, rotation, and printing. Apple Silicon only.", seoSocialDescription: "A minimal, fast, and lightweight native macOS image viewer with folder navigation, large-image zoom, rotation, and printing.",
     heroTitle: "Let the image<br /><em>take your attention.</em>", heroLede: "LumaView is a minimal, native image viewer: open one image and move through its folder immediately.",
     downloadButton: "Download v1.2.1", sourceButton: "View source", compatibility: "macOS 13+ · Apple Silicon · Local by default", heroCaption: "Real application screenshot · original test art", heroImageAlt: "LumaView browsing original test art in its native window, with previous, next, zoom, and rotate controls", welcomeImageAlt: "LumaView native welcome screen with a single Open File action",
     proofOne: "Open and view immediately", proofTwo: "Arrow-key folder browsing", proofThree: "Optimized for Apple Silicon",
@@ -30,13 +32,20 @@ const switcher = document.querySelector(".language-switch");
 
 function setLanguage(next) {
   language = next;
+  const localized = content[next];
   document.documentElement.lang = next === "zh" ? "zh-CN" : "en";
-  document.querySelectorAll("[data-i18n]").forEach((node) => { node.innerHTML = content[next][node.dataset.i18n]; });
-  document.querySelectorAll("[data-i18n-alt]").forEach((node) => { node.alt = content[next][node.dataset.i18nAlt]; });
+  document.querySelectorAll("[data-i18n]").forEach((node) => { node.innerHTML = localized[node.dataset.i18n]; });
+  document.querySelectorAll("[data-i18n-alt]").forEach((node) => { node.alt = localized[node.dataset.i18nAlt]; });
   document.querySelector(".language-label").textContent = next === "zh" ? "EN" : "中文";
   switcher.setAttribute("aria-pressed", String(next === "en"));
   switcher.setAttribute("aria-label", next === "zh" ? "Switch to English" : "切换到中文");
-  document.title = next === "zh" ? "LumaView · 极简的本地原生看图软件" : "LumaView · Minimal native image viewing";
+  document.title = localized.seoTitle;
+  document.querySelector("#meta-description").content = localized.seoDescription;
+  document.querySelector("#og-title").content = localized.seoTitle;
+  document.querySelector("#twitter-title").content = localized.seoTitle;
+  document.querySelector("#og-description").content = localized.seoSocialDescription;
+  document.querySelector("#twitter-description").content = localized.seoSocialDescription;
+  document.querySelector("#og-locale").content = next === "zh" ? "zh_CN" : "en_US";
 }
 
 switcher.addEventListener("click", () => setLanguage(language === "zh" ? "en" : "zh"));

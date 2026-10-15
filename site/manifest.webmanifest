@@ -1,0 +1,16 @@
+{
+  "name": "LumaView",
+  "short_name": "LumaView",
+  "description": "A minimal native image viewer for Apple Silicon Macs.",
+  "start_url": "./",
+  "display": "browser",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "icons": [
+    {
+      "src": "assets/lumaview-app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
