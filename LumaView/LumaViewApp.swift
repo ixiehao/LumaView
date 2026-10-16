@@ -48,7 +48,7 @@ private enum AboutCredits {
 /// changes. AppKit owns File, Edit, the system View menu, Window and Help, so
 /// their top-level labels must be updated explicitly as well. This keeps the
 /// complete menu bar in the language selected inside LumaView rather than
-/// leaving a Chinese macOS menu mixed with English application menus.
+/// leaving a mixed-language macOS menu.
 @MainActor
 enum MainMenuLocalization {
     private static let leadingSystemMenus: [(index: Int, key: String)] = [
@@ -58,8 +58,8 @@ enum MainMenuLocalization {
     ]
 
     private static let trailingSystemMenus: [(titles: Set<String>, key: String)] = [
-        (["Window", "窗口"], "system.menu.window"),
-        (["Help", "帮助"], "system.menu.help")
+        (["Window", "窗口", "ウインドウ"], "system.menu.window"),
+        (["Help", "帮助", "ヘルプ"], "system.menu.help")
     ]
 
     // When macOS itself uses a third language, the AppKit-generated titles do
@@ -105,40 +105,40 @@ enum MainMenuLocalization {
 
     // System command groups are constructed by AppKit in the macOS language, not
     // by SwiftUI's app-local localization bundle. Translate the visible standard
-    // items too so selecting English/Chinese never leaves a mixed menu hierarchy.
+    // items too so switching languages never leaves a mixed menu hierarchy.
     private static let standardItems: [(titles: Set<String>, key: String)] = [
-        (["About LumaView", "关于 LumaView"], "system.item.about"),
-        (["Services", "服务"], "system.item.services"),
-        (["Hide LumaView", "隐藏 LumaView"], "system.item.hideApp"),
-        (["Hide Others", "隐藏其他"], "system.item.hideOthers"),
-        (["Show All", "显示全部"], "system.item.showAll"),
-        (["Quit LumaView", "退出 LumaView"], "system.item.quit"),
-        (["Close", "关闭"], "system.item.close"),
-        (["Save", "存储"], "system.item.save"),
-        (["Duplicate", "复制"], "system.item.duplicate"),
-        (["Rename…", "重命名…"], "system.item.rename"),
-        (["Move To…", "移动到…"], "system.item.moveTo"),
-        (["Export as PDF…", "导出为 PDF…"], "system.item.exportPDF"),
-        (["Print…", "打印…"], "system.item.print"),
-        (["Undo", "撤销"], "system.item.undo"),
-        (["Redo", "重做"], "system.item.redo"),
-        (["Cut", "剪切"], "system.item.cut"),
-        (["Copy", "拷贝"], "system.item.copy"),
-        (["Paste", "粘贴"], "system.item.paste"),
-        (["Paste and Match Style", "粘贴并匹配样式"], "system.item.pasteMatch"),
-        (["Delete", "删除"], "system.item.delete"),
-        (["Select All", "全选"], "system.item.selectAll"),
-        (["Start Dictation…", "开始听写…"], "system.item.dictation"),
-        (["Emoji & Symbols", "表情与符号"], "system.item.emoji"),
-        (["Enter Full Screen", "进入全屏幕"], "system.item.enterFullScreen"),
-        (["Exit Full Screen", "退出全屏幕"], "system.item.exitFullScreen"),
-        (["Show Toolbar", "显示工具栏"], "system.item.showToolbar"),
-        (["Hide Toolbar", "隐藏工具栏"], "system.item.hideToolbar"),
-        (["Customize Toolbar…", "自定工具栏…"], "system.item.customizeToolbar"),
-        (["Minimize", "最小化"], "system.item.minimize"),
-        (["Zoom", "缩放"], "system.item.zoom"),
-        (["Bring All to Front", "全部置于最前"], "system.item.bringAllToFront"),
-        (["LumaView Help", "LumaView 帮助"], "system.item.help")
+        (["About LumaView", "关于 LumaView", "LumaViewについて"], "system.item.about"),
+        (["Services", "服务", "サービス"], "system.item.services"),
+        (["Hide LumaView", "隐藏 LumaView", "LumaViewを隠す"], "system.item.hideApp"),
+        (["Hide Others", "隐藏其他", "ほかを隠す"], "system.item.hideOthers"),
+        (["Show All", "显示全部", "すべてを表示"], "system.item.showAll"),
+        (["Quit LumaView", "退出 LumaView", "LumaViewを終了"], "system.item.quit"),
+        (["Close", "关闭", "閉じる"], "system.item.close"),
+        (["Save", "存储", "保存"], "system.item.save"),
+        (["Duplicate", "复制", "複製"], "system.item.duplicate"),
+        (["Rename…", "重命名…", "名前を変更…"], "system.item.rename"),
+        (["Move To…", "移动到…", "移動…"], "system.item.moveTo"),
+        (["Export as PDF…", "导出为 PDF…", "PDFとして書き出す…"], "system.item.exportPDF"),
+        (["Print…", "打印…", "プリント…"], "system.item.print"),
+        (["Undo", "撤销", "取り消す"], "system.item.undo"),
+        (["Redo", "重做", "やり直す"], "system.item.redo"),
+        (["Cut", "剪切", "カット"], "system.item.cut"),
+        (["Copy", "拷贝", "コピー"], "system.item.copy"),
+        (["Paste", "粘贴", "ペースト"], "system.item.paste"),
+        (["Paste and Match Style", "粘贴并匹配样式", "ペーストしてスタイルを合わせる"], "system.item.pasteMatch"),
+        (["Delete", "删除", "削除"], "system.item.delete"),
+        (["Select All", "全选", "すべてを選択"], "system.item.selectAll"),
+        (["Start Dictation…", "开始听写…", "音声入力を開始…"], "system.item.dictation"),
+        (["Emoji & Symbols", "表情与符号", "絵文字と記号"], "system.item.emoji"),
+        (["Enter Full Screen", "进入全屏幕", "フルスクリーンにする"], "system.item.enterFullScreen"),
+        (["Exit Full Screen", "退出全屏幕", "フルスクリーンを解除"], "system.item.exitFullScreen"),
+        (["Show Toolbar", "显示工具栏", "ツールバーを表示"], "system.item.showToolbar"),
+        (["Hide Toolbar", "隐藏工具栏", "ツールバーを隠す"], "system.item.hideToolbar"),
+        (["Customize Toolbar…", "自定工具栏…", "ツールバーをカスタマイズ…"], "system.item.customizeToolbar"),
+        (["Minimize", "最小化", "しまう"], "system.item.minimize"),
+        (["Zoom", "缩放", "拡大/縮小"], "system.item.zoom"),
+        (["Bring All to Front", "全部置于最前", "すべてを手前に移動"], "system.item.bringAllToFront"),
+        (["LumaView Help", "LumaView 帮助", "LumaViewヘルプ"], "system.item.help")
     ]
 
     static func applyToMainMenu(_ l: L10n) {
@@ -151,7 +151,7 @@ enum MainMenuLocalization {
         // The first four menus are always application, File, Edit and the
         // system View menu. Indexing them prevents the application's separate
         // image View menu from being renamed as the system menu during a
-        // Chinese/English switch.
+        // language switch.
         for menuInfo in leadingSystemMenus where menu.items.indices.contains(menuInfo.index) {
             setTitle(l.text(menuInfo.key), for: menu.items[menuInfo.index])
         }

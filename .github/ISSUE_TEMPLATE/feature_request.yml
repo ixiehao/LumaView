@@ -1,5 +1,5 @@
-name: Feature request / 功能建议
-description: Suggest a focused improvement for image viewing. 为看图体验提出聚焦的改进建议。
+name: Feature request / 功能建议 / 機能リクエスト
+description: Suggest a focused improvement for image viewing. 为看图体验提出聚焦的改进建议。画像閲覧のための焦点を絞った改善を提案します。
 title: "[Feature]: "
 labels: [enhancement]
 body:
@@ -8,29 +8,30 @@ body:
       value: |
         LumaView deliberately keeps the viewing path small. Tell us about the real viewing task this would improve.
         LumaView 有意保持看图主路径简洁。请说明该建议会改善的真实看图场景。
+        LumaView は閲覧の流れを小さく保つことを意図しています。この提案で改善される実際の閲覧作業を教えてください。
   - type: textarea
     id: problem
     attributes:
-      label: What would this improve? / 想改善什么？
-      placeholder: Describe the image-viewing task and where the current flow gets in the way. 请描述看图场景与当前流程的阻碍。
+      label: What would this improve? / 想改善什么？/ 何を改善しますか？
+      placeholder: Describe the image-viewing task and where the current flow gets in the way. 请描述看图场景与当前流程的阻碍。画像閲覧の作業と、現在の流れで妨げになっている点を説明してください。
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: Proposed behavior / 期望的行为
-      placeholder: Keep the proposal focused on a single user-visible outcome. 请聚焦一个用户可见的结果。
+      label: Proposed behavior / 期望的行为 / 提案する動作
+      placeholder: Keep the proposal focused on a single user-visible outcome. 请聚焦一个用户可见的结果。提案は 1 つのユーザーに見える結果に絞ってください。
     validations:
       required: true
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives considered / 考虑过的替代方案
-      placeholder: Optional / 可选
+      label: Alternatives considered / 考虑过的替代方案 / 検討した代替案
+      placeholder: Optional / 可选 / 任意
   - type: checkboxes
     id: checks
     attributes:
-      label: Before submitting / 提交前确认
+      label: Before submitting / 提交前确认 / 送信前の確認
       options:
-        - label: I searched existing issues. / 我已搜索现有 Issue。
+        - label: I searched existing issues. / 我已搜索现有 Issue。/ 既存の Issue を検索しました。
           required: true

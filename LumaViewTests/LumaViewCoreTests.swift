@@ -277,7 +277,7 @@ final class LumaViewCoreTests: XCTestCase {
     }
 
     func testEveryUserSelectableLanguageHasAllRequiredTranslations() {
-        for language in [AppLanguage.chinese, .english] {
+        for language in [AppLanguage.chinese, .english, .japanese] {
             let l = L10n(language: language)
             for key in AppLanguage.requiredLocalizationKeys {
                 XCTAssertNotEqual(l.text(key), key, "\(language.rawValue) is missing \(key)")
@@ -290,6 +290,9 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertEqual(L10n(language: .english).text("toolbar.print"), "Print image (⌘P)")
         XCTAssertEqual(L10n(language: .chinese).text("toolbar.next"), "下一张（→）")
         XCTAssertEqual(L10n(language: .chinese).text("toolbar.rotateLeft"), "向左旋转")
+        XCTAssertEqual(L10n(language: .japanese).text("system.menu.file"), "ファイル")
+        XCTAssertEqual(L10n(language: .japanese).text("toolbar.next"), "次の画像（→）")
+        XCTAssertEqual(L10n(language: .japanese).text("toolbar.rotateLeft"), "左に回転")
     }
 
     func testAppearanceModesHaveExplicitSwiftUIAndAppKitRepresentations() {

@@ -8,6 +8,9 @@
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <meta name="author" content="ixiehao" />
     <link rel="canonical" href="https://ixiehao.github.io/LumaView/" />
+    <link rel="alternate" hreflang="zh-CN" href="https://ixiehao.github.io/LumaView/?lang=zh" />
+    <link rel="alternate" hreflang="en" href="https://ixiehao.github.io/LumaView/?lang=en" />
+    <link rel="alternate" hreflang="ja" href="https://ixiehao.github.io/LumaView/?lang=ja" />
     <link rel="icon" type="image/png" sizes="512x512" href="assets/lumaview-app-icon.png" />
     <link rel="apple-touch-icon" sizes="512x512" href="assets/lumaview-app-icon.png" />
     <link rel="manifest" href="manifest.webmanifest" />
@@ -18,6 +21,7 @@
     <meta property="og:site_name" content="LumaView" />
     <meta id="og-locale" property="og:locale" content="zh_CN" />
     <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:locale:alternate" content="ja_JP" />
     <meta property="og:image" content="https://ixiehao.github.io/LumaView/assets/social-preview.jpg?v=20261016-social-clean" />
     <meta property="og:image:width" content="1280" />
     <meta property="og:image:height" content="640" />
@@ -35,7 +39,7 @@
         "applicationCategory": "MultimediaApplication",
         "applicationSubCategory": "Image Viewer",
         "operatingSystem": "macOS 13 or later",
-        "softwareVersion": "1.2.2",
+        "softwareVersion": "1.2.3",
         "url": "https://ixiehao.github.io/LumaView/",
         "downloadUrl": "https://github.com/ixiehao/LumaView/releases/latest",
         "image": "https://ixiehao.github.io/LumaView/assets/social-preview.jpg?v=20261016-social-clean",
@@ -44,7 +48,7 @@
           "https://ixiehao.github.io/LumaView/assets/lumaview-multiwindow.png?v=20261016-windows-9grid"
         ],
         "isAccessibleForFree": true,
-        "inLanguage": ["zh-CN", "en"],
+        "inLanguage": ["zh-CN", "en", "ja"],
         "author": {
           "@type": "Person",
           "name": "ixiehao",
@@ -52,7 +56,7 @@
         }
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20261016-windows-side-2" />
+    <link rel="stylesheet" href="styles.css?v=20261016-ja" />
   </head>
   <body>
     <header class="nav wrap">
@@ -66,7 +70,7 @@
         <a href="#principles" data-i18n="navPrinciples">优势</a>
         <a href="#download" data-i18n="navDownload">下载</a>
       </nav>
-      <button class="language-switch" type="button" aria-label="Switch to English" aria-pressed="false">
+      <button class="language-switch" type="button" aria-label="Switch to English">
         <span aria-hidden="true">文</span><span class="language-label">EN</span>
       </button>
     </header>
@@ -78,7 +82,7 @@
           <h1 data-i18n="heroTitle">打开图片，<br /><em>极速浏览。</em></h1>
           <p class="lede" data-i18n="heroLede">一款极简的Mac原生看图软件。</p>
           <div class="hero-actions">
-            <a class="button button-primary" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">下载 v1.2.2</span><b aria-hidden="true">↗</b></a>
+            <a class="button button-primary" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">下载 v1.2.3</span><b aria-hidden="true">↗</b></a>
             <a class="button button-secondary" href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer"><span data-i18n="sourceButton">查看源码</span><b aria-hidden="true">→</b></a>
           </div>
           <p class="compatibility" data-i18n="compatibility">macOS 13+ · Intel + Apple Silicon · 离线使用</p>
@@ -159,7 +163,7 @@
             <p class="eyebrow"><i></i><span data-i18n="readyEyebrow">现在开始看图</span></p>
             <h2 data-i18n="downloadTitle">免费下载<br />LumaView。</h2>
           </div>
-          <div class="download-actions"><a class="button button-light" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">下载 v1.2.2</span><b aria-hidden="true">↗</b></a><p data-i18n="downloadNote">macOS 13+ · Universal (arm64 + x86_64)</p></div>
+          <div class="download-actions"><a class="button button-light" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">下载 v1.2.3</span><b aria-hidden="true">↗</b></a><p data-i18n="downloadNote">macOS 13+ · Universal (arm64 + x86_64)</p></div>
         </div>
         <p class="security-note" data-i18n="securityNote">当前为公开预览版，采用 ad-hoc 签名，尚未经过 Apple 公证。若首次启动出现验证提示，请在“应用程序”中 Control 点按 LumaView → “打开” → 再次“打开”；无需关闭系统级安全设置。</p>
       </section>
@@ -170,6 +174,6 @@
       <p data-i18n="footerTagline">本地原生图片浏览器 · 由 ixiehao 制作</p>
       <div><a href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer">GitHub</a><a href="https://github.com/ixiehao/LumaView/issues" target="_blank" rel="noreferrer" data-i18n="footerIssues">反馈</a><a href="https://github.com/ixiehao/LumaView/releases" target="_blank" rel="noreferrer" data-i18n="footerReleases">版本</a></div>
     </footer>
-    <script src="app.js?v=20261016-windows-side"></script>
+    <script src="app.js?v=20261016-ja"></script>
   </body>
 </html>

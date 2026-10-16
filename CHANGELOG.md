@@ -4,6 +4,20 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
+## 1.2.3 — 2026-10-16
+
+### English
+
+- Added complete Japanese localization for the app, website, README, QA guidance, and release documentation.
+
+### 中文
+
+- 为应用、官网、README、QA 指引和发布文档补充完整日语本地化。
+
+### 日本語
+
+- アプリ、公式サイト、README、QA ガイド、リリース文書に日本語ローカライズを追加しました。
+
 ## 1.2.2 — 2026-10-15
 
 - Added a universal macOS build with both Apple Silicon (`arm64`) and Intel (`x86_64`) slices.
@@ -13,6 +27,11 @@ marketing version.
 
 - 新增同时支持 Apple Silicon（`arm64`）与 Intel（`x86_64`）的 macOS 通用版。
 - 更新构建、打包、挂载后 DMG 校验、安装界面、文档与发布流程，统一要求并说明通用安装包。
+
+### 日本語
+
+- Apple Silicon（`arm64`）と Intel（`x86_64`）の両方に対応する macOS ユニバーサル版を追加しました。
+- ビルド、パッケージ作成、DMG マウント後の検証、インストーラ画面、文書、リリース手順を更新し、ユニバーサルインストーラの要件と内容を統一しました。
 
 ## 1.2.1 — 2026-10-15
 
@@ -43,3 +62,12 @@ marketing version.
 - 重制 DMG 安装界面：使用原创 LumaView 品牌插画、清晰拖拽引导，并加入可复现的 Finder 布局校验。
 - 让 macOS 标准菜单完整跟随 LumaView 的语言选择，同时保留系统“帮助”菜单。
 - 补齐双语文档、贡献、隐私、安全、发布和 CI 记录，使项目管理方式与同级项目一致。
+
+### 日本語
+
+- 埋め込みページプレビューを読み取り、`.sketch` 書類のプレビューに対応しました。
+- key ベースの英語・簡体中国語リソースと、翻訳の完全性テストを整備しました。
+- ネイティブの「LumaViewについて」パネルと安全な GitHub 更新確認を追加し、自動確認、手動確認、更新あり、オフライン失敗の状態を扱えるようにしました。
+- オリジナルの LumaView ブランド画像、分かりやすいドラッグ＆ドロップ案内、再現可能な Finder レイアウト検証を備えた DMG インストーラを再構築しました。
+- macOS の標準メニューを LumaView の選択言語に追従させつつ、システムの「ヘルプ」メニューを維持しました。
+- 二言語の文書、コントリビューション、プライバシー、セキュリティ、リリース、CI の記録を整備し、同等プロジェクトと一貫した管理方式にしました。

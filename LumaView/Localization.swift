@@ -7,6 +7,7 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     case automatic
     case chinese
     case english
+    case japanese
 
     var id: String { rawValue }
 
@@ -33,6 +34,7 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
         switch resolvedLanguage {
         case .chinese: Locale(identifier: "zh-Hans")
         case .english, .automatic: Locale(identifier: "en")
+        case .japanese: Locale(identifier: "ja")
         }
     }
 
@@ -43,17 +45,26 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     private var resolvedLanguage: AppLanguage {
         switch self {
         case .automatic:
-            Locale.preferredLanguages.first?.lowercased().hasPrefix("zh") == true ? .chinese : .english
-        case .chinese, .english:
-            self
+            let preferredLanguage = Locale.preferredLanguages.first?.lowercased() ?? ""
+            if preferredLanguage.hasPrefix("zh") { return .chinese }
+            if preferredLanguage.hasPrefix("ja") { return .japanese }
+            return .english
+        case .chinese, .english, .japanese:
+            return self
         }
     }
 
     /// Like ShotTessera, resource bundles are cached once instead of being rebuilt for
     /// every SwiftUI body refresh. Every user-selectable language owns a real .lproj.
     private static let localizationBundles: [AppLanguage: Bundle] = Dictionary(
-        uniqueKeysWithValues: [AppLanguage.chinese, .english].compactMap { language in
-            let code = language == .chinese ? "zh-Hans" : "en"
+        uniqueKeysWithValues: [AppLanguage.chinese, .english, .japanese].compactMap { language in
+            let code: String
+            switch language {
+            case .chinese: code = "zh-Hans"
+            case .english: code = "en"
+            case .japanese: code = "ja"
+            case .automatic: return nil
+            }
             guard let path = Bundle.module.path(forResource: code, ofType: "lproj"),
                   let bundle = Bundle(path: path) else { return nil }
             return (language, bundle)
@@ -77,6 +88,7 @@ struct L10n {
         case .automatic: text("language.automatic")
         case .chinese: "中文"
         case .english: "English"
+        case .japanese: "日本語"
         }
     }
 
@@ -96,8 +108,8 @@ private extension Bundle {
     static var module: Bundle { Bundle(for: LumaViewBundleToken.self) }
 }
 
-/// Appearance is stored separately from language so people can keep a Chinese or
-/// English interface while choosing the canvas and window contrast they prefer.
+/// Appearance is stored separately from language so people can keep their chosen
+/// interface language while choosing the canvas and window contrast they prefer.
 enum AppAppearance: String, CaseIterable, Identifiable {
     case system
     case light

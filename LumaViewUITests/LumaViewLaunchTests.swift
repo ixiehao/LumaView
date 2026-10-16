@@ -58,11 +58,12 @@ final class LumaViewLaunchTests: XCTestCase {
         expect(canvas, accessibilityLabelContaining: "0°")
     }
 
-    func testEnglishAndChineseToolbarLabelsAreCompleteForBothAppearanceModes() throws {
+    func testEverySupportedLanguageHasCompleteToolbarLabelsInBothAppearances() throws {
         let image = fixtureDirectory.appendingPathComponent("03-toolbar.png")
         let configurations: [(language: String, appearance: String, previous: String, print: String)] = [
             ("english", "light", "Previous image", "Print image"),
-            ("chinese", "dark", "上一张", "打印图片")
+            ("chinese", "dark", "上一张", "打印图片"),
+            ("japanese", "light", "前の画像", "画像をプリント")
         ]
         for configuration in configurations {
             let app = launchApp(

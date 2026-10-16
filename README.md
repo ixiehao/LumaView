@@ -5,7 +5,7 @@
 Open an image and browse the rest of its folder. LumaView keeps the picture in
 focus, with the everyday controls close at hand.
 
-**[Download LumaView 1.2.2 · Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.2/LumaView-1.2.2-universal.dmg)** · [Website](https://ixiehao.github.io/LumaView/) · [简体中文](README.zh-CN.md) · [Changelog](CHANGELOG.md)
+**[Download LumaView 1.2.3 · Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.3/LumaView-1.2.3-universal.dmg)** · [Website](https://ixiehao.github.io/LumaView/?lang=en) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Changelog](CHANGELOG.md)
 
 macOS 13+ · Intel + Apple Silicon · Universal DMG · ~2 MB
 
@@ -20,15 +20,15 @@ macOS 13+ · Intel + Apple Silicon · Universal DMG · ~2 MB
 - **Browse naturally** — open from Finder, choose a file, or drag it in; use `←` / `→` or the toolbar for the previous and next image in the folder.
 - **See the image clearly** — fit, zoom, pan, rotate, and print; the status bar shows the actual zoom level.
 - **Open the formats you meet every day** — JPEG, PNG, HEIC, GIF, TIFF, BMP, ICO, WebP, PDF, many macOS-supported RAW files, and `.sketch` previews.
-- **Built for the Mac** — native SwiftUI, English and Simplified Chinese, Light / Dark / System appearance, Intel and Apple Silicon support.
+- **Built for the Mac** — native SwiftUI, English, Simplified Chinese, and Japanese; Light / Dark / System appearance; Intel and Apple Silicon support.
 
 ## Install
 
-1. [Download the Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.2/LumaView-1.2.2-universal.dmg).
+1. [Download the Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.3/LumaView-1.2.3-universal.dmg).
 2. Open it and drag **LumaView.app** to **Applications**.
 3. Open LumaView, or double-click an image and choose it from Finder's **Open With** menu.
 
-> **First launch:** v1.2.2 is ad-hoc signed and is not Apple-notarized yet. If macOS cannot verify the developer, Control-click **LumaView** in Applications, choose **Open**, then confirm **Open** once more. There is no need to disable system-wide security.
+> **First launch:** v1.2.3 is ad-hoc signed and is not Apple-notarized yet. If macOS cannot verify the developer, Control-click **LumaView** in Applications, choose **Open**, then confirm **Open** once more. There is no need to disable system-wide security.
 
 ### Make LumaView the default image viewer
 

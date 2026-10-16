@@ -1,5 +1,5 @@
-name: Bug report / 问题反馈
-description: Report something that does not work as expected. 报告不符合预期的行为。
+name: Bug report / 问题反馈 / 不具合報告
+description: Report something that does not work as expected. 报告不符合预期的行为。期待どおりに動かないことを報告します。
 title: "[Bug]: "
 labels: [bug]
 body:
@@ -8,36 +8,37 @@ body:
       value: |
         Thank you for helping improve LumaView. Please remove private image content and file paths before posting.
         感谢帮助改进 LumaView。发布前请移除私人图片内容与本地文件路径。
+        LumaView の改善にご協力ありがとうございます。投稿前に個人画像の内容とローカルファイルパスを削除してください。
   - type: input
     id: version
     attributes:
-      label: LumaView version / LumaView 版本
-      description: Find it in LumaView → About LumaView. 可在“关于 LumaView”中查看。
-      placeholder: "1.2.2 (5)"
+      label: LumaView version / LumaView 版本 / LumaView のバージョン
+      description: Find it in LumaView → About LumaView. 可在“关于 LumaView”中查看。LumaView →「LumaViewについて」で確認できます。
+      placeholder: "1.2.3 (6)"
     validations:
       required: true
   - type: input
     id: macos
     attributes:
-      label: macOS version and Mac / macOS 版本与 Mac 型号
+      label: macOS version and Mac / macOS 版本与 Mac 型号 / macOS のバージョンと Mac
       placeholder: "macOS 15.0 · MacBook Air (M2)"
     validations:
       required: true
   - type: dropdown
     id: opening-path
     attributes:
-      label: How was the file opened? / 如何打开文件？
+      label: How was the file opened? / 如何打开文件？/ ファイルを開いた方法
       options:
-        - Finder / 访达
-        - Open File / 打开文件
-        - Drag and drop / 拖放
-        - Other / 其他
+        - Finder / 访达 / Finder
+        - Open File / 打开文件 / ファイルを開く
+        - Drag and drop / 拖放 / ドラッグ＆ドロップ
+        - Other / 其他 / その他
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: Steps to reproduce / 复现步骤
+      label: Steps to reproduce / 复现步骤 / 再現手順
       placeholder: |
         1. …
         2. …
@@ -47,15 +48,15 @@ body:
   - type: textarea
     id: expected
     attributes:
-      label: Expected and actual result / 预期与实际结果
+      label: Expected and actual result / 预期与实际结果 / 期待した結果と実際の結果
     validations:
       required: true
   - type: checkboxes
     id: checks
     attributes:
-      label: Before submitting / 提交前确认
+      label: Before submitting / 提交前确认 / 送信前の確認
       options:
-        - label: I removed private image content, local paths, and credentials. / 我已移除私人图片内容、本地路径与凭据。
+        - label: I removed private image content, local paths, and credentials. / 我已移除私人图片内容、本地路径与凭据。/ 個人画像の内容、ローカルパス、認証情報を削除しました。
           required: true
-        - label: I searched existing issues. / 我已搜索现有 Issue。
+        - label: I searched existing issues. / 我已搜索现有 Issue。/ 既存の Issue を検索しました。
           required: true
