@@ -2,10 +2,7 @@
 
 **A minimal native image viewer for Mac.**
 
-LumaView opens an image and keeps the focus on it: browse forward and back
-within its folder, inspect large files, zoom, rotate, print, and reveal the
-current item in Finder. It does not create an image library, copy source files,
-require an account, or upload images.
+Open an image, then browse its folder, zoom, rotate, print, or reveal the current file in Finder.
 
 [**Latest release: v1.2.2 universal DMG**](https://github.com/ixiehao/LumaView/releases/tag/v1.2.2) · macOS 13+ · Intel + Apple Silicon
 
@@ -13,11 +10,9 @@ require an account, or upload images.
 
 ## Application screenshots
 
-| Start locally | Browse without a sidebar |
+| Start locally | Browse images |
 | --- | --- |
 | ![Real LumaView welcome screen in Chinese, with one Open File action](docs/assets/lumaview-welcome.png) | ![Real LumaView image browser showing folder position and previous-next controls](docs/assets/lumaview-browse.png) |
-
-These are screenshots from a running LumaView build.
 
 ## Highlights
 

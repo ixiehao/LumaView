@@ -2,7 +2,7 @@
 
 **一款极简的Mac原生看图软件。**
 
-LumaView 打开图片后持续专注于看图：前后浏览、查看大图、缩放、旋转、打印，以及在访达中定位当前文件。它不会创建图片库、复制源文件、要求登录或上传图片。
+打开图片后，可前后浏览、缩放、旋转、打印，并在访达中定位当前文件。
 
 [**最新发布：v1.2.2 通用 DMG**](https://github.com/ixiehao/LumaView/releases/tag/v1.2.2) · macOS 13+ · Intel + Apple Silicon
 
@@ -10,11 +10,9 @@ LumaView 打开图片后持续专注于看图：前后浏览、查看大图、�
 
 ## 软件实机截图
 
-| 本地开始浏览 | 无侧栏专注看图 |
+| 本地开始浏览 | 浏览图片 |
 | --- | --- |
 | ![LumaView 中文欢迎界面，仅保留一个打开文件入口](docs/assets/lumaview-welcome.png) | ![LumaView 图片浏览界面，显示文件夹位置和前后浏览操作](docs/assets/lumaview-browse.png) |
-
-截图来自真实运行的 LumaView。
 
 ## 功能
 
