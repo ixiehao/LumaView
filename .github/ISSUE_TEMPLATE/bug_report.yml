@@ -14,7 +14,7 @@ body:
     attributes:
       label: LumaView version / LumaView 版本 / LumaView のバージョン
       description: Find it in LumaView → About LumaView. 可在“关于 LumaView”中查看。LumaView →「LumaViewについて」で確認できます。
-      placeholder: "1.2.4 (7)"
+      placeholder: "1.2.5 (8)"
     validations:
       required: true
   - type: input

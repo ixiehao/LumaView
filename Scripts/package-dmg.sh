@@ -61,5 +61,8 @@ MOUNTED_ARCHITECTURES="$(lipo -archs "$MOUNT_DIR/LumaView.app/Contents/MacOS/Lum
 }
 hdiutil detach "$VALIDATION_DEVICE" -quiet
 VALIDATION_DEVICE=""
-shasum -a 256 "$DMG_PATH" > "$DMG_PATH.sha256"
+(
+  cd "$OUTPUT_DIR"
+  shasum -a 256 "$(basename "$DMG_PATH")" > "$(basename "$DMG_PATH").sha256"
+)
 print "Created internal QA package: $DMG_PATH"

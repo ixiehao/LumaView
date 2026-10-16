@@ -4,6 +4,20 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
+## 1.2.5 — 2026-10-17
+
+### English
+
+- Corrected the portable SHA-256 file shipped with the universal DMG so downloads can be verified directly.
+
+### 中文
+
+- 修正通用 DMG 附带的可移植 SHA-256 校验文件，下载后可直接校验。
+
+### 日本語
+
+- ユニバーサル DMG に添付するポータブルな SHA-256 チェックサムファイルを修正し、ダウンロード後に直接検証できるようにしました。
+
 ## 1.2.4 — 2026-10-17
 
 ### English
