@@ -1,9 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://ixiehao.github.io/LumaView/</loc>
-    <lastmod>2026-10-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
+    <lastmod>2026-10-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ixiehao.github.io/LumaView/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://ixiehao.github.io/LumaView/?lang=en" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ixiehao.github.io/LumaView/?lang=ja" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ixiehao.github.io/LumaView/" />
+  </url>
+  <url>
+    <loc>https://ixiehao.github.io/LumaView/?lang=en</loc>
+    <lastmod>2026-10-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ixiehao.github.io/LumaView/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://ixiehao.github.io/LumaView/?lang=en" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ixiehao.github.io/LumaView/?lang=ja" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ixiehao.github.io/LumaView/" />
+  </url>
+  <url>
+    <loc>https://ixiehao.github.io/LumaView/?lang=ja</loc>
+    <lastmod>2026-10-16</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ixiehao.github.io/LumaView/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://ixiehao.github.io/LumaView/?lang=en" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ixiehao.github.io/LumaView/?lang=ja" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://ixiehao.github.io/LumaView/" />
   </url>
 </urlset>
