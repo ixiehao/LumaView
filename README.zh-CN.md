@@ -4,7 +4,7 @@
 
 打开一张图片，直接浏览同一文件夹。LumaView 将画面留在中心，把日常操作放在顺手的位置。
 
-**[下载 LumaView 1.2.3 · 通用 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.3/LumaView-1.2.3-universal.dmg)** · [官网](https://ixiehao.github.io/LumaView/?lang=zh) · [English](README.md) · [日本語](README.ja.md) · [变更记录](CHANGELOG.md)
+**[下载 LumaView 1.2.4 · 通用 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.4/LumaView-1.2.4-universal.dmg)** · [官网](https://ixiehao.github.io/LumaView/?lang=zh) · [English](README.md) · [日本語](README.ja.md) · [变更记录](CHANGELOG.md)
 
 macOS 13+ · Intel + Apple Silicon · 通用版 DMG · 约 2 MB
 
@@ -18,16 +18,17 @@ macOS 13+ · Intel + Apple Silicon · 通用版 DMG · 约 2 MB
 
 - **自然浏览** — 可从访达打开、选择文件或直接拖入；使用 `←` / `→` 或工具栏浏览当前文件夹的上一张、下一张。
 - **看清画面** — 支持适合窗口、缩放、平移、旋转和打印；底部会显示真实缩放比例。
+- **按需查看信息** — 工具栏一个按钮即可查看当前图片的文件信息与内嵌 EXIF；不额外扫描整个文件夹，也不建立元数据图库。
 - **打开日常格式** — 支持 JPEG、PNG、HEIC、GIF、TIFF、BMP、ICO、WebP、PDF、多数 macOS 支持的 RAW 和 `.sketch` 预览。
 - **为 Mac 而做** — 原生 SwiftUI，支持简体中文 / English / 日本語、浅色 / 深色 / 跟随系统，以及 Intel 与 Apple Silicon。
 
 ## 安装
 
-1. [下载通用版 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.3/LumaView-1.2.3-universal.dmg)。
+1. [下载通用版 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.4/LumaView-1.2.4-universal.dmg)。
 2. 打开它，将 **LumaView.app** 拖进“应用程序”。
 3. 直接打开 LumaView，或双击图片后，在访达的“打开方式”中选择它。
 
-> **首次启动：** v1.2.3 采用 ad-hoc 签名，尚未经过 Apple 公证。若 macOS 无法验证开发者，请在“应用程序”中按住 Control 点按 **LumaView**，选择“打开”，再确认一次“打开”。无需关闭系统级安全设置。
+> **首次启动：** v1.2.4 采用 ad-hoc 签名，尚未经过 Apple 公证。若 macOS 无法验证开发者，请在“应用程序”中按住 Control 点按 **LumaView**，选择“打开”，再确认一次“打开”。无需关闭系统级安全设置。
 
 ### 设为默认看图软件
 

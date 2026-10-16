@@ -39,6 +39,28 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertTrue(app.windows["01-first.png"].waitForExistence(timeout: 5))
     }
 
+    func testBrowsingMovesToTheNextImageAndKeepsFitMode() throws {
+        let landscape = fixtureDirectory.appendingPathComponent("04-landscape.png")
+        let portrait = fixtureDirectory.appendingPathComponent("05-portrait.png")
+        try makePNG(at: landscape, width: 1_600, height: 900)
+        try makePNG(at: portrait, width: 900, height: 1_600)
+
+        let app = launchApp(opening: landscape)
+        XCTAssertTrue(canvas(in: app, named: landscape.lastPathComponent).waitForExistence(timeout: 8))
+
+        app.typeKey(.rightArrow, modifierFlags: [])
+        let portraitCanvas = canvas(in: app, named: portrait.lastPathComponent)
+        XCTAssertTrue(portraitCanvas.waitForExistence(timeout: 8))
+        XCTAssertTrue(portraitCanvas.label.contains("0°"))
+        // The window includes a unified toolbar above this element. Verify the
+        // actual drawable canvas—not the outer window—switches to the next
+        // image's aspect ratio. The accessible frame includes the 54pt toolbar,
+        // so its ratio is necessarily more portrait than the source canvas.
+        let outerWindowRatio = portraitCanvas.frame.width / portraitCanvas.frame.height
+        XCTAssertLessThan(outerWindowRatio, 900.0 / 1_600.0)
+        XCTAssertGreaterThan(outerWindowRatio, 0.48)
+    }
+
     func testRotationToolbarExposesDistinctWorkingActions() throws {
         let file = fixtureDirectory.appendingPathComponent("03-toolbar.png")
         let app = launchApp(opening: file)
@@ -58,12 +80,27 @@ final class LumaViewLaunchTests: XCTestCase {
         expect(canvas, accessibilityLabelContaining: "0°")
     }
 
-    func testEverySupportedLanguageHasCompleteToolbarLabelsInBothAppearances() throws {
+    func testImageInformationToolbarPresentsMetadataInspector() throws {
+        let file = fixtureDirectory.appendingPathComponent("03-toolbar.png")
+        let app = launchApp(opening: file)
+        XCTAssertTrue(canvas(in: app, named: file.lastPathComponent).waitForExistence(timeout: 5))
+
+        let information = app.buttons["Image information"]
+        XCTAssertTrue(information.waitForExistence(timeout: 5))
+        XCTAssertTrue(information.isEnabled)
+        information.click()
+
+        XCTAssertTrue(app.descendants(matching: .any)["image.informationInspector"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Image Information"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["No EXIF metadata in this image."].waitForExistence(timeout: 5))
+    }
+
+    func testEverySupportedLanguageHasCompleteToolbarLabelsWithoutPrintButton() throws {
         let image = fixtureDirectory.appendingPathComponent("03-toolbar.png")
-        let configurations: [(language: String, appearance: String, previous: String, print: String)] = [
-            ("english", "light", "Previous image", "Print image"),
-            ("chinese", "dark", "上一张", "打印图片"),
-            ("japanese", "light", "前の画像", "画像をプリント")
+        let configurations: [(language: String, appearance: String, previous: String, information: String, print: String)] = [
+            ("english", "light", "Previous image", "Image information", "Print image"),
+            ("chinese", "dark", "上一张", "图片信息", "打印图片"),
+            ("japanese", "light", "前の画像", "画像情報", "画像をプリント")
         ]
         for configuration in configurations {
             let app = launchApp(
@@ -73,7 +110,8 @@ final class LumaViewLaunchTests: XCTestCase {
             )
             XCTAssertTrue(canvas(in: app, named: image.lastPathComponent).waitForExistence(timeout: 8))
             XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", configuration.previous)).firstMatch.waitForExistence(timeout: 5))
-            XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", configuration.print)).firstMatch.waitForExistence(timeout: 5))
+            XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", configuration.information)).firstMatch.waitForExistence(timeout: 5))
+            XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", configuration.print)).firstMatch.exists)
             app.terminate()
         }
     }
@@ -287,6 +325,28 @@ final class LumaViewLaunchTests: XCTestCase {
         NSGraphicsContext.restoreGraphicsState()
         try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
             .write(to: fixtureDirectory.appendingPathComponent("03-toolbar.png"), options: .atomic)
+    }
+
+    private func makePNG(at url: URL, width: Int, height: Int) throws {
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: width,
+            pixelsHigh: height,
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        ))
+        let context = try XCTUnwrap(NSGraphicsContext(bitmapImageRep: bitmap))
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = context
+        NSColor.systemBlue.setFill()
+        NSBezierPath(rect: NSRect(x: 0, y: 0, width: width, height: height)).fill()
+        NSGraphicsContext.restoreGraphicsState()
+        try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: url, options: .atomic)
     }
 
     private func residentMemoryBytes() throws -> Int {

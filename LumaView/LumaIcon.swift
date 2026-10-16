@@ -4,7 +4,7 @@ import SwiftUI
 /// control. Keeping the asset mapping here guarantees a single 24 pt / 2 pt outline
 /// language across the toolbar, canvas, and contextual actions.
 enum LumaIconKind: Equatable {
-    case previous, next, zoomOut, zoomIn, fit, rotateLeft, rotateRight, more
+    case previous, next, zoomOut, zoomIn, fit, rotateLeft, rotateRight, more, information
     case folder, image, imagePlus, reveal, print
 
     var tablerAssetName: String {
@@ -17,6 +17,7 @@ enum LumaIconKind: Equatable {
         case .rotateLeft: return "TablerRotateCounterclockwise"
         case .rotateRight: return "TablerRotateClockwise"
         case .more: return "TablerDots"
+        case .information: return "TablerInfoCircle"
         case .folder: return "TablerFolder"
         case .image: return "TablerPhoto"
         case .imagePlus: return "TablerPhotoPlus"

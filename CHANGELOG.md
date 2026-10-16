@@ -4,6 +4,23 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
+## 1.2.4 — 2026-10-17
+
+### English
+
+- Added an on-demand Image Information inspector for file facts and embedded EXIF data.
+- Made each image window recalculate its canvas geometry when browsing so the full image stays visible without side rails.
+
+### 中文
+
+- 新增按需读取的“图片信息”面板，可查看文件信息与内嵌 EXIF 数据。
+- 浏览上一张、下一张时，窗口会按当前图片重新计算画布尺寸，完整显示画面且不再留下左右留白。
+
+### 日本語
+
+- ファイル情報と埋め込み EXIF を必要なときだけ確認できる「画像情報」パネルを追加しました。
+- 前後の画像へ移動したときにウインドウがキャンバスの寸法を再計算し、画像全体を表示して左右の余白を残さないようにしました。
+
 ## 1.2.3 — 2026-10-16
 
 ### English

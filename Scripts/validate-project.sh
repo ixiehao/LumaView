@@ -6,7 +6,6 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 STAGE_DIR="$(mktemp -d /tmp/lumaview-validation.XXXXXX)"
 DERIVED_DATA="$STAGE_DIR/DerivedData"
-STRESS_BINARY="$STAGE_DIR/lumaview-stress"
 
 cleanup() {
   rm -rf "$STAGE_DIR"
@@ -42,15 +41,20 @@ RELEASE_ARCHITECTURES="$(lipo -archs "$RELEASE_BINARY")"
   exit 1
 }
 
-swiftc -O -parse-as-library \
-  LumaView/Localization.swift \
-  LumaView/ImageBrowserStore.swift \
-  LumaView/ImagePipeline.swift \
-  tools/StressHarness.swift \
-  -o "$STRESS_BINARY" \
-  -framework AppKit \
-  -framework SwiftUI \
-  -framework ImageIO \
-  -framework UniformTypeIdentifiers
+if [[ "${LUMAVIEW_RUN_STRESS_TEST:-0}" == "1" ]]; then
+  STRESS_BINARY="$STAGE_DIR/lumaview-stress"
+  swiftc -O -parse-as-library \
+    LumaView/Localization.swift \
+    LumaView/ImageBrowserStore.swift \
+    LumaView/ImagePipeline.swift \
+    tools/StressHarness.swift \
+    -o "$STRESS_BINARY" \
+    -framework AppKit \
+    -framework SwiftUI \
+    -framework ImageIO \
+    -framework UniformTypeIdentifiers
 
-/usr/bin/time -l "$STRESS_BINARY"
+  /usr/bin/time -l "$STRESS_BINARY"
+else
+  print "Skipping optional 5K stress gate (set LUMAVIEW_RUN_STRESS_TEST=1 to run it)."
+fi

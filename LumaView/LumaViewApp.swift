@@ -576,7 +576,7 @@ private enum LumaViewToolbarIdentifier {
     static let zoomIn = NSToolbarItem.Identifier("com.lumaview.toolbar.zoom-in")
     static let rotateLeft = NSToolbarItem.Identifier("com.lumaview.toolbar.rotate-left")
     static let rotateRight = NSToolbarItem.Identifier("com.lumaview.toolbar.rotate-right")
-    static let print = NSToolbarItem.Identifier("com.lumaview.toolbar.print")
+    static let information = NSToolbarItem.Identifier("com.lumaview.toolbar.information")
 
     static let defaultItems: [NSToolbarItem.Identifier] = [
         .flexibleSpace,
@@ -590,7 +590,7 @@ private enum LumaViewToolbarIdentifier {
         rotateLeft,
         rotateRight,
         .space,
-        print
+        information
     ]
 }
 
@@ -602,7 +602,11 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
     private var browserChangeObserver: AnyCancellable?
     private var pixelSizeObserver: AnyCancellable?
     private var keyEventMonitor: Any?
-    private var hasAppliedInitialDocumentSize = false
+    private var informationPopover: NSPopover?
+    /// The current document whose image-led frame has been applied.  This is
+    /// intentionally per selection, not per window: browsing from a landscape
+    /// to a portrait must reshape the same window before the new canvas draws.
+    private var sizedDocumentURL: URL?
     private let authoredMinimumFrameSize = NSSize(width: 560, height: 380)
     private var uiStressFrame: NSRect?
 
@@ -653,7 +657,8 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         pixelSizeObserver = browser.$originalPixelSize
             .compactMap { $0 }
             .sink { [weak self] size in
-                self?.applyInitialDocumentSize(for: size)
+                guard let self, let selectedURL = self.browser.selectedURL else { return }
+                self.applyDocumentSize(for: size, documentURL: selectedURL)
             }
 
         // AppKit toolbar actions and SwiftUI command shortcuts both express the
@@ -716,7 +721,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
     func adopt(documentURL: URL) {
         guard canBecomeDocumentWindow else { return }
         self.documentURL = documentURL
-        hasAppliedInitialDocumentSize = false
+        sizedDocumentURL = nil
         browser.open(url: documentURL, l: Self.currentLocalization)
     }
 
@@ -785,8 +790,8 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             return toolbarItem(itemIdentifier, kind: .rotateLeft, labelKey: "toolbar.rotateLeft", action: #selector(rotateLeftToolbarAction))
         case LumaViewToolbarIdentifier.rotateRight:
             return toolbarItem(itemIdentifier, kind: .rotateRight, labelKey: "toolbar.rotateRight", action: #selector(rotateRightToolbarAction))
-        case LumaViewToolbarIdentifier.print:
-            return toolbarItem(itemIdentifier, kind: .print, labelKey: "toolbar.print", action: #selector(printToolbarAction))
+        case LumaViewToolbarIdentifier.information:
+            return informationToolbarItem(itemIdentifier)
         default:
             return nil
         }
@@ -845,6 +850,34 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         return item
     }
 
+    /// The standard toolbar image items do not expose their rendered button as
+    /// a public anchor. The inspector alone uses a compact native button view so
+    /// its transient popover can point at the control the person just clicked.
+    private func informationToolbarItem(_ identifier: NSToolbarItem.Identifier) -> NSToolbarItem {
+        let item = NSToolbarItem(itemIdentifier: identifier)
+        let label = Self.currentLocalization.text("toolbar.info")
+        let button = NSButton(
+            image: NSImage(named: LumaIconKind.information.tablerAssetName) ?? NSImage(),
+            target: self,
+            action: #selector(informationToolbarAction)
+        )
+        button.image?.isTemplate = true
+        button.bezelStyle = .toolbar
+        button.imagePosition = .imageOnly
+        button.toolTip = label
+        button.setAccessibilityLabel(label)
+        button.frame = NSRect(x: 0, y: 0, width: 30, height: 30)
+        item.label = label
+        item.paletteLabel = label
+        item.toolTip = label
+        item.view = button
+        let overflowItem = NSMenuItem(title: label, action: #selector(informationToolbarAction), keyEquivalent: "")
+        overflowItem.target = self
+        overflowItem.image = button.image
+        item.menuFormRepresentation = overflowItem
+        return item
+    }
+
     private func refreshToolbarLocalization(_ l: L10n) {
         let labelKeys: [NSToolbarItem.Identifier: String] = [
             LumaViewToolbarIdentifier.previous: "toolbar.previous",
@@ -854,7 +887,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             LumaViewToolbarIdentifier.zoomIn: "toolbar.zoomIn",
             LumaViewToolbarIdentifier.rotateLeft: "toolbar.rotateLeft",
             LumaViewToolbarIdentifier.rotateRight: "toolbar.rotateRight",
-            LumaViewToolbarIdentifier.print: "toolbar.print"
+            LumaViewToolbarIdentifier.information: "toolbar.info"
         ]
         for item in window?.toolbar?.items ?? [] {
             guard let key = labelKeys[item.itemIdentifier] else { continue }
@@ -862,6 +895,11 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             item.label = label
             item.paletteLabel = label
             item.toolTip = label
+            if let button = item.view as? NSButton {
+                button.toolTip = label
+                button.setAccessibilityLabel(label)
+            }
+            item.menuFormRepresentation?.title = label
         }
         window?.toolbar?.validateVisibleItems()
     }
@@ -872,13 +910,12 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             return browser.hasPrevious || browser.isScanning
         case LumaViewToolbarIdentifier.next:
             return browser.hasNext || browser.isScanning
-        case LumaViewToolbarIdentifier.print:
-            return browser.selectedURL != nil && !browser.isPreparingPrint
         case LumaViewToolbarIdentifier.zoomOut,
              LumaViewToolbarIdentifier.fit,
              LumaViewToolbarIdentifier.zoomIn,
              LumaViewToolbarIdentifier.rotateLeft,
-             LumaViewToolbarIdentifier.rotateRight:
+             LumaViewToolbarIdentifier.rotateRight,
+             LumaViewToolbarIdentifier.information:
             return browser.selectedURL != nil
         default:
             return false
@@ -892,62 +929,120 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
     @objc private func zoomInToolbarAction(_ sender: Any?) { browser.zoomIn() }
     @objc private func rotateLeftToolbarAction(_ sender: Any?) { browser.rotate(by: -90) }
     @objc private func rotateRightToolbarAction(_ sender: Any?) { browser.rotate(by: 90) }
-    @objc private func printToolbarAction(_ sender: Any?) {
-        browser.printSelectedImage(Self.currentLocalization, from: window)
+    @objc private func informationToolbarAction(_ sender: Any?) {
+        guard let selectedURL = browser.selectedURL else { return }
+        informationPopover?.performClose(nil)
+        let anchor = sender as? NSView
+        Task { [weak self, weak anchor] in
+            let information = await Task.detached(priority: .userInitiated) {
+                ImageInformationReader.read(from: selectedURL)
+            }.value
+            guard let self, self.browser.selectedURL == selectedURL else { return }
+            self.presentInformationPopover(information, anchor: anchor)
+        }
     }
 
-    private func applyInitialDocumentSize(for imagePixelSize: CGSize) {
-        // The welcome window becomes a document viewer when its Open File
-        // button is used. Apply the same first-image sizing policy there as we
-        // do for Finder-launched documents; otherwise a landscape image stays
-        // constrained inside the small welcome canvas instead of using the
-        // available viewer area.
-        guard !hasAppliedInitialDocumentSize,
+    private func presentInformationPopover(_ information: ImageInformation, anchor: NSView?) {
+        guard let fallbackAnchor = window?.contentView else { return }
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.animates = true
+        let controller = NSHostingController(
+            rootView: ImageInformationInspector(information: information, l: Self.currentLocalization)
+        )
+        popover.contentViewController = controller
+        controller.view.layoutSubtreeIfNeeded()
+        let fittingSize = controller.view.fittingSize
+        popover.contentSize = NSSize(
+            width: min(fittingSize.width, ImageInformationInspector.maximumPreferredWidth),
+            height: max(1, fittingSize.height)
+        )
+        informationPopover = popover
+        if let anchor {
+            popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
+        } else {
+            // A toolbar item moved into the overflow menu sends an NSMenuItem,
+            // not its original NSButton. Anchor the same popover to the current
+            // window's upper-right content edge so the action stays available.
+            let edge = NSRect(x: fallbackAnchor.bounds.maxX - 28, y: fallbackAnchor.bounds.maxY - 1, width: 1, height: 1)
+            popover.show(relativeTo: edge, of: fallbackAnchor, preferredEdge: .minY)
+        }
+    }
+    private func applyDocumentSize(for imagePixelSize: CGSize, documentURL: URL) {
+        // A document window follows the selected image, including when
+        // Previous/Next changes its aspect ratio.  This is deliberately not a
+        // one-time launch adjustment: showing a portrait inside a landscape
+        // canvas would reintroduce the empty rails the viewer avoids.
+        guard sizedDocumentURL != documentURL,
               let window,
               !window.styleMask.contains(.fullScreen),
               let screen = window.screen ?? NSScreen.main else { return }
 
         if let uiStressFrame {
-            hasAppliedInitialDocumentSize = true
+            sizedDocumentURL = documentURL
             window.setFrame(uiStressFrame, display: true, animate: false)
             return
         }
 
-        let chromeHeight = max(window.frame.height - window.contentLayoutRect.height, 44)
-        let maximumContentSize = CGSize(
+        // `contentAspectRatio` constrains the whole content view, while the
+        // SwiftUI canvas begins below the unified toolbar.  Locking that whole
+        // area directly to the image ratio leaves rails beside a portrait (or
+        // above a panorama).  Calculate in canvas coordinates, then add back
+        // only the measured toolbar/titlebar inset for the window constraint.
+        window.contentView?.layoutSubtreeIfNeeded()
+        // With `.fullSizeContentView`, the titlebar is overlaid instead of
+        // being subtracted by `contentRect(forFrameRect:)`.  Measure from the
+        // frame itself so the entire non-canvas strip is included.
+        let canvasVerticalInset = max(0, window.frame.height - window.contentLayoutRect.height)
+        let maximumFrameSize = CGSize(
             width: max(screen.visibleFrame.width - 96, 320),
-            height: max(screen.visibleFrame.height - chromeHeight - 96, 260)
+            height: max(screen.visibleFrame.height - 96, 260)
         )
-        guard let contentSize = ImageWindowSizing.initialContentSize(
+        let maximumCanvasSize = CGSize(
+            width: maximumFrameSize.width,
+            height: max(maximumFrameSize.height - canvasVerticalInset, 260)
+        )
+        guard let canvasSize = ImageWindowSizing.initialContentSize(
             for: imagePixelSize,
-            maximumContentSize: maximumContentSize
+            maximumContentSize: maximumCanvasSize
         ) else { return }
 
         // NSWindow.minSize is a frame-size constraint.  Convert it to content
         // coordinates before centering so small or extreme-aspect images are
         // not silently enlarged by AppKit after their frame has been placed.
-        let minimumContentSize = window.contentRect(
-            forFrameRect: NSRect(origin: .zero, size: window.minSize)
-        ).size
-        guard let constrainedContentSize = ImageWindowSizing.aspectPreservingContentSize(
-            preferred: contentSize,
-            minimum: minimumContentSize,
-            maximum: maximumContentSize
+        let minimumCanvasSize = CGSize(
+            width: window.minSize.width,
+            height: max(1, window.minSize.height - canvasVerticalInset)
+        )
+        guard let constrainedCanvasSize = ImageWindowSizing.aspectPreservingContentSize(
+            preferred: canvasSize,
+            minimum: minimumCanvasSize,
+            maximum: maximumCanvasSize
         ) else { return }
-        let proposedFrame = window.frameRect(forContentRect: NSRect(origin: .zero, size: constrainedContentSize))
+        let proposedFrameSize = CGSize(
+            width: constrainedCanvasSize.width,
+            height: constrainedCanvasSize.height + canvasVerticalInset
+        )
+        // Keep the document canvas locked to the source ratio after navigation
+        // too.  The window itself also contains the measured toolbar inset, so
+        // its constrained ratio must include that inset; the drawable canvas
+        // remains exactly the source ratio at fit zoom.
+        window.contentAspectRatio = window.contentRect(
+            forFrameRect: NSRect(origin: .zero, size: proposedFrameSize)
+        ).size
         // AppKit applies minSize after setFrame. For an extreme portrait/panorama
         // the normal 560×380 floor cannot coexist with the image ratio on screen;
         // lower just that window's floor before centering rather than letting AppKit
         // silently distort its final frame or offset its centre.
         window.minSize = NSSize(
-            width: min(authoredMinimumFrameSize.width, proposedFrame.width),
-            height: min(authoredMinimumFrameSize.height, proposedFrame.height)
+            width: min(authoredMinimumFrameSize.width, proposedFrameSize.width),
+            height: min(authoredMinimumFrameSize.height, proposedFrameSize.height)
         )
         let centeredFrame = ImageWindowSizing.centeredFrame(
-            for: proposedFrame.size,
+            for: proposedFrameSize,
             in: screen.visibleFrame
         )
-        hasAppliedInitialDocumentSize = true
+        sizedDocumentURL = documentURL
         window.setFrame(centeredFrame, display: true, animate: false)
     }
 

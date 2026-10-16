@@ -25,9 +25,10 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
         "button.openImage",
         "dialog.openImage.title", "dialog.openImage.action",
         "error.emptyFolder", "error.unsupportedFormat", "error.noPrintSelection", "error.printPreparation", "status.preparingPrint",
-        "toolbar.previous", "toolbar.next", "toolbar.zoomOut", "toolbar.fit", "toolbar.zoomIn", "toolbar.rotateLeft", "toolbar.rotateRight", "toolbar.print",
+        "toolbar.previous", "toolbar.next", "toolbar.zoomOut", "toolbar.fit", "toolbar.zoomIn", "toolbar.rotateLeft", "toolbar.rotateRight", "toolbar.info", "toolbar.print",
         "command.previous", "command.next", "command.zoomIn", "command.zoomOut", "command.fit", "command.rotateLeft", "command.rotateRight",
-        "canvas.drop", "canvas.noPreview"
+        "canvas.drop", "canvas.noPreview",
+        "metadata.title", "metadata.fileSection", "metadata.exifSection", "metadata.name", "metadata.format", "metadata.dimensions", "metadata.fileSize", "metadata.capturedAt", "metadata.camera", "metadata.lens", "metadata.exposure", "metadata.aperture", "metadata.iso", "metadata.focalLength", "metadata.noExif"
     ]
 
     fileprivate var locale: Locale {

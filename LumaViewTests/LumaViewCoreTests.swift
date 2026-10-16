@@ -1,4 +1,6 @@
 import AppKit
+import ImageIO
+import SwiftUI
 import XCTest
 @testable import LumaView
 
@@ -79,6 +81,7 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertEqual(LumaIconKind.rotateLeft.tablerAssetName, "TablerRotateCounterclockwise")
         XCTAssertEqual(LumaIconKind.rotateRight.tablerAssetName, "TablerRotateClockwise")
         XCTAssertNotEqual(LumaIconKind.rotateLeft.tablerAssetName, LumaIconKind.rotateRight.tablerAssetName)
+        XCTAssertEqual(LumaIconKind.information.tablerAssetName, "TablerInfoCircle")
     }
 
     func testNewDocumentWindowUsesImageAspectRatioWithinVisibleBounds() throws {
@@ -102,6 +105,22 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertEqual(portrait.width / portrait.height, 0.5, accuracy: 0.002)
         XCTAssertLessThanOrEqual(portrait.width, maximum.width)
         XCTAssertLessThanOrEqual(portrait.height, maximum.height)
+
+        // Previous/Next uses this same sizing policy.  Changing from a
+        // landscape to a portrait must therefore reflow the document canvas
+        // rather than leaving the portrait letterboxed in the former window.
+        let browsedLandscape = try XCTUnwrap(ImageWindowSizing.initialContentSize(
+            for: CGSize(width: 1_600, height: 900),
+            maximumContentSize: maximum
+        ))
+        let browsedPortrait = try XCTUnwrap(ImageWindowSizing.initialContentSize(
+            for: CGSize(width: 900, height: 1_600),
+            maximumContentSize: maximum
+        ))
+        XCTAssertEqual(browsedLandscape.width / browsedLandscape.height, 16.0 / 9.0, accuracy: 0.002)
+        XCTAssertEqual(browsedPortrait.width / browsedPortrait.height, 9.0 / 16.0, accuracy: 0.002)
+        XCTAssertLessThan(browsedPortrait.width, browsedLandscape.width)
+        XCTAssertGreaterThan(browsedPortrait.height, browsedLandscape.height)
         XCTAssertEqual(small.width, 512, accuracy: 0.1)
         XCTAssertEqual(small.height, 256, accuracy: 0.1)
 
@@ -220,6 +239,81 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertLessThanOrEqual(navigationPreview?.representations.first?.pixelsWide ?? .max, 96)
     }
 
+    func testImageInformationReadsEXIFOnDemand() throws {
+        let url = directory.appendingPathComponent("camera.jpg")
+        try makeJPEGWithEXIF(at: url)
+
+        let information = ImageInformationReader.read(from: url)
+
+        XCTAssertEqual(information.fileName, "camera.jpg")
+        XCTAssertEqual(information.fileFormat, "JPEG")
+        XCTAssertEqual(information.dimensions, "320 × 240")
+        XCTAssertGreaterThan(information.fileSize ?? 0, 0)
+        XCTAssertEqual(information.capturedAt, "2026-10-17 12:34:56")
+        XCTAssertEqual(information.camera, "Luma Labs LumaCam 1")
+        XCTAssertEqual(information.lens, "Luma 50mm f/1.8")
+        XCTAssertEqual(information.exposure, "1/125 s")
+        XCTAssertEqual(information.aperture, "f/2.8")
+        XCTAssertEqual(information.iso, "200")
+        XCTAssertEqual(information.focalLength, "50 mm")
+        XCTAssertTrue(information.hasEXIF)
+    }
+
+    @MainActor
+    func testImageInformationInspectorFitsCompleteEXIFWithoutInternalScrolling() {
+        let information = ImageInformation(
+            fileName: "camera-with-complete-metadata.jpg",
+            fileFormat: "JPEG",
+            fileSize: 12_345_678,
+            pixelWidth: 6_000,
+            pixelHeight: 4_000,
+            capturedAt: "2026-10-17 12:34:56",
+            camera: "Luma Labs LumaCam One",
+            lens: "Luma Prime 50mm f/1.8",
+            exposure: "1/125 s",
+            aperture: "f/2.8",
+            iso: "200",
+            focalLength: "50 mm"
+        )
+        let controller = NSHostingController(
+            rootView: ImageInformationInspector(information: information, l: L10n(language: .english))
+        )
+
+        controller.view.layoutSubtreeIfNeeded()
+        let fittedSize = controller.view.fittingSize
+
+        // The inspector has no fixed short height or inner scroll view: a
+        // complete file + EXIF record must determine its own popover height.
+        XCTAssertGreaterThan(fittedSize.height, 260)
+        XCTAssertLessThanOrEqual(fittedSize.width, ImageInformationInspector.maximumPreferredWidth)
+
+        let compactController = NSHostingController(
+            rootView: ImageInformationInspector(
+                information: ImageInformation(
+                    fileName: "image.png",
+                    fileFormat: "PNG",
+                    fileSize: 1_024,
+                    pixelWidth: 32,
+                    pixelHeight: 32,
+                    capturedAt: nil,
+                    camera: nil,
+                    lens: nil,
+                    exposure: nil,
+                    aperture: nil,
+                    iso: nil,
+                    focalLength: nil
+                ),
+                l: L10n(language: .english)
+            )
+        )
+        compactController.view.layoutSubtreeIfNeeded()
+        XCTAssertLessThan(
+            compactController.view.fittingSize.width,
+            ImageInformationInspector.maximumPreferredWidth,
+            "A compact record should not inherit the width of a full EXIF record."
+        )
+    }
+
     func testSketchDocumentUsesBundledPreviewForAllImageOperations() throws {
         let previewDirectory = directory.appendingPathComponent("previews")
         try FileManager.default.createDirectory(at: previewDirectory, withIntermediateDirectories: true)
@@ -288,11 +382,14 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertEqual(L10n(language: .chinese).text("system.menu.edit"), "编辑")
         XCTAssertEqual(L10n(language: .chinese).text("system.menu.window"), "窗口")
         XCTAssertEqual(L10n(language: .english).text("toolbar.print"), "Print image (⌘P)")
+        XCTAssertEqual(L10n(language: .english).text("toolbar.info"), "Image information")
         XCTAssertEqual(L10n(language: .chinese).text("toolbar.next"), "下一张（→）")
+        XCTAssertEqual(L10n(language: .chinese).text("toolbar.info"), "图片信息")
         XCTAssertEqual(L10n(language: .chinese).text("toolbar.rotateLeft"), "向左旋转")
         XCTAssertEqual(L10n(language: .japanese).text("system.menu.file"), "ファイル")
         XCTAssertEqual(L10n(language: .japanese).text("toolbar.next"), "次の画像（→）")
         XCTAssertEqual(L10n(language: .japanese).text("toolbar.rotateLeft"), "左に回転")
+        XCTAssertEqual(L10n(language: .japanese).text("toolbar.info"), "画像情報")
     }
 
     func testAppearanceModesHaveExplicitSwiftUIAndAppKitRepresentations() {
@@ -559,6 +656,41 @@ final class LumaViewCoreTests: XCTestCase {
 
     private func makeFile(_ name: String) throws {
         try Data("fixture".utf8).write(to: directory.appendingPathComponent(name))
+    }
+
+    private func makeJPEGWithEXIF(at url: URL) throws {
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: 320,
+            pixelsHigh: 240,
+            bitsPerSample: 8,
+            samplesPerPixel: 3,
+            hasAlpha: false,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        ))
+        let image = try XCTUnwrap(bitmap.cgImage)
+        let destination = try XCTUnwrap(
+            CGImageDestinationCreateWithURL(url as CFURL, "public.jpeg" as CFString, 1, nil)
+        )
+        let properties: [CFString: Any] = [
+            kCGImagePropertyTIFFDictionary: [
+                kCGImagePropertyTIFFMake: "Luma Labs",
+                kCGImagePropertyTIFFModel: "LumaCam 1"
+            ],
+            kCGImagePropertyExifDictionary: [
+                kCGImagePropertyExifDateTimeOriginal: "2026:10:17 12:34:56",
+                kCGImagePropertyExifLensModel: "Luma 50mm f/1.8",
+                kCGImagePropertyExifExposureTime: 1.0 / 125.0,
+                kCGImagePropertyExifFNumber: 2.8,
+                kCGImagePropertyExifISOSpeedRatings: [200],
+                kCGImagePropertyExifFocalLength: 50.0
+            ]
+        ]
+        CGImageDestinationAddImage(destination, image, properties as CFDictionary)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
     }
 
     private func makePNG(at url: URL, width: Int, height: Int) throws {

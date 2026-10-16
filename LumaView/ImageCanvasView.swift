@@ -10,7 +10,6 @@ struct ImageCanvasView: View {
     @ObservedObject var browser: ImageBrowserStore
     let l: L10n
     @Environment(\.displayScale) private var displayScale
-    @Environment(\.colorScheme) private var colorScheme
     @State private var image: NSImage?
     @State private var displayedURL: URL?
     @State private var isLoading = false
@@ -77,10 +76,9 @@ struct ImageCanvasView: View {
         let displayZoom = browser.zoom * gestureScale
         let imageSize = CGSize(width: fitted.width * displayZoom, height: fitted.height * displayZoom)
         let rotatedSize = rotatedBounds(for: imageSize, degrees: browser.rotation)
-        let edgeInset = previewInset(for: container)
         let canvasSize = CGSize(
-            width: max(container.width, rotatedSize.width + edgeInset * 2),
-            height: max(container.height, rotatedSize.height + edgeInset * 2)
+            width: max(container.width, rotatedSize.width),
+            height: max(container.height, rotatedSize.height)
         )
 
         return ScrollView([.horizontal, .vertical]) {
@@ -90,13 +88,8 @@ struct ImageCanvasView: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(width: imageSize.width, height: imageSize.height)
                 .rotationEffect(.degrees(browser.rotation))
-                .shadow(color: Color.primary.opacity(colorScheme == .dark ? 0.24 : 0.14), radius: 12, y: 4)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 1, style: .continuous)
-                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.17 : 0.11), lineWidth: 1)
-                }
                 // The explicit canvas frame is the important part: when the image fits,
-                // it exactly matches the visible preview area and centers on both axes.
+                // it uses the full visible preview area without a decorative border.
                 // When zoomed beyond it, ScrollView gains only the space it needs.
                 .frame(width: canvasSize.width, height: canvasSize.height, alignment: .center)
                 .gesture(
@@ -233,18 +226,8 @@ struct ImageCanvasView: View {
 
     private func fittedSize(for imageSize: CGSize, in container: CGSize) -> CGSize {
         guard imageSize.width > 0, imageSize.height > 0 else { return container }
-        let inset = previewInset(for: container)
-        let availableWidth = max(container.width - inset * 2, 1)
-        let availableHeight = max(container.height - inset * 2, 1)
-        let scale = min(availableWidth / imageSize.width, availableHeight / imageSize.height)
+        let scale = min(container.width / imageSize.width, container.height / imageSize.height)
         return CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
-    }
-
-    private func previewInset(for container: CGSize) -> CGFloat {
-        // Keep only a slim breathing edge: document windows now open at the
-        // image's aspect ratio, so the preview should use the available canvas
-        // rather than appearing inset inside a fixed, oversized window.
-        min(max(min(container.width, container.height) * 0.035, 18), 36)
     }
 
     private func rotatedBounds(for size: CGSize, degrees: Double) -> CGSize {
