@@ -10,7 +10,7 @@ const content = {
     featureTwoTitle: "大图按屏幕而生", featureTwoBody: "支持适合窗口、缩放、平移和旋转；底部显示当前缩放比例。",
     featureThreeTitle: "不止 PNG 和 JPG", featureThreeBody: "支持 JPEG、PNG、HEIC、GIF、TIFF、WebP、PDF、RAW 和 Sketch 预览。",
     principlesEyebrow: "为日常看图而做", principlesTitle: "极简。极速。<br />极致轻量化。", principleOneTitle: "极简", principleOneBody: "一个浏览框，一组常用操作。打开即看，让画面保持中心。", principleTwoTitle: "极速", principleTwoBody: "迅捷浏览图片；上一张/下一张/放大/缩小/旋转...工具栏自然衔接。", principleThreeTitle: "极致轻量化", principleThreeBody: "安装包仅2M，将代码轻量化到极致。",
-    readyEyebrow: "现在开始看图", downloadTitle: "打开图片，<br />开始浏览。", downloadNote: "macOS 13+ · Universal (arm64 + x86_64)", securityNote: "当前为公开预览版，采用 ad-hoc 签名，尚未经过 Apple 公证。若首次启动出现验证提示，请在“应用程序”中 Control 点按 LumaView → “打开” → 再次“打开”；无需关闭系统级安全设置。", footerTagline: "本地原生图片浏览器 · 由 ixiehao 制作", footerIssues: "反馈", footerReleases: "版本"
+    readyEyebrow: "现在开始看图", downloadTitle: "免费下载<br />LumaView。", downloadNote: "macOS 13+ · Universal (arm64 + x86_64)", securityNote: "当前为公开预览版，采用 ad-hoc 签名，尚未经过 Apple 公证。若首次启动出现验证提示，请在“应用程序”中 Control 点按 LumaView → “打开” → 再次“打开”；无需关闭系统级安全设置。", footerTagline: "本地原生图片浏览器 · 由 ixiehao 制作", footerIssues: "反馈", footerReleases: "版本"
   },
   en: {
     navExperience: "Experience", navPrinciples: "Principles", navDownload: "Download", eyebrow: "For Intel and Apple Silicon Macs",
@@ -23,7 +23,7 @@ const content = {
     featureTwoTitle: "Large images meet the screen", featureTwoBody: "Fit, zoom, pan, and rotate images. The status bar shows the current zoom level.",
     featureThreeTitle: "More than PNG and JPG", featureThreeBody: "Supports JPEG, PNG, HEIC, GIF, TIFF, WebP, PDF, RAW, and Sketch previews.",
     principlesEyebrow: "For everyday viewing", principlesTitle: "Minimal.<br />Fast. Lightweight.", principleOneTitle: "Minimal", principleOneBody: "One viewer and one set of essential controls. Open an image and let it remain the center.", principleTwoTitle: "Fast", principleTwoBody: "Browse swiftly; previous, next, zoom, and rotation flow naturally through the toolbar.", principleThreeTitle: "Extremely lightweight", principleThreeBody: "A 2 MB installer, with the code made as lightweight as possible.",
-    readyEyebrow: "Start viewing", downloadTitle: "Open an image.<br />Start browsing.", downloadNote: "macOS 13+ · Universal (arm64 + x86_64)", securityNote: "This public preview is ad-hoc signed and not Apple-notarized. If macOS shows a verification prompt on first launch, Control-click LumaView in Applications → Open → Open once more. Do not disable system-wide security.", footerTagline: "A local native image viewer · by ixiehao", footerIssues: "Feedback", footerReleases: "Releases"
+    readyEyebrow: "Start viewing", downloadTitle: "Download<br />LumaView for free.", downloadNote: "macOS 13+ · Universal (arm64 + x86_64)", securityNote: "This public preview is ad-hoc signed and not Apple-notarized. If macOS shows a verification prompt on first launch, Control-click LumaView in Applications → Open → Open once more. Do not disable system-wide security.", footerTagline: "A local native image viewer · by ixiehao", footerIssues: "Feedback", footerReleases: "Releases"
   }
 };
 
