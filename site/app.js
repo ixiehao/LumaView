@@ -2,7 +2,7 @@ const content = {
   zh: {
     navExperience: "体验", navPrinciples: "优势", navDownload: "下载", eyebrow: "支持 Intel 与 Apple Silicon Mac",
     seoTitle: "LumaView · 极简的Mac原生看图软件", seoDescription: "一款极简的Mac原生看图软件。", seoSocialDescription: "一款极简的Mac原生看图软件。",
-    heroTitle: "打开图片，<br /><em>直接浏览。</em>", heroLede: "一款极简的Mac原生看图软件。",
+    heroTitle: "打开图片，<br /><em>极速浏览。</em>", heroLede: "一款极简的Mac原生看图软件。",
     downloadButton: "下载 v1.2.2", sourceButton: "查看源码", compatibility: "macOS 13+ · Intel + Apple Silicon · 离线使用", heroImageAlt: "LumaView 在原生窗口中浏览图片，顶部有上一张、下一张、缩放和旋转操作", welcomeImageAlt: "LumaView 原生欢迎界面，中央保留一个打开文件操作",
     proofOne: "打开即看，画面居中", proofTwo: "方向键快速前后浏览", proofThree: "Intel + Apple Silicon 通用版",
     experienceEyebrow: "简单看图", experienceTitle: "常用操作，<br />一目了然。",
