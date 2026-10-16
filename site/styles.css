@@ -180,6 +180,35 @@ h2 {
 .feature h3, .principle-card h3 { margin-bottom: 9px; color: #263348; font-size: 18px; font-weight: 740; letter-spacing: -0.025em; }
 .feature p, .principle-card p { margin-bottom: 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
 
+.multiwindow { padding-bottom: 0; }
+.multiwindow-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.66fr);
+  align-items: end;
+  gap: clamp(42px, 8vw, 128px);
+  margin-bottom: 52px;
+}
+.multiwindow-heading .section-heading { margin-bottom: 0; }
+.multiwindow h2 em {
+  color: transparent;
+  font-style: normal;
+  background: linear-gradient(100deg, #19b9d9 0%, #3287f4 36%, #7b5df6 65%, #ee4a9d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.multiwindow-lede { max-width: 410px; margin: 0 0 3px; color: var(--muted); font-size: 16px; line-height: 1.8; }
+.multiwindow-shot { margin: 0; }
+.multiwindow-shot img { width: 100%; }
+.multiwindow-points {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 28px;
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+}
+.multiwindow-points span { padding: 18px 0; color: #44526a; font-size: 14px; font-weight: 700; text-align: center; }
+.multiwindow-points span + span { border-left: 1px solid var(--line-strong); }
+
 .principles { padding-bottom: 0; }
 .principle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .principle-card {
@@ -225,6 +254,7 @@ h2 {
   .hero { grid-template-columns: minmax(0, 1fr) minmax(300px, 0.7fr); gap: 42px; padding-inline: 0; }
   .hero-shot { width: 100%; }
   .experience-layout { gap: 48px; }
+  .multiwindow-heading { gap: 48px; }
   .download-card { grid-template-columns: auto 1fr; }
   .download-actions { grid-column: 2; justify-content: flex-start; }
   .download-actions p { text-align: left; }
@@ -242,6 +272,9 @@ h2 {
   .section { padding-top: 94px; }
   .section-heading { margin-bottom: 35px; }
   .experience-layout { grid-template-columns: 1fr; gap: 42px; }
+  .multiwindow-heading { grid-template-columns: 1fr; gap: 14px; margin-bottom: 35px; }
+  .multiwindow-lede { font-size: 15px; }
+  .multiwindow-points span { padding: 15px 5px; font-size: 13px; }
   .principle-grid { grid-template-columns: 1fr; gap: 11px; }
   .principle-card { min-height: auto; padding: 20px 0; }
   .principle-card + .principle-card { padding-left: 0; border-top: 1px solid var(--line-strong); border-left: 0; }
