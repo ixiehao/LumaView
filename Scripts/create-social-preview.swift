@@ -14,21 +14,12 @@ private func color(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat, _ alpha: C
     NSColor(calibratedRed: red, green: green, blue: blue, alpha: alpha)
 }
 
-private func roundedRect(_ rect: NSRect, radius: CGFloat) -> NSBezierPath {
-    NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
-}
-
 private func fill(_ rect: NSRect, color fillColor: NSColor, radius: CGFloat = 0) {
-    let path = radius > 0 ? roundedRect(rect, radius: radius) : NSBezierPath(rect: rect)
+    let path = radius > 0
+        ? NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
+        : NSBezierPath(rect: rect)
     fillColor.setFill()
     path.fill()
-}
-
-private func stroke(_ rect: NSRect, color strokeColor: NSColor, width: CGFloat = 1, radius: CGFloat = 0) {
-    let path = radius > 0 ? roundedRect(rect, radius: radius) : NSBezierPath(rect: rect)
-    strokeColor.setStroke()
-    path.lineWidth = width
-    path.stroke()
 }
 
 private func drawText(
@@ -96,49 +87,56 @@ private func render(screenshot: NSImage, icon: NSImage) throws -> Data {
     NSGraphicsContext.current = graphics
     graphics.imageInterpolation = .high
 
-    NSGradient(colors: [color(0.97, 0.985, 1.0), color(0.91, 0.95, 1.0)])!
-        .draw(in: NSRect(origin: .zero, size: canvas), angle: -16)
-    let cyanGlow = NSGradient(colors: [color(0.05, 0.74, 0.95, 0.18), .clear])!
-    cyanGlow.draw(
-        fromCenter: NSPoint(x: 108, y: 620), radius: 0,
-        toCenter: NSPoint(x: 108, y: 620), radius: 420,
-        options: [.drawsAfterEndingLocation]
+    // Editorial canvas: no background panels, glows, or synthetic device frame.
+    // The UI on the right is drawn directly from the captured LumaView runtime.
+    fill(NSRect(origin: .zero, size: canvas), color: color(0.985, 0.984, 0.976))
+
+    let divider = NSBezierPath()
+    divider.move(to: NSPoint(x: 680, y: 84))
+    divider.line(to: NSPoint(x: 680, y: 556))
+    divider.lineWidth = 1
+    color(0.87, 0.87, 0.84).setStroke()
+    divider.stroke()
+
+    drawImageAspectFit(icon, in: NSRect(x: 92, y: 428, width: 42, height: 42))
+    drawText(
+        "NATIVE IMAGE VIEWER FOR MAC",
+        in: NSRect(x: 148, y: 440, width: 390, height: 17),
+        size: 13,
+        weight: .semibold,
+        color: color(0.28, 0.32, 0.37)
     )
-    let coralGlow = NSGradient(colors: [color(1.0, 0.38, 0.60, 0.16), .clear])!
-    coralGlow.draw(
-        fromCenter: NSPoint(x: 1240, y: 36), radius: 0,
-        toCenter: NSPoint(x: 1240, y: 36), radius: 390,
-        options: [.drawsAfterEndingLocation]
+    drawText(
+        "LumaView",
+        in: NSRect(x: 90, y: 347, width: 510, height: 67),
+        size: 56,
+        weight: .bold,
+        color: color(0.09, 0.11, 0.14)
+    )
+    drawText(
+        "A minimal, native image viewer for Mac.",
+        in: NSRect(x: 92, y: 303, width: 500, height: 29),
+        size: 21,
+        weight: .medium,
+        color: color(0.23, 0.27, 0.31)
+    )
+    drawText(
+        "Browse · Zoom · Rotate",
+        in: NSRect(x: 92, y: 251, width: 360, height: 24),
+        size: 17,
+        weight: .medium,
+        color: color(0.08, 0.46, 0.73)
+    )
+    drawText(
+        "macOS 13+  ·  Intel + Apple Silicon",
+        in: NSRect(x: 92, y: 126, width: 370, height: 18),
+        size: 13,
+        weight: .medium,
+        color: color(0.40, 0.43, 0.46)
     )
 
-    let card = NSRect(x: 54, y: 64, width: 1172, height: 512)
-    fill(card, color: color(1, 1, 1, 0.90), radius: 30)
-    stroke(card, color: color(0.37, 0.59, 0.88, 0.28), width: 1, radius: 30)
-
-    let badge = NSRect(x: 90, y: 493, width: 86, height: 27)
-    fill(badge, color: color(0.08, 0.54, 0.90), radius: 13.5)
-    drawText("macOS", in: NSRect(x: 90, y: 499, width: 86, height: 14), size: 12, weight: .bold, color: .white, alignment: .center)
-
-    let iconRect = NSRect(x: 90, y: 382, width: 76, height: 76)
-    fill(iconRect, color: color(0.93, 0.96, 1.0), radius: 18)
-    drawImageAspectFit(icon, in: iconRect.insetBy(dx: 5, dy: 5))
-    drawText("LumaView", in: NSRect(x: 182, y: 410, width: 270, height: 43), size: 42, weight: .bold, color: color(0.10, 0.13, 0.20))
-    drawText("A minimal native image viewer for Mac", in: NSRect(x: 90, y: 338, width: 408, height: 30), size: 21, weight: .semibold, color: color(0.17, 0.27, 0.42))
-    drawText("Browse · Zoom · Rotate", in: NSRect(x: 90, y: 297, width: 360, height: 24), size: 17, weight: .medium, color: color(0.22, 0.42, 0.70))
-    drawText("macOS 13+ · Intel + Apple Silicon", in: NSRect(x: 90, y: 268, width: 385, height: 19), size: 14, weight: .medium, color: color(0.08, 0.58, 0.70))
-    drawText("Open an image. Start browsing.", in: NSRect(x: 90, y: 143, width: 365, height: 25), size: 19, weight: .semibold, color: color(0.13, 0.24, 0.40))
-    fill(NSRect(x: 90, y: 116, width: 340, height: 5), color: color(0.05, 0.66, 0.89), radius: 2.5)
-    drawText("Local native viewer", in: NSRect(x: 90, y: 92, width: 280, height: 16), size: 13, weight: .medium, color: color(0.39, 0.49, 0.64))
-
-    let screenshotBackdrop = NSRect(x: 610, y: 68, width: 570, height: 504)
-    fill(screenshotBackdrop, color: color(0.82, 0.89, 1.0, 0.72), radius: 28)
-    let screenshotRect = NSRect(x: 765, y: 80, width: 367, height: 480)
-    fill(screenshotRect, color: color(0.94, 0.97, 1.0), radius: 22)
-    NSGraphicsContext.saveGraphicsState()
-    roundedRect(screenshotRect, radius: 22).addClip()
-    drawImageAspectFit(screenshot, in: screenshotRect)
-    NSGraphicsContext.restoreGraphicsState()
-    stroke(screenshotRect, color: color(0.28, 0.55, 0.88, 0.42), width: 1.5, radius: 22)
+    // Keep every pixel of the real app capture visible: no crop, mask, or invented frame.
+    drawImageAspectFit(screenshot, in: NSRect(x: 779, y: 50, width: 408, height: 540))
 
     NSGraphicsContext.restoreGraphicsState()
     guard let jpeg = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.90]) else {
