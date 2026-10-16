@@ -72,26 +72,6 @@ private func drawImageAspectFit(_ image: NSImage, in rect: NSRect) {
     )
 }
 
-private func drawImageTopFill(_ image: NSImage, in rect: NSRect) {
-    let size = image.size
-    guard size.width > 0, size.height > 0 else { return }
-    let scale = max(rect.width / size.width, rect.height / size.height)
-    let rendered = NSSize(width: size.width * scale, height: size.height * scale)
-    image.draw(
-        in: NSRect(
-            x: rect.midX - rendered.width / 2,
-            y: rect.maxY - rendered.height,
-            width: rendered.width,
-            height: rendered.height
-        ),
-        from: .zero,
-        operation: .sourceOver,
-        fraction: 1,
-        respectFlipped: false,
-        hints: [.interpolation: NSImageInterpolation.high]
-    )
-}
-
 private func render(screenshot: NSImage, icon: NSImage) throws -> Data {
     guard let bitmap = NSBitmapImageRep(
         bitmapDataPlanes: nil,
@@ -144,11 +124,13 @@ private func render(screenshot: NSImage, icon: NSImage) throws -> Data {
     fill(NSRect(x: 90, y: 116, width: 340, height: 5), color: color(0.10, 0.77, 0.95), radius: 2.5)
     drawText("Local native viewer", in: NSRect(x: 90, y: 92, width: 280, height: 16), size: 13, weight: .medium, color: color(0.52, 0.66, 0.84))
 
-    let screenshotRect = NSRect(x: 520, y: 100, width: 650, height: 440)
+    let screenshotBackdrop = NSRect(x: 540, y: 80, width: 610, height: 480)
+    fill(screenshotBackdrop, color: color(0, 0, 0, 0.20), radius: 24)
+    let screenshotRect = NSRect(x: 661, y: 80, width: 367, height: 480)
     fill(screenshotRect, color: color(0, 0, 0, 0.28), radius: 22)
     NSGraphicsContext.saveGraphicsState()
     roundedRect(screenshotRect, radius: 22).addClip()
-    drawImageTopFill(screenshot, in: screenshotRect)
+    drawImageAspectFit(screenshot, in: screenshotRect)
     NSGraphicsContext.restoreGraphicsState()
     stroke(screenshotRect, color: color(0.60, 0.88, 1.0, 0.38), width: 1.5, radius: 22)
 
