@@ -1,99 +1,73 @@
 # LumaView
 
-**A minimal native image viewer for Mac.**
+**A fast, minimal native image viewer for macOS.**
 
-Open an image, then browse its folder, zoom, rotate, print, or reveal the current file in Finder.
+Open an image and browse the rest of its folder. LumaView keeps the picture in
+focus, with the everyday controls close at hand.
 
-[**Latest release: v1.2.2 universal DMG**](https://github.com/ixiehao/LumaView/releases/tag/v1.2.2) · macOS 13+ · Intel + Apple Silicon
+**[Download LumaView 1.2.2 · Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.2/LumaView-1.2.2-universal.dmg)** · [Website](https://ixiehao.github.io/LumaView/) · [简体中文](README.zh-CN.md) · [Changelog](CHANGELOG.md)
 
-[Official site](https://ixiehao.github.io/LumaView/) · [简体中文](README.zh-CN.md) · [Contributing](CONTRIBUTING.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Release guide](docs/RELEASE.md) · [Changelog](CHANGELOG.md)
+macOS 13+ · Intel + Apple Silicon · Universal DMG · ~2 MB
 
-## Application screenshots
+## LumaView in use
 
-| Start locally | Browse images |
+| Open a file | Browse its folder |
 | --- | --- |
-| ![Real LumaView welcome screen in Chinese, with one Open File action](docs/assets/lumaview-welcome.png) | ![Real LumaView image browser showing folder position and previous-next controls](docs/assets/lumaview-browse.png) |
+| ![LumaView native welcome screen with one Open File action](docs/assets/lumaview-welcome.png) | ![LumaView browsing images with folder position and previous-next controls](docs/assets/lumaview-browse.png) |
 
 ## Highlights
 
-- Native SwiftUI viewer for macOS 13+ on **Intel and Apple Silicon**.
-- Open from Finder, choose a file, or drag it in; browse the current folder with `←` / `→` or the toolbar.
-- View JPEG, PNG, HEIC, GIF, TIFF, BMP, ICO, WebP, PDF, many system RAW formats, and `.sketch` previews.
-- Zoom, fit, pan, rotate, and print large images; the status bar shows the true percentage of the source image.
-- Switch instantly between English / 简体中文 and Light / Dark / System appearance.
+- **Browse naturally** — open from Finder, choose a file, or drag it in; use `←` / `→` or the toolbar for the previous and next image in the folder.
+- **See the image clearly** — fit, zoom, pan, rotate, and print; the status bar shows the actual zoom level.
+- **Open the formats you meet every day** — JPEG, PNG, HEIC, GIF, TIFF, BMP, ICO, WebP, PDF, many macOS-supported RAW files, and `.sketch` previews.
+- **Built for the Mac** — native SwiftUI, English and Simplified Chinese, Light / Dark / System appearance, Intel and Apple Silicon support.
 
-## Requirements
+## Install
 
-- Intel Mac (x86_64) or Apple Silicon Mac (arm64)
-- macOS 13 Ventura or later
-- Xcode 15 or later for source builds
+1. [Download the Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.2/LumaView-1.2.2-universal.dmg).
+2. Open it and drag **LumaView.app** to **Applications**.
+3. Open LumaView, or double-click an image and choose it from Finder's **Open With** menu.
 
-## Download
+> **First launch:** v1.2.2 is ad-hoc signed and is not Apple-notarized yet. If macOS cannot verify the developer, Control-click **LumaView** in Applications, choose **Open**, then confirm **Open** once more. There is no need to disable system-wide security.
 
-Open [the latest release](https://github.com/ixiehao/LumaView/releases/latest)
-and download **`LumaView-1.2.2-universal.dmg`** together with its matching
-`LumaView-1.2.2-universal.dmg.sha256` checksum. This universal build contains
-both Intel (`x86_64`) and Apple Silicon (`arm64`) slices.
+### Make LumaView the default image viewer
 
-## Install safely
+In Finder, select an image → press `⌘I` → choose **LumaView** under **Open with** → click **Change All…**.
 
-1. Double-click the downloaded `.dmg`, then drag **LumaView.app** to **Applications**.
-2. After the copy finishes, eject or delete the DMG. It is only the installer and does not remove the installed app.
-3. This first public preview is ad-hoc signed and is **not Apple-notarized**. If macOS cannot verify the developer, open **Applications**, Control-click **LumaView**, choose **Open**, then choose **Open** once more. Do not disable macOS system-wide security.
-
-To remove LumaView later, quit it and move only `LumaView.app` from
-Applications to Trash. Your image files remain where they are.
-
-## Run from source
-
-```sh
-open LumaView.xcodeproj
-```
-
-Select the **LumaView** scheme and run with `⌘R`. Release builds contain both
-`arm64` and `x86_64` application slices.
+The DMG is only the installer. Removing it never removes LumaView or your images; to uninstall later, move `LumaView.app` from Applications to Trash.
 
 ## Shortcuts
 
 | Action | Shortcut |
 | --- | --- |
 | Open file | `⌘ O` |
-| Previous / next | `←` / `→` |
+| Previous / next image | `←` / `→` |
 | Zoom in / out | `⌘ +` / `⌘ -` |
 | Fit image | `⌘ 0` |
 | Rotate left / right | `⌘ [` / `⌘ ]` |
 | Print current image | `⌘ P` |
 
-## Verify and package
+## Build from source
+
+Requirements: macOS 13+, Xcode 15+, and an Intel or Apple Silicon Mac.
+
+```sh
+open LumaView.xcodeproj
+# Select the LumaView scheme, then press ⌘R.
+```
+
+Before opening a pull request, run:
 
 ```sh
 ./Scripts/validate-project.sh
-./Scripts/package-dmg.sh
 ```
 
-The validation script runs the core tests, UI tests (including a real 1 / 4 / 8
-window 5K rendering gate), release build, and a synthetic image stress harness.
-The real-window gate records first/all-render timing, RSS, document identity,
-and independent initial viewport state; Finder-style `←` / `→` navigation is
-covered in its own end-to-end test. See [QA](docs/QA.md) for the manual LaunchServices, drag,
-print, VoiceOver, and corrupt-file checks that macOS cannot drive reliably in
-headless XCTest.
-`package-dmg.sh` creates an ad-hoc-signed universal DMG. The v1.2.2 GitHub release uses
-the transparent preview path also used by ShotMap: it attaches the exact DMG
-and its SHA-256 file, and states the non-notarized first-run recovery step.
-The Developer ID, notarization, stapling, and Gatekeeper path for a future
-formal universal release remains documented in [docs/RELEASE.md](docs/RELEASE.md).
-The current 5K multi-window RSS and latency baseline is recorded in
-[docs/PERFORMANCE_BASELINE.md](docs/PERFORMANCE_BASELINE.md).
-Public releases require an auditable initial commit and an annotated `vX.Y.Z`
-tag pointing to the shipped source; the procedure is in
-[docs/RELEASE.md](docs/RELEASE.md). Packaging scripts never create commits,
-tags, credentials, or a substitute signature.
+Release packaging, manual QA, and performance baselines are documented in
+[Release guide](docs/RELEASE.md), [QA guide](docs/QA.md), and
+[Performance baseline](docs/PERFORMANCE_BASELINE.md).
 
-## Project boundaries
+## Feedback and contribution
 
-LumaView is a viewer, not an editor, photo manager, cloud backup service, or
-cleanup tool. Keeping those workflows out of the main path is intentional.
+Found a problem or have an idea? Use the structured [bug report](https://github.com/ixiehao/LumaView/issues/new?template=bug_report.yml) or [feature request](https://github.com/ixiehao/LumaView/issues/new?template=feature_request.yml) form. See [Contributing](CONTRIBUTING.md) for development expectations, [Privacy](PRIVACY.md) for local-data behavior, and [Security](SECURITY.md) for responsible disclosure.
 
-Source code is available under the [MIT License](LICENSE). Tabler attribution
-is recorded in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+LumaView is available under the [MIT License](LICENSE). Tabler icon attribution is listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

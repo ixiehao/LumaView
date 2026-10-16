@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Download and install / 下载与安装
+    url: https://github.com/ixiehao/LumaView/releases/latest
+    about: Download the latest Universal DMG and read the installation notes. 下载最新通用版 DMG 并查看安装说明。
+  - name: Security vulnerability / 安全漏洞
+    url: https://github.com/ixiehao/LumaView/security/advisories/new
+    about: Report security-sensitive details privately. 请勿在公开 Issue 中发布安全敏感细节。

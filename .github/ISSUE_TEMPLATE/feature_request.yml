@@ -1,0 +1,36 @@
+name: Feature request / 功能建议
+description: Suggest a focused improvement for image viewing. 为看图体验提出聚焦的改进建议。
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        LumaView deliberately keeps the viewing path small. Tell us about the real viewing task this would improve.
+        LumaView 有意保持看图主路径简洁。请说明该建议会改善的真实看图场景。
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would this improve? / 想改善什么？
+      placeholder: Describe the image-viewing task and where the current flow gets in the way. 请描述看图场景与当前流程的阻碍。
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior / 期望的行为
+      placeholder: Keep the proposal focused on a single user-visible outcome. 请聚焦一个用户可见的结果。
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered / 考虑过的替代方案
+      placeholder: Optional / 可选
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting / 提交前确认
+      options:
+        - label: I searched existing issues. / 我已搜索现有 Issue。
+          required: true

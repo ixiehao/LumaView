@@ -1,0 +1,61 @@
+name: Bug report / 问题反馈
+description: Report something that does not work as expected. 报告不符合预期的行为。
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve LumaView. Please remove private image content and file paths before posting.
+        感谢帮助改进 LumaView。发布前请移除私人图片内容与本地文件路径。
+  - type: input
+    id: version
+    attributes:
+      label: LumaView version / LumaView 版本
+      description: Find it in LumaView → About LumaView. 可在“关于 LumaView”中查看。
+      placeholder: "1.2.2 (5)"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and Mac / macOS 版本与 Mac 型号
+      placeholder: "macOS 15.0 · MacBook Air (M2)"
+    validations:
+      required: true
+  - type: dropdown
+    id: opening-path
+    attributes:
+      label: How was the file opened? / 如何打开文件？
+      options:
+        - Finder / 访达
+        - Open File / 打开文件
+        - Drag and drop / 拖放
+        - Other / 其他
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / 复现步骤
+      placeholder: |
+        1. …
+        2. …
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual result / 预期与实际结果
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting / 提交前确认
+      options:
+        - label: I removed private image content, local paths, and credentials. / 我已移除私人图片内容、本地路径与凭据。
+          required: true
+        - label: I searched existing issues. / 我已搜索现有 Issue。
+          required: true
