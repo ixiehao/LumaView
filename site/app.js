@@ -44,6 +44,12 @@ const content = {
 };
 
 const supportedLanguages = ["zh", "en", "ja"];
+const siteURL = "https://ixiehao.github.io/LumaView/";
+const localeURLs = {
+  zh: siteURL,
+  en: `${siteURL}?lang=en`,
+  ja: `${siteURL}?lang=ja`
+};
 const languageDetails = {
   zh: { htmlLang: "zh-CN", nextLabel: "EN", switchLabel: "Switch to English", ogLocale: "zh_CN" },
   en: { htmlLang: "en", nextLabel: "日本語", switchLabel: "Switch to Japanese", ogLocale: "en_US" },
@@ -52,6 +58,22 @@ const languageDetails = {
 const requestedLanguage = new URLSearchParams(window.location.search).get("lang");
 let language = supportedLanguages.includes(requestedLanguage) ? requestedLanguage : "zh";
 const switcher = document.querySelector(".language-switch");
+
+function updateSEO(nextLanguage, localized, details) {
+  const localizedURL = localeURLs[nextLanguage];
+  document.querySelector("#canonical-url").href = localizedURL;
+  document.querySelector("#og-url").content = localizedURL;
+  document.querySelector("#og-image-alt").content = localized.heroImageAlt;
+  document.querySelector("#twitter-image-alt").content = localized.heroImageAlt;
+
+  const schemaNode = document.querySelector("#software-schema");
+  if (!schemaNode) return;
+  const schema = JSON.parse(schemaNode.textContent);
+  schema.url = localizedURL;
+  schema.description = localized.seoDescription;
+  schema.inLanguage = details.htmlLang;
+  schemaNode.textContent = JSON.stringify(schema);
+}
 
 function setLanguage(next, updateURL = false) {
   if (!supportedLanguages.includes(next)) return;
@@ -70,9 +92,11 @@ function setLanguage(next, updateURL = false) {
   document.querySelector("#og-description").content = localized.seoSocialDescription;
   document.querySelector("#twitter-description").content = localized.seoSocialDescription;
   document.querySelector("#og-locale").content = details.ogLocale;
+  updateSEO(next, localized, details);
   if (updateURL) {
     const url = new URL(window.location.href);
-    url.searchParams.set("lang", next);
+    if (next === "zh") url.searchParams.delete("lang");
+    else url.searchParams.set("lang", next);
     window.history.replaceState({}, "", url);
   }
 }
