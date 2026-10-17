@@ -142,7 +142,7 @@ enum MainMenuLocalization {
     ]
 
     static func applyToMainMenu(_ l: L10n) {
-        guard let menu = NSApp.mainMenu else { return }
+        guard let menu = NSApp?.mainMenu else { return }
         apply(l, to: menu)
     }
 
@@ -576,7 +576,10 @@ final class LumaViewWindowRegistry: ObservableObject {
         // releases. `mainWindow` remains the document that owned the menu in
         // that interval. Both candidates must be controllers registered by
         // this registry; never fall back to an arbitrary open document.
-        for candidate in [NSApp.keyWindow, NSApp.mainWindow].compactMap({ $0 }) {
+        // SwiftUI may validate Commands before AppKit has assigned NSApp,
+        // especially when XCTest launches the application on a fresh runner.
+        guard let application = NSApp else { return nil }
+        for candidate in [application.keyWindow, application.mainWindow].compactMap({ $0 }) {
             if let controller = controllers.values.first(where: { $0.window === candidate }) {
                 return controller
             }

@@ -4,6 +4,23 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
+## 1.2.8 — 2026-10-17
+
+### English
+
+- Show square and portrait images edge to edge, without blank strips beside the canvas.
+- Fix a launch-time crash that could occur before macOS finished creating the application object.
+
+### 中文
+
+- 正方形和竖图贴合窗口两侧，不再留下白边。
+- 修复 macOS 尚未完成应用初始化时可能发生的启动崩溃。
+
+### 日本語
+
+- 正方形や縦長の画像を左右の余白なく表示します。
+- macOS がアプリケーションの初期化を終える前に発生することがあった起動時のクラッシュを修正しました。
+
 ## 1.2.7 — 2026-10-17
 
 ### English
