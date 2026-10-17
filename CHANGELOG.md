@@ -4,6 +4,20 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
+## 1.2.7 — 2026-10-17
+
+### English
+
+- Match the window to the image canvas below the toolbar, removing the blank strips beside square and portrait images.
+
+### 中文
+
+- 窗口按工具栏下方的实际画布尺寸适配图片，去除正方形与竖图两侧的留白。
+
+### 日本語
+
+- ツールバー下の画像表示領域にウインドウを合わせ、正方形や縦長の画像の左右にできる余白をなくしました。
+
 ## 1.2.6 — 2026-10-17
 
 ### English

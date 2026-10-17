@@ -4,7 +4,7 @@ LumaView supports **Intel and Apple Silicon Macs** on macOS 13+. Every release s
 
 There are two deliberately distinct paths:
 
-- **Transparent public preview (current v1.2.5):** the ShotMap pattern—an
+- **Transparent public preview (current v1.2.7):** the ShotMap pattern—an
   ad-hoc-signed DMG plus its SHA-256 file, with the Release and README clearly
   saying that it is not Apple-notarized and explaining the one-time Gatekeeper
   recovery action. This is useful for early open-source testing, but must never

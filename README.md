@@ -5,7 +5,7 @@
 Open an image and browse the rest of its folder. LumaView keeps the picture in
 focus, with the everyday controls close at hand.
 
-**[Download LumaView 1.2.6 · Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.6/LumaView-1.2.6-universal.dmg)** · [Website](https://ixiehao.github.io/LumaView/?lang=en) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Changelog](CHANGELOG.md)
+**[Download LumaView 1.2.7 · Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.7/LumaView-1.2.7-universal.dmg)** · [Website](https://ixiehao.github.io/LumaView/?lang=en) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Changelog](CHANGELOG.md)
 
 macOS 13+ · Intel + Apple Silicon · Universal DMG · ~2 MB
 
@@ -25,7 +25,7 @@ macOS 13+ · Intel + Apple Silicon · Universal DMG · ~2 MB
 
 ## Install
 
-1. [Download the Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.6/LumaView-1.2.6-universal.dmg).
+1. [Download the Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.7/LumaView-1.2.7-universal.dmg).
 2. Open it and drag **LumaView.app** to **Applications**.
 3. Open LumaView, or double-click an image and choose it from Finder's **Open With** menu.
 
