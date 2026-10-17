@@ -664,7 +664,11 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         let contentSize = NSSize(width: 700, height: 480)
         let window = NSWindow(
             contentRect: NSRect(origin: .zero, size: contentSize),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            // The image canvas must begin below the unified toolbar. With
+            // fullSizeContentView, AppKit counts the titlebar in contentRect
+            // while SwiftUI excludes it from its drawable area, producing
+            // equal white rails beside square and portrait images.
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
@@ -1058,8 +1062,8 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         quarterTurn: QuarterTurn
     ) {
         // The window and canvas use ViewerGeometry's exact right-angle bounds.
-        // Do not derive another ratio from fullSizeContentView/titlebar insets:
-        // `contentAspectRatio` and `setFrame` both speak in content coordinates.
+        // Without fullSizeContentView, AppKit's content rectangle is the
+        // SwiftUI canvas below the toolbar, so one image ratio sizes both.
         let orientation = ImageWindowSizing.orientationKey(for: quarterTurn)
         guard sizedDocumentURL != documentURL || sizedDocumentOrientation != orientation,
               let window,
