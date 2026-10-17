@@ -157,6 +157,26 @@ final class LumaViewCoreTests: XCTestCase {
             in: visibleFrame
         )
         XCTAssertEqual(clamped, visibleFrame)
+
+        // Browsing and quarter-turns resize around the current document
+        // position rather than recentering it on every image change.
+        let preservedPosition = ImageWindowSizing.frame(
+            with: CGSize(width: 900, height: 700),
+            centeredAt: CGPoint(x: 1_000, y: 450),
+            constrainedTo: visibleFrame
+        )
+        XCTAssertEqual(preservedPosition.midX, 1_000, accuracy: 0.01)
+        XCTAssertEqual(preservedPosition.midY, 450, accuracy: 0.01)
+        XCTAssertTrue(visibleFrame.contains(preservedPosition))
+
+        let positionNearEdge = ImageWindowSizing.frame(
+            with: CGSize(width: 900, height: 700),
+            centeredAt: CGPoint(x: 110, y: 90),
+            constrainedTo: visibleFrame
+        )
+        XCTAssertTrue(visibleFrame.contains(positionNearEdge))
+        XCTAssertEqual(positionNearEdge.minX, visibleFrame.minX, accuracy: 0.01)
+        XCTAssertEqual(positionNearEdge.minY, visibleFrame.minY, accuracy: 0.01)
     }
 
     func testQuarterTurnsAndViewerGeometryShareExactDisplayBounds() throws {
@@ -591,6 +611,7 @@ final class LumaViewCoreTests: XCTestCase {
         ).update(newerThan: installed, expectedRepositoryPath: "ixiehao/LumaView"))
     }
 
+    @MainActor
     func testUpdateIntervalPersistsAcrossCheckerInstances() async throws {
         let suiteName = "LumaViewTests.update-interval.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -604,40 +625,34 @@ final class LumaViewCoreTests: XCTestCase {
         let referenceDate = Date(timeIntervalSinceReferenceDate: 123_456)
         let key = "last-checked"
 
-        let first = await MainActor.run {
-            UpdateChecker(
-                currentVersion: ReleaseVersion(tag: "1.2.1"),
-                session: session,
-                defaults: defaults,
-                lastCheckedDefaultsKey: key,
-                now: { referenceDate }
-            )
-        }
+        let first = UpdateChecker(
+            currentVersion: ReleaseVersion(tag: "1.2.1"),
+            session: session,
+            defaults: defaults,
+            lastCheckedDefaultsKey: key,
+            now: { referenceDate }
+        )
         await first.checkForUpdate()
         XCTAssertEqual(UpdateCheckURLProtocol.requestCount, 1)
         XCTAssertEqual(defaults.object(forKey: key) as? Date, referenceDate)
 
-        let second = await MainActor.run {
-            UpdateChecker(
-                currentVersion: ReleaseVersion(tag: "1.2.1"),
-                session: session,
-                defaults: defaults,
-                lastCheckedDefaultsKey: key,
-                now: { referenceDate.addingTimeInterval(60) }
-            )
-        }
+        let second = UpdateChecker(
+            currentVersion: ReleaseVersion(tag: "1.2.1"),
+            session: session,
+            defaults: defaults,
+            lastCheckedDefaultsKey: key,
+            now: { referenceDate.addingTimeInterval(60) }
+        )
         await second.checkForUpdate()
         XCTAssertEqual(UpdateCheckURLProtocol.requestCount, 1, "A relaunch inside the interval must not call GitHub again")
 
-        let due = await MainActor.run {
-            UpdateChecker(
-                currentVersion: ReleaseVersion(tag: "1.2.1"),
-                session: session,
-                defaults: defaults,
-                lastCheckedDefaultsKey: key,
-                now: { referenceDate.addingTimeInterval(12 * 60 * 60) }
-            )
-        }
+        let due = UpdateChecker(
+            currentVersion: ReleaseVersion(tag: "1.2.1"),
+            session: session,
+            defaults: defaults,
+            lastCheckedDefaultsKey: key,
+            now: { referenceDate.addingTimeInterval(12 * 60 * 60) }
+        )
         await due.checkForUpdate()
         XCTAssertEqual(UpdateCheckURLProtocol.requestCount, 2)
     }

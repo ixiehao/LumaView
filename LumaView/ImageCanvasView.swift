@@ -293,14 +293,7 @@ struct ImageCanvasView: View {
         let zoomDemand = min(max(browser.zoom, 1), 4)
         let longestCanvasEdge = max(container.width, container.height)
         let calculatedTarget = Int(longestCanvasEdge * displayScale * zoomDemand * 1.25)
-        let target = uiTestRenderPixelOverride ?? calculatedTarget
-        return ImageRenderRequest(url: browser.selectedURL, maxPixelSize: target)
-    }
-
-    private var uiTestRenderPixelOverride: Int? {
-        guard let rawValue = ProcessInfo.processInfo.environment["LUMAVIEW_UI_TEST_RENDER_MAX_PIXELS"],
-              let requested = Int(rawValue) else { return nil }
-        return min(max(requested, 1_024), 5_120)
+        return ImageRenderRequest(url: browser.selectedURL, maxPixelSize: calculatedTarget)
     }
 
     private func prepareImageLoad(for request: ImageRenderRequest) {

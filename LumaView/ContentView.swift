@@ -25,13 +25,15 @@ struct ContentView: View {
     }
 
     private var viewer: some View {
-        VStack(spacing: 0) {
+        ZStack(alignment: .top) {
+            Color(nsColor: .windowBackgroundColor).ignoresSafeArea()
+            ImageCanvasView(browser: browser, l: l)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // An available-update notice is transient chrome. Overlay it so it
+            // never changes the canvas height that the document window locks
+            // to the current image aspect ratio.
             UpdateAvailableBanner(checker: updateChecker, l: l)
-            ZStack {
-                Color(nsColor: .windowBackgroundColor).ignoresSafeArea()
-                ImageCanvasView(browser: browser, l: l)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .zIndex(1)
         }
         .onDrop(of: [.fileURL], isTargeted: $isDropTarget, perform: receiveDrop(providers:))
         .overlay {

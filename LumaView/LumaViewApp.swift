@@ -323,14 +323,6 @@ final class LumaViewAppDelegate: NSObject, NSApplicationDelegate {
 
     func localizeSystemMenus(_ l: L10n) {
         MainMenuLocalization.applyToMainMenu(l)
-        // AppKit's standard menus and SwiftUI CommandMenus are assembled on
-        // adjacent main-run-loop turns at launch. Reapply through that small
-        // construction window so the final visible menu is never mixed-language.
-        for delay in [0.0, 0.15, 0.6] {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                MainMenuLocalization.applyToMainMenu(l)
-            }
-        }
     }
 
     private var selectedLocalization: L10n {
@@ -362,21 +354,14 @@ final class LumaViewAppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(180), execute: workItem)
     }
 
-    /// Test-only document input. The unit-separator payload lets UI tests use the
-    /// exact Finder/window-registry route for a real 1/4/8-window stress run without
-    /// relying on developer-specific paths or automating an open panel.
+    /// Test-only document input follows the same document-router path as Finder.
+    /// It deliberately accepts one URL: focused UI tests should exercise the
+    /// production route, not a second multi-window launch mode.
     private func uiTestDocumentURLs() -> [URL] {
         let environment = ProcessInfo.processInfo.environment
-        var paths: [String] = []
-        if let path = environment["LUMAVIEW_UI_TEST_OPEN_FILE"] {
-            paths.append(path)
-        }
-        if let packedPaths = environment["LUMAVIEW_UI_TEST_OPEN_FILES"] {
-            paths.append(contentsOf: packedPaths.split(separator: "\u{1F}").map(String.init))
-        }
-        return paths
-            .map { URL(fileURLWithPath: $0).standardizedFileURL.resolvingSymlinksInPath() }
-            .filter(ImageFile.canOpen)
+        guard let path = environment["LUMAVIEW_UI_TEST_OPEN_FILE"] else { return [] }
+        let url = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath()
+        return ImageFile.canOpen(url) ? [url] : []
     }
 }
 
@@ -385,22 +370,34 @@ final class LumaViewAppDelegate: NSObject, NSApplicationDelegate {
 /// image aspect ratio, so a portrait opens as a portrait window and a panorama
 /// opens wide instead of inheriting a fixed application rectangle.
 enum ImageWindowSizing {
+    /// The AppKit window must use the same discrete state as the canvas.  This
+    /// bridge deliberately treats the viewer as a right-angle viewer rather
+    /// than reintroducing trigonometry in the window layer.
+    static func quarterTurn(for degrees: Double) -> QuarterTurn {
+        QuarterTurn.zero.rotated(by: degrees)
+    }
+
     /// Returns the bounding size the canvas needs after a viewport rotation.
     /// Keeping this calculation next to window sizing ensures a 90° rotation
     /// reshapes the document window just like browsing to a differently-shaped
     /// image does.
     static func displayedPixelSize(for imageSize: CGSize, rotatedBy degrees: Double) -> CGSize? {
-        guard imageSize.width > 0, imageSize.height > 0 else { return nil }
+        displayedPixelSize(for: imageSize, quarterTurn: quarterTurn(for: degrees))
+    }
 
-        let radians = degrees.truncatingRemainder(dividingBy: 360) * .pi / 180
-        let cosine = abs(CGFloat(Darwin.cos(radians)))
-        let sine = abs(CGFloat(Darwin.sin(radians)))
-        let size = CGSize(
-            width: imageSize.width * cosine + imageSize.height * sine,
-            height: imageSize.width * sine + imageSize.height * cosine
-        )
-        guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else { return nil }
-        return size
+    static func displayedPixelSize(for imageSize: CGSize, quarterTurn: QuarterTurn) -> CGSize? {
+        ViewerGeometry.displayedSize(for: imageSize, rotation: quarterTurn)
+    }
+
+    /// Window sizing only depends on whether the image is in its original or
+    /// quarter-turned orientation.  A 180° turn keeps the same canvas bounds,
+    /// so it must not needlessly reset the user's centered window.
+    static func orientationKey(for rotation: Double) -> Bool {
+        quarterTurn(for: rotation).swapsAxes
+    }
+
+    static func orientationKey(for quarterTurn: QuarterTurn) -> Bool {
+        quarterTurn.swapsAxes
     }
 
     static func initialContentSize(for imageSize: CGSize, maximumContentSize: CGSize) -> CGSize? {
@@ -463,6 +460,47 @@ enum ImageWindowSizing {
             height: height
         )
     }
+
+    /// Preserve a person's current window position while changing the content
+    /// aspect.  Initial windows are already centered, while subsequent browse
+    /// and rotate operations should not jump back to the middle of the screen.
+    static func frame(
+        with size: CGSize,
+        centeredAt center: CGPoint,
+        constrainedTo visibleFrame: NSRect
+    ) -> NSRect {
+        let width = min(max(size.width, 1), visibleFrame.width)
+        let height = min(max(size.height, 1), visibleFrame.height)
+        let ideal = NSRect(
+            x: center.x - width / 2,
+            y: center.y - height / 2,
+            width: width,
+            height: height
+        )
+        return NSRect(
+            x: min(max(ideal.minX, visibleFrame.minX), visibleFrame.maxX - width),
+            y: min(max(ideal.minY, visibleFrame.minY), visibleFrame.maxY - height),
+            width: width,
+            height: height
+        )
+    }
+}
+
+/// All visible viewer controls ultimately resolve to one controller: the key
+/// document window.  This is intentionally not an application-wide "active"
+/// fallback.  A command without a key LumaView document is disabled instead
+/// of mutating an arbitrary background window.
+fileprivate enum ViewerCommand {
+    case open
+    case previous
+    case next
+    case zoomOut
+    case fit
+    case zoomIn
+    case rotateLeft
+    case rotateRight
+    case revealInFinder
+    case print
 }
 
 /// Owns real AppKit document windows. A SwiftUI WindowGroup is intentionally
@@ -511,7 +549,6 @@ final class LumaViewWindowRegistry: ObservableObject {
         for url in urls where seen.insert(url.standardizedFileURL.resolvingSymlinksInPath()).inserted {
             openDocumentWindow(for: url)
         }
-        arrangeUIStressWindowsIfNeeded()
     }
 
     func applyWindowPreferences(localization: L10n, appearance: AppAppearance) {
@@ -532,6 +569,27 @@ final class LumaViewWindowRegistry: ObservableObject {
                 self?.objectWillChange.send()
             }
         }
+    }
+
+    private var commandDocumentController: LumaViewWindowController? {
+        // Opening the menu bar can briefly clear `keyWindow` on some macOS
+        // releases. `mainWindow` remains the document that owned the menu in
+        // that interval. Both candidates must be controllers registered by
+        // this registry; never fall back to an arbitrary open document.
+        for candidate in [NSApp.keyWindow, NSApp.mainWindow].compactMap({ $0 }) {
+            if let controller = controllers.values.first(where: { $0.window === candidate }) {
+                return controller
+            }
+        }
+        return nil
+    }
+
+    fileprivate func perform(_ command: ViewerCommand, localization: L10n) {
+        commandDocumentController?.perform(command, localization: localization)
+    }
+
+    fileprivate func canPerform(_ command: ViewerCommand) -> Bool {
+        commandDocumentController?.canPerform(command) ?? false
     }
 
     fileprivate func remove(_ controller: LumaViewWindowController) {
@@ -555,35 +613,6 @@ final class LumaViewWindowRegistry: ObservableObject {
         return controller
     }
 
-    /// Production launches preserve the image-led centred-window policy. This is
-    /// enabled only by the UI stress suite, which needs every document visible at once
-    /// in order to exercise the real render queue rather than a synthetic decoder.
-    private func arrangeUIStressWindowsIfNeeded() {
-        guard ProcessInfo.processInfo.environment["LUMAVIEW_UI_TEST_TILE_WINDOWS"] == "1",
-              let visibleFrame = NSScreen.main?.visibleFrame else { return }
-        let windows = controllers.values
-            .filter { $0.browser.selectedURL != nil }
-            .sorted { ($0.browser.selectedURL?.path ?? "") < ($1.browser.selectedURL?.path ?? "") }
-        guard !windows.isEmpty else { return }
-
-        let columns = Int(ceil(sqrt(Double(windows.count))))
-        let rows = Int(ceil(Double(windows.count) / Double(columns)))
-        let gap: CGFloat = 10
-        let width = max(260, floor((visibleFrame.width - gap * CGFloat(columns - 1)) / CGFloat(columns)))
-        let height = max(190, floor((visibleFrame.height - gap * CGFloat(rows - 1)) / CGFloat(rows)))
-
-        for (index, controller) in windows.enumerated() {
-            let column = index % columns
-            let row = index / columns
-            let frame = NSRect(
-                x: visibleFrame.minX + CGFloat(column) * (width + gap),
-                y: visibleFrame.maxY - CGFloat(row + 1) * height - CGFloat(row) * gap,
-                width: width,
-                height: height
-            )
-            controller.applyUIStressFrame(frame)
-        }
-    }
 }
 
 private enum LumaViewToolbarIdentifier {
@@ -619,17 +648,15 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
 
     private var browserChangeObserver: AnyCancellable?
     private var pixelSizeObserver: AnyCancellable?
-    private var rotationObserver: AnyCancellable?
-    private var keyEventMonitor: Any?
+    private var quarterTurnObserver: AnyCancellable?
     private var informationPopover: NSPopover?
     private var informationPopoverDocumentURL: URL?
     /// The current document whose image-led frame has been applied.  This is
     /// intentionally per selection, not per window: browsing from a landscape
     /// to a portrait must reshape the same window before the new canvas draws.
     private var sizedDocumentURL: URL?
-    private var sizedDocumentRotation: Double?
-    private let authoredMinimumFrameSize = NSSize(width: 560, height: 380)
-    private var uiStressFrame: NSRect?
+    private var sizedDocumentOrientation: Bool?
+    private let authoredMinimumContentSize = NSSize(width: 560, height: 380)
 
     init(documentURL: URL?, updateChecker: UpdateChecker) {
         self.documentURL = documentURL
@@ -645,7 +672,9 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         window.isRestorable = false
         window.titleVisibility = .hidden
         window.toolbarStyle = .unified
-        window.minSize = authoredMinimumFrameSize
+        window.minSize = window.frameRect(
+            forContentRect: NSRect(origin: .zero, size: authoredMinimumContentSize)
+        ).size
         window.contentViewController = NSHostingController(
             rootView: ContentView(
                 browser: browser,
@@ -684,43 +713,18 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
                 self.applyDocumentSize(
                     for: size,
                     documentURL: selectedURL,
-                    rotation: self.browser.rotation
+                    quarterTurn: self.browser.quarterTurn
                 )
             }
-        rotationObserver = browser.$rotation
+        quarterTurnObserver = browser.$quarterTurn
             .removeDuplicates()
             .dropFirst()
-            .sink { [weak self] rotation in
+            .sink { [weak self] quarterTurn in
                 guard let self,
                       let pixelSize = self.browser.originalPixelSize,
                       let selectedURL = self.browser.selectedURL else { return }
-                self.applyDocumentSize(for: pixelSize, documentURL: selectedURL, rotation: rotation)
+                self.applyDocumentSize(for: pixelSize, documentURL: selectedURL, quarterTurn: quarterTurn)
             }
-        // AppKit toolbar actions and SwiftUI command shortcuts both express the
-        // same intent, but an arrow event can arrive while a newly-created
-        // document window is still becoming key. Handle bare left/right arrows
-        // at the owning window as well, so Finder-opened images can always move
-        // through their parent folder without waiting for command-menu focus.
-        // Do not intercept modified arrows: they remain available to macOS and
-        // assistive technologies.
-        keyEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self,
-                  event.window === self.window,
-                  self.browser.selectedURL != nil,
-                  event.modifierFlags.intersection([.command, .option, .control, .function]).isEmpty else {
-                return event
-            }
-            switch event.keyCode {
-            case 123 where self.browser.hasPrevious || self.browser.isScanning:
-                self.browser.previous()
-                return nil
-            case 124 where self.browser.hasNext || self.browser.isScanning:
-                self.browser.next()
-                return nil
-            default:
-                return event
-            }
-        }
 
         if let documentURL {
             browser.open(url: documentURL, l: Self.currentLocalization)
@@ -734,12 +738,6 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
     }
 
     required init?(coder: NSCoder) { nil }
-
-    deinit {
-        if let keyEventMonitor {
-            NSEvent.removeMonitor(keyEventMonitor)
-        }
-    }
 
     func showAndFocus() {
         showWindow(nil)
@@ -765,10 +763,49 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         refreshToolbarLocalization(localization)
     }
 
-    func applyUIStressFrame(_ frame: NSRect) {
-        uiStressFrame = frame
-        window?.minSize = NSSize(width: 260, height: 190)
-        window?.setFrame(frame, display: true, animate: false)
+    /// The toolbar, its overflow menu, and the main menu all end here. Keeping
+    /// the routing on the owning window prevents a background document from
+    /// receiving actions when several viewers are open.
+    fileprivate func canPerform(_ command: ViewerCommand) -> Bool {
+        switch command {
+        case .open:
+            return window != nil
+        case .previous:
+            return browser.hasPrevious || browser.isScanning
+        case .next:
+            return browser.hasNext || browser.isScanning
+        case .zoomOut, .fit, .zoomIn, .rotateLeft, .rotateRight,
+             .revealInFinder:
+            return browser.selectedURL != nil
+        case .print:
+            return browser.selectedURL != nil && !browser.isPreparingPrint
+        }
+    }
+
+    fileprivate func perform(_ command: ViewerCommand, localization: L10n) {
+        guard canPerform(command) else { return }
+        switch command {
+        case .open:
+            browser.chooseImage(localization)
+        case .previous:
+            browser.previous()
+        case .next:
+            browser.next()
+        case .zoomOut:
+            browser.zoomOut()
+        case .fit:
+            browser.fitImage()
+        case .zoomIn:
+            browser.zoomIn()
+        case .rotateLeft:
+            browser.rotate(by: -90)
+        case .rotateRight:
+            browser.rotate(by: 90)
+        case .revealInFinder:
+            browser.revealInFinder()
+        case .print:
+            browser.printSelectedImage(localization, from: window)
+        }
     }
 
     func windowDidBecomeKey(_ notification: Notification) {
@@ -882,6 +919,10 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         item.target = self
         item.action = action
         item.visibilityPriority = .standard
+        let overflowItem = NSMenuItem(title: item.label, action: action, keyEquivalent: "")
+        overflowItem.target = self
+        overflowItem.image = image
+        item.menuFormRepresentation = overflowItem
         return item
     }
 
@@ -957,13 +998,13 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         }
     }
 
-    @objc private func previousToolbarAction(_ sender: Any?) { browser.previous() }
-    @objc private func nextToolbarAction(_ sender: Any?) { browser.next() }
-    @objc private func zoomOutToolbarAction(_ sender: Any?) { browser.zoomOut() }
-    @objc private func fitToolbarAction(_ sender: Any?) { browser.fitImage() }
-    @objc private func zoomInToolbarAction(_ sender: Any?) { browser.zoomIn() }
-    @objc private func rotateLeftToolbarAction(_ sender: Any?) { browser.rotate(by: -90) }
-    @objc private func rotateRightToolbarAction(_ sender: Any?) { browser.rotate(by: 90) }
+    @objc private func previousToolbarAction(_ sender: Any?) { perform(.previous, localization: Self.currentLocalization) }
+    @objc private func nextToolbarAction(_ sender: Any?) { perform(.next, localization: Self.currentLocalization) }
+    @objc private func zoomOutToolbarAction(_ sender: Any?) { perform(.zoomOut, localization: Self.currentLocalization) }
+    @objc private func fitToolbarAction(_ sender: Any?) { perform(.fit, localization: Self.currentLocalization) }
+    @objc private func zoomInToolbarAction(_ sender: Any?) { perform(.zoomIn, localization: Self.currentLocalization) }
+    @objc private func rotateLeftToolbarAction(_ sender: Any?) { perform(.rotateLeft, localization: Self.currentLocalization) }
+    @objc private func rotateRightToolbarAction(_ sender: Any?) { perform(.rotateRight, localization: Self.currentLocalization) }
     @objc private func informationToolbarAction(_ sender: Any?) {
         guard let selectedURL = browser.selectedURL else { return }
         dismissInformationPopover()
@@ -1011,90 +1052,62 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             popover.show(relativeTo: edge, of: fallbackAnchor, preferredEdge: .minY)
         }
     }
-    private func applyDocumentSize(for imagePixelSize: CGSize, documentURL: URL, rotation: Double) {
-        // A document window follows the selected image, including when
-        // Previous/Next changes its aspect ratio.  This is deliberately not a
-        // one-time launch adjustment: showing a portrait inside a landscape
-        // canvas would reintroduce the empty rails the viewer avoids.
-        let normalizedRotation = rotation.truncatingRemainder(dividingBy: 360)
-        guard sizedDocumentURL != documentURL || sizedDocumentRotation != normalizedRotation,
+    private func applyDocumentSize(
+        for imagePixelSize: CGSize,
+        documentURL: URL,
+        quarterTurn: QuarterTurn
+    ) {
+        // The window and canvas use ViewerGeometry's exact right-angle bounds.
+        // Do not derive another ratio from fullSizeContentView/titlebar insets:
+        // `contentAspectRatio` and `setFrame` both speak in content coordinates.
+        let orientation = ImageWindowSizing.orientationKey(for: quarterTurn)
+        guard sizedDocumentURL != documentURL || sizedDocumentOrientation != orientation,
               let window,
               !window.styleMask.contains(.fullScreen),
-              let screen = window.screen ?? NSScreen.main else { return }
+              let screen = window.screen ?? NSScreen.main,
+              let displayedPixelSize = ImageWindowSizing.displayedPixelSize(
+                  for: imagePixelSize,
+                  quarterTurn: quarterTurn
+              ) else { return }
 
-        guard let displayedPixelSize = ImageWindowSizing.displayedPixelSize(
-            for: imagePixelSize,
-            rotatedBy: normalizedRotation
-        ) else { return }
-
-        if let uiStressFrame {
-            sizedDocumentURL = documentURL
-            sizedDocumentRotation = normalizedRotation
-            window.setFrame(uiStressFrame, display: true, animate: false)
-            return
-        }
-
-        // `contentAspectRatio` constrains the whole content view, while the
-        // SwiftUI canvas begins below the unified toolbar.  Locking that whole
-        // area directly to the image ratio leaves rails beside a portrait (or
-        // above a panorama).  Calculate in canvas coordinates, then add back
-        // only the measured toolbar/titlebar inset for the window constraint.
-        window.contentView?.layoutSubtreeIfNeeded()
-        // With `.fullSizeContentView`, the titlebar is overlaid instead of
-        // being subtracted by `contentRect(forFrameRect:)`.  Measure from the
-        // frame itself so the entire non-canvas strip is included.
-        let canvasVerticalInset = max(0, window.frame.height - window.contentLayoutRect.height)
-        let maximumFrameSize = CGSize(
-            width: max(screen.visibleFrame.width - 96, 320),
-            height: max(screen.visibleFrame.height - 96, 260)
-        )
-        let maximumCanvasSize = CGSize(
-            width: maximumFrameSize.width,
-            height: max(maximumFrameSize.height - canvasVerticalInset, 260)
-        )
-        guard let canvasSize = ImageWindowSizing.initialContentSize(
+        // Leave a modest safe margin around the frame, then convert that frame
+        // to the exact content area available to SwiftUI's canvas. The toolbar
+        // is AppKit chrome and must not be mixed into image geometry.
+        let maximumFrame = screen.visibleFrame.insetBy(dx: 48, dy: 48)
+        let maximumContentSize = window.contentRect(forFrameRect: maximumFrame).size
+        guard let preferredContentSize = ImageWindowSizing.initialContentSize(
             for: displayedPixelSize,
-            maximumContentSize: maximumCanvasSize
+            maximumContentSize: maximumContentSize
+        ), let contentSize = ImageWindowSizing.aspectPreservingContentSize(
+            preferred: preferredContentSize,
+            minimum: authoredMinimumContentSize,
+            maximum: maximumContentSize
         ) else { return }
 
-        // NSWindow.minSize is a frame-size constraint.  Convert it to content
-        // coordinates before centering so small or extreme-aspect images are
-        // not silently enlarged by AppKit after their frame has been placed.
-        let minimumCanvasSize = CGSize(
-            width: window.minSize.width,
-            height: max(1, window.minSize.height - canvasVerticalInset)
+        // Extreme aspect ratios cannot simultaneously honour the normal
+        // welcome-window floor and remain visible. Lower only this document's
+        // floor, in content coordinates, before applying the frame.
+        let minimumContentSize = CGSize(
+            width: min(authoredMinimumContentSize.width, contentSize.width),
+            height: min(authoredMinimumContentSize.height, contentSize.height)
         )
-        guard let constrainedCanvasSize = ImageWindowSizing.aspectPreservingContentSize(
-            preferred: canvasSize,
-            minimum: minimumCanvasSize,
-            maximum: maximumCanvasSize
-        ) else { return }
-        let proposedFrameSize = CGSize(
-            width: constrainedCanvasSize.width,
-            height: constrainedCanvasSize.height + canvasVerticalInset
-        )
-        // Keep the document canvas locked to the source ratio after navigation
-        // too.  The window itself also contains the measured toolbar inset, so
-        // its constrained ratio must include that inset; the drawable canvas
-        // remains exactly the source ratio at fit zoom.
-        window.contentAspectRatio = window.contentRect(
-            forFrameRect: NSRect(origin: .zero, size: proposedFrameSize)
+        window.contentAspectRatio = contentSize
+        window.minSize = window.frameRect(
+            forContentRect: NSRect(origin: .zero, size: minimumContentSize)
         ).size
-        // AppKit applies minSize after setFrame. For an extreme portrait/panorama
-        // the normal 560×380 floor cannot coexist with the image ratio on screen;
-        // lower just that window's floor before centering rather than letting AppKit
-        // silently distort its final frame or offset its centre.
-        window.minSize = NSSize(
-            width: min(authoredMinimumFrameSize.width, proposedFrameSize.width),
-            height: min(authoredMinimumFrameSize.height, proposedFrameSize.height)
-        )
-        let centeredFrame = ImageWindowSizing.centeredFrame(
-            for: proposedFrameSize,
-            in: screen.visibleFrame
+
+        let frameSize = window.frameRect(
+            forContentRect: NSRect(origin: .zero, size: contentSize)
+        ).size
+        let center = CGPoint(x: window.frame.midX, y: window.frame.midY)
+        let frame = ImageWindowSizing.frame(
+            with: frameSize,
+            centeredAt: center,
+            constrainedTo: screen.visibleFrame
         )
         sizedDocumentURL = documentURL
-        sizedDocumentRotation = normalizedRotation
-        window.setFrame(centeredFrame, display: true, animate: false)
+        sizedDocumentOrientation = orientation
+        window.setFrame(frame, display: true, animate: false)
     }
 
     private static var currentLocalization: L10n {
@@ -1268,7 +1281,6 @@ struct LumaViewApp: App {
 
     private var language: AppLanguage { AppLanguage(rawValue: languageRaw) ?? .automatic }
     private var l: L10n { L10n(language: language) }
-    private var browser: ImageBrowserStore? { windowRegistry.activeBrowser }
     private var updateChecker: UpdateChecker { windowRegistry.updateChecker }
 
     var body: some Scene {
@@ -1283,49 +1295,49 @@ struct LumaViewApp: App {
             }
 
             CommandGroup(replacing: .newItem) {
-                Button(l.text("menu.openImage")) { browser?.chooseImage(l) }
+                Button(l.text("menu.openImage")) { windowRegistry.perform(.open, localization: l) }
                     .keyboardShortcut("o", modifiers: .command)
-                    .disabled(browser == nil)
+                    .disabled(!windowRegistry.canPerform(.open))
             }
 
             CommandMenu(l.text("menu.browse")) {
-                Button(l.text("command.previous")) { browser?.previous() }
+                Button(l.text("command.previous")) { windowRegistry.perform(.previous, localization: l) }
                     .keyboardShortcut(.leftArrow, modifiers: [])
-                    .disabled(browser == nil || (browser?.hasPrevious == false && browser?.isScanning == false))
-                Button(l.text("command.next")) { browser?.next() }
+                    .disabled(!windowRegistry.canPerform(.previous))
+                Button(l.text("command.next")) { windowRegistry.perform(.next, localization: l) }
                     .keyboardShortcut(.rightArrow, modifiers: [])
-                    .disabled(browser == nil || (browser?.hasNext == false && browser?.isScanning == false))
+                    .disabled(!windowRegistry.canPerform(.next))
                 Divider()
-                Button(l.text("menu.reveal")) { browser?.revealInFinder() }
+                Button(l.text("menu.reveal")) { windowRegistry.perform(.revealInFinder, localization: l) }
                     .keyboardShortcut("r", modifiers: [.command, .shift])
-                    .disabled(browser?.selectedURL == nil)
+                    .disabled(!windowRegistry.canPerform(.revealInFinder))
             }
 
             // Keep image controls separate from AppKit's standard "View" menu.
             // This avoids a duplicate, differently-localized View entry in the menu bar.
             CommandMenu(l.text("menu.image")) {
-                Button(l.text("command.zoomIn")) { browser?.zoomIn() }
+                Button(l.text("command.zoomIn")) { windowRegistry.perform(.zoomIn, localization: l) }
                     .keyboardShortcut("+", modifiers: .command)
-                    .disabled(browser?.selectedURL == nil)
-                Button(l.text("command.zoomOut")) { browser?.zoomOut() }
+                    .disabled(!windowRegistry.canPerform(.zoomIn))
+                Button(l.text("command.zoomOut")) { windowRegistry.perform(.zoomOut, localization: l) }
                     .keyboardShortcut("-", modifiers: .command)
-                    .disabled(browser?.selectedURL == nil)
-                Button(l.text("command.fit")) { browser?.fitImage() }
+                    .disabled(!windowRegistry.canPerform(.zoomOut))
+                Button(l.text("command.fit")) { windowRegistry.perform(.fit, localization: l) }
                     .keyboardShortcut("0", modifiers: .command)
-                    .disabled(browser?.selectedURL == nil)
+                    .disabled(!windowRegistry.canPerform(.fit))
                 Divider()
-                Button(l.text("command.rotateLeft")) { browser?.rotate(by: -90) }
+                Button(l.text("command.rotateLeft")) { windowRegistry.perform(.rotateLeft, localization: l) }
                     .keyboardShortcut("[", modifiers: .command)
-                    .disabled(browser?.selectedURL == nil)
-                Button(l.text("command.rotateRight")) { browser?.rotate(by: 90) }
+                    .disabled(!windowRegistry.canPerform(.rotateLeft))
+                Button(l.text("command.rotateRight")) { windowRegistry.perform(.rotateRight, localization: l) }
                     .keyboardShortcut("]", modifiers: .command)
-                    .disabled(browser?.selectedURL == nil)
+                    .disabled(!windowRegistry.canPerform(.rotateRight))
             }
 
             CommandGroup(replacing: .printItem) {
-                Button(l.text("menu.printImage")) { browser?.printSelectedImage(l, from: NSApp.keyWindow) }
+                Button(l.text("menu.printImage")) { windowRegistry.perform(.print, localization: l) }
                     .keyboardShortcut("p", modifiers: .command)
-                    .disabled(browser?.selectedURL == nil || browser?.isPreparingPrint == true)
+                    .disabled(!windowRegistry.canPerform(.print))
             }
 
             CommandMenu(l.text("app.appearance")) {
