@@ -76,8 +76,8 @@ button { font: inherit; }
   grid-template-columns: minmax(0, 0.92fr) minmax(390px, 0.82fr);
   align-items: center;
   gap: clamp(50px, 9vw, 132px);
-  min-height: 685px;
-  padding: 76px 4.8% 66px;
+  min-height: 615px;
+  padding: 58px 4.8% 48px;
 }
 .hero-copy { max-width: 530px; }
 .eyebrow {
@@ -139,7 +139,7 @@ h1 em, h2 em {
 .button-secondary:hover { border-color: #b6cdf2; background: #fff; }
 .compatibility { margin: 21px 0 0; color: var(--quiet); font-size: 14px; font-weight: 550; }
 
-.hero-shot { justify-self: end; width: min(100%, 430px); margin: 0; }
+.hero-shot { justify-self: end; width: min(100%, 380px); margin: 0; }
 .hero-shot img, .welcome-shot img, .multiwindow-shot img { width: 100%; border-radius: 20px; }
 .shot-glow { display: none; }
 
@@ -148,7 +148,6 @@ h1 em, h2 em {
   grid-template-columns: repeat(3, 1fr);
   border-top: 1px solid var(--line-strong);
   border-bottom: 1px solid var(--line-strong);
-  background: rgba(255, 255, 255, 0.55);
 }
 .proof div { display: flex; align-items: center; gap: 15px; min-height: 88px; padding: 18px 26px; }
 .proof div + div { border-left: 1px solid var(--line-strong); }
@@ -249,7 +248,7 @@ h2 {
 
 @media (max-width: 900px) {
   .hero { grid-template-columns: minmax(0, 1fr) minmax(300px, 0.7fr); gap: 42px; padding-inline: 0; }
-  .hero-shot { width: 100%; }
+  .hero-shot { width: min(100%, 390px); }
   .experience-layout { gap: 48px; }
   .multiwindow { gap: 48px; }
   .download-card { grid-template-columns: auto 1fr; }
@@ -260,8 +259,8 @@ h2 {
   .nav { min-height: 68px; gap: 12px; }
   .nav nav { display: none; }
   .language-switch { margin-left: auto; }
-  .hero { grid-template-columns: 1fr; min-height: auto; gap: 54px; padding: 66px 0 56px; }
-  .hero-shot { justify-self: center; width: min(83vw, 410px); }
+  .hero { grid-template-columns: 1fr; min-height: auto; gap: 48px; padding: 58px 0 50px; }
+  .hero-shot { justify-self: center; width: min(78vw, 360px); }
   .proof { grid-template-columns: 1fr; }
   .proof div { min-height: 64px; padding: 14px 4px; }
   .proof div + div { border-top: 1px solid var(--line-strong); border-left: 0; }
