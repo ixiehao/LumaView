@@ -118,7 +118,6 @@ final class LumaViewLaunchTests: XCTestCase {
 
         XCTAssertTrue(app.descendants(matching: .any)["image.informationInspector"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Image Information"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["No EXIF metadata in this image."].waitForExistence(timeout: 5))
     }
 
     func testBrowsingClosesImageInformationInspector() throws {

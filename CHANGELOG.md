@@ -4,6 +4,23 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
+## 1.2.6 — 2026-10-17
+
+### English
+
+- Close Image Information when moving to another image, so EXIF never remains from the previous file.
+- Resize the canvas and window after rotation, keeping the full image fitted to its new orientation.
+
+### 中文
+
+- 切换图片时自动关闭“图片信息”，避免保留上一张图片的 EXIF。
+- 图片旋转后，画布与窗口会按新的方向调整，完整贴合画面。
+
+### 日本語
+
+- 前後の画像へ移動すると「画像情報」を閉じ、前の画像の EXIF が残らないようにしました。
+- 画像を回転した後、キャンバスとウインドウが新しい向きに合わせて調整され、画像全体をぴったり表示します。
+
 ## 1.2.5 — 2026-10-17
 
 ### English
