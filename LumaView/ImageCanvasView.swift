@@ -72,7 +72,7 @@ struct ImageCanvasView: View {
         absoluteZoomPercent: Int?
     ) -> some View {
         let rotation = Int(browser.rotation.rounded())
-        let fitted = fittedSize(for: image.size, in: container)
+        let fitted = fittedImageSize(for: image.size, in: container, rotation: browser.rotation)
         let displayZoom = browser.zoom * gestureScale
         let imageSize = CGSize(width: fitted.width * displayZoom, height: fitted.height * displayZoom)
         let rotatedSize = rotatedBounds(for: imageSize, degrees: browser.rotation)
@@ -224,9 +224,14 @@ struct ImageCanvasView: View {
         return browser.statusMessage ?? "LumaView"
     }
 
-    private func fittedSize(for imageSize: CGSize, in container: CGSize) -> CGSize {
+    /// Fits the unrotated bitmap so its rotated bounds exactly fit the canvas.
+    /// Using the pre-rotation ratio here would leave rails after a 90° turn,
+    /// even when the document window had already adopted the new orientation.
+    private func fittedImageSize(for imageSize: CGSize, in container: CGSize, rotation: Double) -> CGSize {
         guard imageSize.width > 0, imageSize.height > 0 else { return container }
-        let scale = min(container.width / imageSize.width, container.height / imageSize.height)
+        let rotatedSize = rotatedBounds(for: imageSize, degrees: rotation)
+        guard rotatedSize.width > 0, rotatedSize.height > 0 else { return container }
+        let scale = min(container.width / rotatedSize.width, container.height / rotatedSize.height)
         return CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
     }
 
@@ -248,7 +253,7 @@ struct ImageCanvasView: View {
     private func absoluteZoomPercent(for image: NSImage, in container: CGSize) -> Int? {
         guard let original = browser.originalPixelSize,
               original.width > 0, original.height > 0 else { return nil }
-        let fitted = fittedSize(for: image.size, in: container)
+        let fitted = fittedImageSize(for: image.size, in: container, rotation: browser.rotation)
         let displayed = CGSize(
             // SwiftUI layout uses points; the source dimensions are physical
             // pixels. Include the display backing scale for an absolute value.
@@ -265,7 +270,9 @@ struct ImageCanvasView: View {
         // In a wide Retina window this avoids decoding a portrait or square image
         // at several times the pixels it can visibly use.
         let zoomDemand = min(max(browser.zoom, 1), 4)
-        let fitted = browser.originalPixelSize.map { fittedSize(for: $0, in: container) } ?? container
+        let fitted = browser.originalPixelSize.map {
+            fittedImageSize(for: $0, in: container, rotation: browser.rotation)
+        } ?? container
         let calculatedTarget = Int(max(fitted.width, fitted.height) * displayScale * zoomDemand * 1.25)
         let target = uiTestRenderPixelOverride ?? calculatedTarget
         return ImageRenderRequest(url: browser.selectedURL, maxPixelSize: target)

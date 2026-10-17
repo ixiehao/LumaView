@@ -385,6 +385,24 @@ final class LumaViewAppDelegate: NSObject, NSApplicationDelegate {
 /// image aspect ratio, so a portrait opens as a portrait window and a panorama
 /// opens wide instead of inheriting a fixed application rectangle.
 enum ImageWindowSizing {
+    /// Returns the bounding size the canvas needs after a viewport rotation.
+    /// Keeping this calculation next to window sizing ensures a 90° rotation
+    /// reshapes the document window just like browsing to a differently-shaped
+    /// image does.
+    static func displayedPixelSize(for imageSize: CGSize, rotatedBy degrees: Double) -> CGSize? {
+        guard imageSize.width > 0, imageSize.height > 0 else { return nil }
+
+        let radians = degrees.truncatingRemainder(dividingBy: 360) * .pi / 180
+        let cosine = abs(CGFloat(Darwin.cos(radians)))
+        let sine = abs(CGFloat(Darwin.sin(radians)))
+        let size = CGSize(
+            width: imageSize.width * cosine + imageSize.height * sine,
+            height: imageSize.width * sine + imageSize.height * cosine
+        )
+        guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else { return nil }
+        return size
+    }
+
     static func initialContentSize(for imageSize: CGSize, maximumContentSize: CGSize) -> CGSize? {
         guard imageSize.width > 0,
               imageSize.height > 0,
@@ -601,12 +619,15 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
 
     private var browserChangeObserver: AnyCancellable?
     private var pixelSizeObserver: AnyCancellable?
+    private var rotationObserver: AnyCancellable?
     private var keyEventMonitor: Any?
     private var informationPopover: NSPopover?
+    private var informationPopoverDocumentURL: URL?
     /// The current document whose image-led frame has been applied.  This is
     /// intentionally per selection, not per window: browsing from a landscape
     /// to a portrait must reshape the same window before the new canvas draws.
     private var sizedDocumentURL: URL?
+    private var sizedDocumentRotation: Double?
     private let authoredMinimumFrameSize = NSSize(width: 560, height: 380)
     private var uiStressFrame: NSRect?
 
@@ -650,17 +671,31 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
 
         browserChangeObserver = browser.objectWillChange.sink { [weak self] _ in
             DispatchQueue.main.async {
-                self?.refreshTitle()
-                self?.window?.toolbar?.validateVisibleItems()
+                guard let self else { return }
+                self.refreshTitle()
+                self.window?.toolbar?.validateVisibleItems()
+                self.dismissInformationPopover(unlessShowing: self.browser.selectedURL)
             }
         }
         pixelSizeObserver = browser.$originalPixelSize
             .compactMap { $0 }
             .sink { [weak self] size in
                 guard let self, let selectedURL = self.browser.selectedURL else { return }
-                self.applyDocumentSize(for: size, documentURL: selectedURL)
+                self.applyDocumentSize(
+                    for: size,
+                    documentURL: selectedURL,
+                    rotation: self.browser.rotation
+                )
             }
-
+        rotationObserver = browser.$rotation
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] rotation in
+                guard let self,
+                      let pixelSize = self.browser.originalPixelSize,
+                      let selectedURL = self.browser.selectedURL else { return }
+                self.applyDocumentSize(for: pixelSize, documentURL: selectedURL, rotation: rotation)
+            }
         // AppKit toolbar actions and SwiftUI command shortcuts both express the
         // same intent, but an arrow event can arrive while a newly-created
         // document window is still becoming key. Handle bare left/right arrows
@@ -931,18 +966,25 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
     @objc private func rotateRightToolbarAction(_ sender: Any?) { browser.rotate(by: 90) }
     @objc private func informationToolbarAction(_ sender: Any?) {
         guard let selectedURL = browser.selectedURL else { return }
-        informationPopover?.performClose(nil)
+        dismissInformationPopover()
         let anchor = sender as? NSView
         Task { [weak self, weak anchor] in
             let information = await Task.detached(priority: .userInitiated) {
                 ImageInformationReader.read(from: selectedURL)
             }.value
             guard let self, self.browser.selectedURL == selectedURL else { return }
-            self.presentInformationPopover(information, anchor: anchor)
+            self.presentInformationPopover(information, for: selectedURL, anchor: anchor)
         }
     }
 
-    private func presentInformationPopover(_ information: ImageInformation, anchor: NSView?) {
+    private func dismissInformationPopover(unlessShowing selectedURL: URL? = nil) {
+        guard informationPopoverDocumentURL != selectedURL else { return }
+        informationPopover?.close()
+        informationPopover = nil
+        informationPopoverDocumentURL = nil
+    }
+
+    private func presentInformationPopover(_ information: ImageInformation, for documentURL: URL, anchor: NSView?) {
         guard let fallbackAnchor = window?.contentView else { return }
         let popover = NSPopover()
         popover.behavior = .transient
@@ -958,6 +1000,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             height: max(1, fittingSize.height)
         )
         informationPopover = popover
+        informationPopoverDocumentURL = documentURL
         if let anchor {
             popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
         } else {
@@ -968,18 +1011,25 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             popover.show(relativeTo: edge, of: fallbackAnchor, preferredEdge: .minY)
         }
     }
-    private func applyDocumentSize(for imagePixelSize: CGSize, documentURL: URL) {
+    private func applyDocumentSize(for imagePixelSize: CGSize, documentURL: URL, rotation: Double) {
         // A document window follows the selected image, including when
         // Previous/Next changes its aspect ratio.  This is deliberately not a
         // one-time launch adjustment: showing a portrait inside a landscape
         // canvas would reintroduce the empty rails the viewer avoids.
-        guard sizedDocumentURL != documentURL,
+        let normalizedRotation = rotation.truncatingRemainder(dividingBy: 360)
+        guard sizedDocumentURL != documentURL || sizedDocumentRotation != normalizedRotation,
               let window,
               !window.styleMask.contains(.fullScreen),
               let screen = window.screen ?? NSScreen.main else { return }
 
+        guard let displayedPixelSize = ImageWindowSizing.displayedPixelSize(
+            for: imagePixelSize,
+            rotatedBy: normalizedRotation
+        ) else { return }
+
         if let uiStressFrame {
             sizedDocumentURL = documentURL
+            sizedDocumentRotation = normalizedRotation
             window.setFrame(uiStressFrame, display: true, animate: false)
             return
         }
@@ -1003,7 +1053,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             height: max(maximumFrameSize.height - canvasVerticalInset, 260)
         )
         guard let canvasSize = ImageWindowSizing.initialContentSize(
-            for: imagePixelSize,
+            for: displayedPixelSize,
             maximumContentSize: maximumCanvasSize
         ) else { return }
 
@@ -1043,6 +1093,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             in: screen.visibleFrame
         )
         sizedDocumentURL = documentURL
+        sizedDocumentRotation = normalizedRotation
         window.setFrame(centeredFrame, display: true, animate: false)
     }
 

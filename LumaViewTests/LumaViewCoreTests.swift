@@ -158,6 +158,22 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertEqual(clamped, visibleFrame)
     }
 
+    func testRotatingAnImageSwapsTheCanvasSizingAxes() throws {
+        let landscape = CGSize(width: 1_600, height: 900)
+
+        let quarterTurn = try XCTUnwrap(ImageWindowSizing.displayedPixelSize(for: landscape, rotatedBy: 90))
+        XCTAssertEqual(quarterTurn.width, 900, accuracy: 0.001)
+        XCTAssertEqual(quarterTurn.height, 1_600, accuracy: 0.001)
+
+        let reverseQuarterTurn = try XCTUnwrap(ImageWindowSizing.displayedPixelSize(for: landscape, rotatedBy: -90))
+        XCTAssertEqual(reverseQuarterTurn.width, 900, accuracy: 0.001)
+        XCTAssertEqual(reverseQuarterTurn.height, 1_600, accuracy: 0.001)
+
+        let halfTurn = try XCTUnwrap(ImageWindowSizing.displayedPixelSize(for: landscape, rotatedBy: 180))
+        XCTAssertEqual(halfTurn.width, 1_600, accuracy: 0.001)
+        XCTAssertEqual(halfTurn.height, 900, accuracy: 0.001)
+    }
+
     func testNavigationPreviewCacheInvalidatesWhenFileChanges() throws {
         let url = directory.appendingPathComponent("replaceable.jpg")
         try Data([0x01]).write(to: url)

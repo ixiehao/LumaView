@@ -17,6 +17,8 @@ final class LumaViewLaunchTests: XCTestCase {
         try png.write(to: fixtureDirectory.appendingPathComponent("01-first.png"), options: .atomic)
         try png.write(to: fixtureDirectory.appendingPathComponent("02-next.png"), options: .atomic)
         try makeToolbarFixture()
+        try makePNG(at: fixtureDirectory.appendingPathComponent("90-exif-current.png"), width: 1_600, height: 900)
+        try makePNG(at: fixtureDirectory.appendingPathComponent("91-exif-next.png"), width: 1_600, height: 900)
     }
 
     override func tearDownWithError() throws {
@@ -76,8 +78,32 @@ final class LumaViewLaunchTests: XCTestCase {
 
         rotateRight.click()
         expect(canvas, accessibilityLabelContaining: "90°")
-        rotateLeft.click()
+        // A correctly reshaped portrait window can move this toolbar item into
+        // the standard overflow menu. Its Command-[ shortcut remains available
+        // regardless of that native toolbar layout.
+        app.activate()
+        app.typeKey("[", modifierFlags: .command)
         expect(canvas, accessibilityLabelContaining: "0°")
+    }
+
+    func testRotationReshapesTheDocumentCanvasForTheNewOrientation() throws {
+        let file = fixtureDirectory.appendingPathComponent("03-toolbar.png")
+        let app = launchApp(opening: file)
+        let renderedCanvas = canvas(in: app, named: file.lastPathComponent)
+        XCTAssertTrue(renderedCanvas.waitForExistence(timeout: 5))
+        XCTAssertGreaterThan(renderedCanvas.frame.width / renderedCanvas.frame.height, 1)
+
+        let rotateRight = app.buttons.matching(NSPredicate(format: "label == %@", "Rotate right")).firstMatch
+        XCTAssertTrue(rotateRight.waitForExistence(timeout: 5))
+        app.activate()
+        rotateRight.click()
+
+        let portraitFrame = NSPredicate { _, _ in
+            let frame = renderedCanvas.frame
+            return renderedCanvas.label.contains("90°") && frame.width < frame.height
+        }
+        let resized = expectation(for: portraitFrame, evaluatedWith: renderedCanvas)
+        wait(for: [resized], timeout: 5)
     }
 
     func testImageInformationToolbarPresentsMetadataInspector() throws {
@@ -93,6 +119,24 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["image.informationInspector"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Image Information"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["No EXIF metadata in this image."].waitForExistence(timeout: 5))
+    }
+
+    func testBrowsingClosesImageInformationInspector() throws {
+        let first = fixtureDirectory.appendingPathComponent("90-exif-current.png")
+        let next = fixtureDirectory.appendingPathComponent("91-exif-next.png")
+        let app = launchApp(opening: first)
+        XCTAssertTrue(canvas(in: app, named: first.lastPathComponent).waitForExistence(timeout: 5))
+
+        let information = app.buttons["Image information"]
+        XCTAssertTrue(information.waitForExistence(timeout: 5))
+        app.activate()
+        information.click()
+        let inspector = app.descendants(matching: .any)["image.informationInspector"]
+        XCTAssertTrue(inspector.waitForExistence(timeout: 5))
+
+        app.typeKey(.rightArrow, modifierFlags: [])
+        XCTAssertTrue(canvas(in: app, named: next.lastPathComponent).waitForExistence(timeout: 5))
+        XCTAssertFalse(inspector.waitForExistence(timeout: 1))
     }
 
     func testEverySupportedLanguageHasCompleteToolbarLabelsWithoutPrintButton() throws {
