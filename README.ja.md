@@ -67,3 +67,9 @@ Pull Request を作成する前に、次を実行してください。
 問題を見つけた、またはアイデアがある場合は、構造化された[バグ報告](https://github.com/ixiehao/LumaView/issues/new?template=bug_report.yml)または[機能リクエスト](https://github.com/ixiehao/LumaView/issues/new?template=feature_request.yml)を利用してください。開発への協力については[コントリビューションガイド](CONTRIBUTING.md)、ローカルデータの取り扱いについては[プライバシー](PRIVACY.md)、脆弱性の報告については[セキュリティ](SECURITY.md)を参照してください。
 
 LumaView は [MIT License](LICENSE) で提供しています。Tabler アイコンの帰属は [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) に記載しています。
+
+## 開発・保守ドキュメント
+
+[ドキュメント一覧](docs/README.md) · [開発と検証](docs/DEVELOPMENT.md) · [公式サイトの保守](docs/WEBSITE.md)。
+
+公式サイトのソースは `website/` に、開発・保守ドキュメントは `docs/` に置いています。

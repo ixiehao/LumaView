@@ -4,12 +4,12 @@ LumaView supports **Intel and Apple Silicon Macs** on macOS 13+. Every release s
 
 There are two deliberately distinct paths:
 
-- **Transparent public preview (current v1.2.8):** the ShotMap pattern—an
+- **Transparent public preview (current v1.2.8):** an
   ad-hoc-signed DMG plus its SHA-256 file, with the Release and README clearly
   saying that it is not Apple-notarized and explaining the one-time Gatekeeper
   recovery action. This is useful for early open-source testing, but must never
   be presented as a notarized stable release.
-- **Formal stable release:** the MP4Flow pattern—re-sign the exact final app
+- **Formal stable release:** re-sign the exact final app
   with Developer ID, notarize the final DMG, staple its ticket, validate
   Gatekeeper, and publish its checksum.
 
@@ -32,7 +32,7 @@ published only through the transparent preview procedure below.
 See [INSTALLER-BUILD.md](INSTALLER-BUILD.md) for the installer-artwork and
 Finder-layout guarantees.
 
-## Transparent public preview (ShotMap-compatible)
+## Transparent public preview
 
 Use this only when the project owner explicitly chooses a public preview before
 Developer ID/notarization is available. Run the full test and packaging gate
@@ -100,7 +100,7 @@ a commit, tag, signing identity, or notarization credential on their behalf.
 
 ## Update feed
 
-LumaView follows ShotTessera's lightweight update model: it reads only the
+LumaView uses a lightweight update check: it reads only the
 latest public GitHub release metadata at most once every 12 hours, including
 across app launches. Before the first public release, create the repository at the configured
 slug or update `LumaViewProjectLinks.repositorySlug` in

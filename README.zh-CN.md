@@ -67,3 +67,9 @@ open LumaView.xcodeproj
 遇到问题或有功能想法？请使用结构化的[问题反馈](https://github.com/ixiehao/LumaView/issues/new?template=bug_report.yml)或[功能建议](https://github.com/ixiehao/LumaView/issues/new?template=feature_request.yml)。开发协作请阅读[贡献说明](CONTRIBUTING.md)；本地数据行为见[隐私说明](PRIVACY.md)，安全问题请参考[安全说明](SECURITY.md)。
 
 LumaView 使用 [MIT License](LICENSE)。Tabler 图标归属见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
+
+## 开发与维护文档
+
+[文档索引](docs/README.md) · [开发与验证](docs/DEVELOPMENT.md) · [官网维护](docs/WEBSITE.md)。
+
+官网源码统一位于 `website/`，`docs/` 用于开发与维护文档。
