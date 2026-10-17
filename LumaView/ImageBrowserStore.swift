@@ -2,6 +2,102 @@ import AppKit
 import Combine
 import UniformTypeIdentifiers
 
+/// The only rotations offered by LumaView. Keeping the state discrete avoids
+/// floating-point bounds calculations and makes the displayed dimensions
+/// deterministic after a complete rotation cycle.
+enum QuarterTurn: Int, CaseIterable, Sendable {
+    case zero
+    case clockwise
+    case upsideDown
+    case counterClockwise
+
+    var degrees: Double { Double(rawValue * 90) }
+    var swapsAxes: Bool { self == .clockwise || self == .counterClockwise }
+
+    func rotated(by degrees: Double) -> QuarterTurn {
+        guard degrees.isFinite else { return self }
+        let steps = Int((degrees / 90).rounded())
+        guard abs(degrees - Double(steps * 90)) < 0.001 else { return self }
+        let raw = (rawValue + steps % 4 + 4) % 4
+        return QuarterTurn(rawValue: raw) ?? self
+    }
+}
+
+/// One geometry contract for the image view and the document window. The
+/// source dimensions stay in their decoded orientation; only the display
+/// bounds swap for a quarter turn. That leaves no second trigonometric or
+/// aspect-ratio implementation that can drift from the canvas.
+enum ViewerGeometry {
+    struct CanvasLayout: Equatable {
+        let unrotatedImageSize: CGSize
+        let displayedImageSize: CGSize
+        let canvasSize: CGSize
+    }
+
+    static func displayedSize(for imageSize: CGSize, rotation: QuarterTurn) -> CGSize? {
+        guard imageSize.width > 0, imageSize.height > 0,
+              imageSize.width.isFinite, imageSize.height.isFinite else { return nil }
+        return rotation.swapsAxes
+            ? CGSize(width: imageSize.height, height: imageSize.width)
+            : imageSize
+    }
+
+    /// ImageIO-backed NSImages normally report a point size, but a CGImage
+    /// representation is authoritative when that value is zero. Centralising
+    /// this fallback prevents a zero-sized SwiftUI frame on decoded images.
+    static func decodedSize(for image: NSImage) -> CGSize? {
+        if let size = validatedSize(image.size) {
+            return size
+        }
+        let width = image.representations.map(\.pixelsWide).max() ?? 0
+        let height = image.representations.map(\.pixelsHigh).max() ?? 0
+        return validatedSize(CGSize(width: width, height: height))
+    }
+
+    /// Lays out the complete image at fit zoom, then grows only the scrollable
+    /// canvas when a person zooms in. At fit zoom the displayed image and
+    /// canvas have the same dimensions whenever the owning window uses this
+    /// contract's display bounds.
+    static func canvasLayout(
+        imageSize: CGSize,
+        viewportSize: CGSize,
+        rotation: QuarterTurn,
+        zoom: CGFloat
+    ) -> CanvasLayout? {
+        guard let displayedSourceSize = displayedSize(for: imageSize, rotation: rotation),
+              let viewport = validatedSize(viewportSize) else { return nil }
+
+        let fitScale = min(
+            viewport.width / displayedSourceSize.width,
+            viewport.height / displayedSourceSize.height
+        )
+        guard fitScale.isFinite, fitScale > 0 else { return nil }
+
+        let clampedZoom = min(max(zoom, 0.15), 12)
+        let unrotatedImageSize = CGSize(
+            width: imageSize.width * fitScale * clampedZoom,
+            height: imageSize.height * fitScale * clampedZoom
+        )
+        guard let displayedImageSize = displayedSize(for: unrotatedImageSize, rotation: rotation) else {
+            return nil
+        }
+        return CanvasLayout(
+            unrotatedImageSize: unrotatedImageSize,
+            displayedImageSize: displayedImageSize,
+            canvasSize: CGSize(
+                width: max(viewport.width, displayedImageSize.width),
+                height: max(viewport.height, displayedImageSize.height)
+            )
+        )
+    }
+
+    private static func validatedSize(_ size: CGSize) -> CGSize? {
+        guard size.width > 0, size.height > 0,
+              size.width.isFinite, size.height.isFinite else { return nil }
+        return size
+    }
+}
+
 struct ImageFile: Identifiable, Hashable, Sendable {
     let url: URL
 
@@ -194,7 +290,14 @@ final class ImageBrowserStore: ObservableObject {
     @Published private(set) var selectedIndex: Int?
     @Published private(set) var originalPixelSize: CGSize?
     @Published var zoom: CGFloat = 1
-    @Published var rotation: Double = 0
+    @Published private(set) var quarterTurn: QuarterTurn = .zero
+    /// A post-mutation invalidation token for the canvas. `Published` sends
+    /// `objectWillChange` before it stores a new value; that is suitable for
+    /// simple controls, but a right-angle transform must never render against
+    /// the previous orientation while AppKit has already resized its window.
+    /// This revision is incremented only after `quarterTurn` is assigned and
+    /// followed by an explicit post-assignment change notification.
+    @Published private(set) var canvasPresentationRevision: UInt64 = 0
     @Published var statusMessage: String?
     @Published private(set) var isScanning = false
     @Published private(set) var isPreparingPrint = false
@@ -516,12 +619,28 @@ final class ImageBrowserStore: ObservableObject {
     func fitImage() { zoom = 1 }
 
     func rotate(by degrees: Double) {
-        rotation = (rotation + degrees).truncatingRemainder(dividingBy: 360)
+        let nextTurn = quarterTurn.rotated(by: degrees)
+        guard nextTurn != quarterTurn else { return }
+        quarterTurn = nextTurn
+        invalidateCanvasPresentation()
     }
 
     func resetViewport() {
+        let didResetRotation = quarterTurn != .zero
         zoom = 1
-        rotation = 0
+        quarterTurn = .zero
+        if didResetRotation {
+            invalidateCanvasPresentation()
+        }
+    }
+
+    private func invalidateCanvasPresentation() {
+        canvasPresentationRevision &+= 1
+        // This notification occurs after both orientation and revision are in
+        // storage. It gives SwiftUI a stable snapshot to render, rather than
+        // asking a view update started by `Published.willSet` to observe
+        // transient old state.
+        objectWillChange.send()
     }
 
     func suspendCanvasRendering() {

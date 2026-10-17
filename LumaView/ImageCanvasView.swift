@@ -19,6 +19,12 @@ struct ImageCanvasView: View {
 
     var body: some View {
         GeometryReader { geometry in
+            // `canvasPresentationRevision` is changed only after rotation is
+            // stored. Reading both values here creates one stable snapshot for
+            // the transform, its geometry and AX state, even though
+            // `Published`'s regular notification is sent before assignment.
+            let rotation = browser.quarterTurn
+            let presentationRevision = browser.canvasPresentationRevision
             let request = renderRequest(for: geometry.size)
             let renderTask = CanvasRenderTask(
                 request: request,
@@ -28,10 +34,21 @@ struct ImageCanvasView: View {
             // Keep the local value distinct from the helper method. Swift 5.10
             // otherwise resolves the name to itself inside `flatMap`, which
             // breaks a documented Xcode 15 source build.
-            let renderedZoomPercent = isCurrentImage ? image.flatMap { absoluteZoomPercent(for: $0, in: geometry.size) } : nil
+            let renderedZoomPercent = isCurrentImage
+                ? image.flatMap { absoluteZoomPercent(for: $0, in: geometry.size, rotation: rotation) }
+                : nil
             ZStack {
                 if isCurrentImage, let image {
-                    imageViewport(image, in: geometry.size, absoluteZoomPercent: renderedZoomPercent)
+                    imageViewport(
+                        image,
+                        in: geometry.size,
+                        rotation: rotation,
+                        absoluteZoomPercent: renderedZoomPercent
+                    )
+                    // A quarter turn is a new layout epoch, not a new image
+                    // decode. Recreating this visual subtree clears SwiftUI's
+                    // cached transform/layout while retaining the NSImage.
+                    .id(presentationRevision)
                 } else if isLoading {
                     ProgressView()
                         .controlSize(.small)
@@ -69,45 +86,59 @@ struct ImageCanvasView: View {
     private func imageViewport(
         _ image: NSImage,
         in container: CGSize,
+        rotation: QuarterTurn,
         absoluteZoomPercent: Int?
     ) -> some View {
-        let rotation = Int(browser.rotation.rounded())
-        let fitted = fittedImageSize(for: image.size, in: container, rotation: browser.rotation)
-        let displayZoom = browser.zoom * gestureScale
-        let imageSize = CGSize(width: fitted.width * displayZoom, height: fitted.height * displayZoom)
-        let rotatedSize = rotatedBounds(for: imageSize, degrees: browser.rotation)
-        let canvasSize = CGSize(
-            width: max(container.width, rotatedSize.width),
-            height: max(container.height, rotatedSize.height)
-        )
-
-        return ScrollView([.horizontal, .vertical]) {
-            Image(nsImage: image)
-                .resizable()
-                .interpolation(.high)
-                .aspectRatio(contentMode: .fit)
-                .frame(width: imageSize.width, height: imageSize.height)
-                .rotationEffect(.degrees(browser.rotation))
-                // The explicit canvas frame is the important part: when the image fits,
-                // it uses the full visible preview area without a decorative border.
-                // When zoomed beyond it, ScrollView gains only the space it needs.
-                .frame(width: canvasSize.width, height: canvasSize.height, alignment: .center)
-                .gesture(
-                    MagnificationGesture()
-                        .updating($gestureScale) { value, state, _ in state = value }
-                        .onEnded { value in
-                            browser.zoom = min(max(browser.zoom * value, 0.15), 12)
-                        }
-                )
-                .onTapGesture(count: 2) { browser.fitImage() }
+        let layout = ViewerGeometry.decodedSize(for: image).flatMap {
+            ViewerGeometry.canvasLayout(
+                imageSize: $0,
+                viewportSize: container,
+                rotation: rotation,
+                zoom: browser.zoom * gestureScale
+            )
         }
-        .scrollIndicators(.hidden)
+
+        return Group {
+            if let layout {
+                ScrollView([.horizontal, .vertical]) {
+                    Image(nsImage: image)
+                        .resizable()
+                        .interpolation(.high)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(
+                            width: layout.unrotatedImageSize.width,
+                            height: layout.unrotatedImageSize.height
+                        )
+                        .rotationEffect(.degrees(rotation.degrees))
+                        // The outer frame is in the displayed orientation. It
+                        // is therefore exactly what the window-sizing layer
+                        // consumes at fit zoom, rather than an unrotated image
+                        // frame padded after the fact.
+                        .frame(
+                            width: layout.canvasSize.width,
+                            height: layout.canvasSize.height,
+                            alignment: .center
+                        )
+                        .gesture(
+                            MagnificationGesture()
+                                .updating($gestureScale) { value, state, _ in state = value }
+                                .onEnded { value in
+                                    browser.zoom = min(max(browser.zoom * value, 0.15), 12)
+                                }
+                        )
+                        .onTapGesture(count: 2) { browser.fitImage() }
+                }
+                .scrollIndicators(.hidden)
+            } else {
+                emptyCanvas
+            }
+        }
         .accessibilityElement(children: .ignore)
         // Scroll views do not reliably expose an AXValue on every macOS release.
         // Put the rotation in the accessible name as well, so VoiceOver and UI
         // regression tests can both observe the state change after a toolbar action.
-        .accessibilityLabel("\(browser.selectedFile?.name ?? "LumaView"), \(rotation)°")
-        .accessibilityValue("\(absoluteZoomPercent ?? Int((browser.zoom * 100).rounded()))%, \(rotation)°")
+        .accessibilityLabel("\(browser.selectedFile?.name ?? "LumaView"), \(Int(rotation.degrees))°")
+        .accessibilityValue("\(absoluteZoomPercent ?? Int((browser.zoom * 100).rounded()))%, \(Int(rotation.degrees))°")
         .accessibilityIdentifier("image.rendered.\(browser.selectedFile?.name ?? "unknown")")
     }
 
@@ -224,41 +255,28 @@ struct ImageCanvasView: View {
         return browser.statusMessage ?? "LumaView"
     }
 
-    /// Fits the unrotated bitmap so its rotated bounds exactly fit the canvas.
-    /// Using the pre-rotation ratio here would leave rails after a 90° turn,
-    /// even when the document window had already adopted the new orientation.
-    private func fittedImageSize(for imageSize: CGSize, in container: CGSize, rotation: Double) -> CGSize {
-        guard imageSize.width > 0, imageSize.height > 0 else { return container }
-        let rotatedSize = rotatedBounds(for: imageSize, degrees: rotation)
-        guard rotatedSize.width > 0, rotatedSize.height > 0 else { return container }
-        let scale = min(container.width / rotatedSize.width, container.height / rotatedSize.height)
-        return CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
-    }
-
-    private func rotatedBounds(for size: CGSize, degrees: Double) -> CGSize {
-        let radians = abs(degrees.truncatingRemainder(dividingBy: 180)) * .pi / 180
-        // AppKit brings both Darwin and CoreGraphics trigonometric overloads
-        // into scope. Name the Darwin functions explicitly for Xcode 15.4.
-        let cosine = CGFloat(Darwin.cos(radians))
-        let sine = CGFloat(Darwin.sin(radians))
-        return CGSize(
-            width: abs(size.width * cosine) + abs(size.height * sine),
-            height: abs(size.width * sine) + abs(size.height * cosine)
-        )
-    }
-
     /// `zoom == 1` means “fit this window”; it is not inherently 100%. The value shown
     /// to the user instead compares current on-screen image pixels with the source file's
     /// original pixel dimensions, so it remains meaningful across differently sized photos.
-    private func absoluteZoomPercent(for image: NSImage, in container: CGSize) -> Int? {
+    private func absoluteZoomPercent(
+        for image: NSImage,
+        in container: CGSize,
+        rotation: QuarterTurn
+    ) -> Int? {
         guard let original = browser.originalPixelSize,
               original.width > 0, original.height > 0 else { return nil }
-        let fitted = fittedImageSize(for: image.size, in: container, rotation: browser.rotation)
+        guard let decodedSize = ViewerGeometry.decodedSize(for: image),
+              let fitted = ViewerGeometry.canvasLayout(
+                  imageSize: decodedSize,
+                  viewportSize: container,
+                  rotation: rotation,
+                  zoom: browser.zoom * gestureScale
+              )?.unrotatedImageSize else { return nil }
         let displayed = CGSize(
             // SwiftUI layout uses points; the source dimensions are physical
             // pixels. Include the display backing scale for an absolute value.
-            width: fitted.width * browser.zoom * gestureScale * displayScale,
-            height: fitted.height * browser.zoom * gestureScale * displayScale
+            width: fitted.width * displayScale,
+            height: fitted.height * displayScale
         )
         let scale = min(displayed.width / original.width, displayed.height / original.height)
         guard scale.isFinite, scale >= 0 else { return nil }
@@ -266,14 +284,15 @@ struct ImageCanvasView: View {
     }
 
     private func renderRequest(for container: CGSize) -> ImageRenderRequest {
-        // Request the image's *fitted* display size, not the window's longest edge.
-        // In a wide Retina window this avoids decoding a portrait or square image
-        // at several times the pixels it can visibly use.
+        // Decode size intentionally does not depend on orientation. A right-angle
+        // turn reuses the same NSImage and only changes its display transform;
+        // treating a 90° turn as a fresh image request causes an unnecessary
+        // decode during the window's intermediate resize pass. The longest
+        // visible canvas edge is orientation-invariant when the document swaps
+        // its axes, while the normal cap still bounds memory use.
         let zoomDemand = min(max(browser.zoom, 1), 4)
-        let fitted = browser.originalPixelSize.map {
-            fittedImageSize(for: $0, in: container, rotation: browser.rotation)
-        } ?? container
-        let calculatedTarget = Int(max(fitted.width, fitted.height) * displayScale * zoomDemand * 1.25)
+        let longestCanvasEdge = max(container.width, container.height)
+        let calculatedTarget = Int(longestCanvasEdge * displayScale * zoomDemand * 1.25)
         let target = uiTestRenderPixelOverride ?? calculatedTarget
         return ImageRenderRequest(url: browser.selectedURL, maxPixelSize: target)
     }

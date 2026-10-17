@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import ImageIO
 import SwiftUI
 import XCTest
@@ -158,20 +159,135 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertEqual(clamped, visibleFrame)
     }
 
-    func testRotatingAnImageSwapsTheCanvasSizingAxes() throws {
+    func testQuarterTurnsAndViewerGeometryShareExactDisplayBounds() throws {
         let landscape = CGSize(width: 1_600, height: 900)
 
-        let quarterTurn = try XCTUnwrap(ImageWindowSizing.displayedPixelSize(for: landscape, rotatedBy: 90))
+        let quarterTurn = try XCTUnwrap(ViewerGeometry.displayedSize(for: landscape, rotation: .clockwise))
         XCTAssertEqual(quarterTurn.width, 900, accuracy: 0.001)
         XCTAssertEqual(quarterTurn.height, 1_600, accuracy: 0.001)
 
-        let reverseQuarterTurn = try XCTUnwrap(ImageWindowSizing.displayedPixelSize(for: landscape, rotatedBy: -90))
+        let reverseQuarterTurn = try XCTUnwrap(ViewerGeometry.displayedSize(for: landscape, rotation: .counterClockwise))
         XCTAssertEqual(reverseQuarterTurn.width, 900, accuracy: 0.001)
         XCTAssertEqual(reverseQuarterTurn.height, 1_600, accuracy: 0.001)
 
-        let halfTurn = try XCTUnwrap(ImageWindowSizing.displayedPixelSize(for: landscape, rotatedBy: 180))
+        let halfTurn = try XCTUnwrap(ViewerGeometry.displayedSize(for: landscape, rotation: .upsideDown))
         XCTAssertEqual(halfTurn.width, 1_600, accuracy: 0.001)
         XCTAssertEqual(halfTurn.height, 900, accuracy: 0.001)
+
+        var turn = QuarterTurn.zero
+        for _ in 0..<4 { turn = turn.rotated(by: 90) }
+        XCTAssertEqual(turn, .zero)
+        XCTAssertEqual(QuarterTurn.zero.rotated(by: -90), .counterClockwise)
+        XCTAssertEqual(QuarterTurn.upsideDown.degrees, 180)
+        XCTAssertEqual(QuarterTurn.zero.rotated(by: 45), .zero)
+
+        // Use the same displayed bounds to form the viewport a document window
+        // will request. At fit zoom, the canvas then equals the rotated image
+        // exactly—there is no secondary trigonometric or aspect-ratio path
+        // that can introduce white rails at 90° or 270°.
+        for source in [
+            landscape,
+            CGSize(width: 900, height: 1_600),
+            CGSize(width: 1_200, height: 1_200)
+        ] {
+            for rotation in QuarterTurn.allCases {
+                let displayed = try XCTUnwrap(ViewerGeometry.displayedSize(for: source, rotation: rotation))
+                let layout = try XCTUnwrap(ViewerGeometry.canvasLayout(
+                    imageSize: source,
+                    viewportSize: displayed,
+                    rotation: rotation,
+                    zoom: 1
+                ))
+                XCTAssertEqual(layout.displayedImageSize.width, displayed.width, accuracy: 0.001)
+                XCTAssertEqual(layout.displayedImageSize.height, displayed.height, accuracy: 0.001)
+                XCTAssertEqual(layout.canvasSize, displayed)
+
+                let magnified = try XCTUnwrap(ViewerGeometry.canvasLayout(
+                    imageSize: source,
+                    viewportSize: displayed,
+                    rotation: rotation,
+                    zoom: 2
+                ))
+                XCTAssertEqual(magnified.canvasSize.width, displayed.width * 2, accuracy: 0.001)
+                XCTAssertEqual(magnified.canvasSize.height, displayed.height * 2, accuracy: 0.001)
+            }
+        }
+    }
+
+    @MainActor
+    func testQuarterTurnPublisherDeliversTheAppliedCanvasOrientation() {
+        let store = ImageBrowserStore()
+        let source = CGSize(width: 1_600, height: 900)
+        var renderedTurns: [QuarterTurn] = []
+        var renderedCanvasSizes: [CGSize] = []
+        var presentationRevisions: [UInt64] = []
+        let observation = store.$quarterTurn
+            .dropFirst()
+            .sink { turn in
+                renderedTurns.append(turn)
+                guard let displayedSize = ViewerGeometry.displayedSize(for: source, rotation: turn),
+                      let layout = ViewerGeometry.canvasLayout(
+                          imageSize: source,
+                          viewportSize: displayedSize,
+                          rotation: turn,
+                          zoom: 1
+                      ) else { return }
+                renderedCanvasSizes.append(layout.canvasSize)
+            }
+        let revisionObservation = store.$canvasPresentationRevision
+            .dropFirst()
+            .sink { presentationRevisions.append($0) }
+
+        for _ in 0..<4 { store.rotate(by: 90) }
+
+        // The window receives the quarter-turn publisher immediately. The
+        // canvas receives this post-assignment revision only after the store
+        // contains the same turn, so it cannot render a previous odd state.
+        XCTAssertEqual(
+            renderedTurns,
+            [.clockwise, .upsideDown, .counterClockwise, .zero]
+        )
+        XCTAssertEqual(store.quarterTurn, .zero)
+        XCTAssertEqual(presentationRevisions, [1, 2, 3, 4])
+        XCTAssertEqual(
+            renderedCanvasSizes,
+            [
+                CGSize(width: 900, height: 1_600),
+                CGSize(width: 1_600, height: 900),
+                CGSize(width: 900, height: 1_600),
+                CGSize(width: 1_600, height: 900)
+            ],
+            "0° → 90° → 180° → 270° → 0° must update the canvas bounds on every turn"
+        )
+        withExtendedLifetime(observation) {}
+        withExtendedLifetime(revisionObservation) {}
+    }
+
+    func testViewerGeometryRejectsInvalidImageAndViewportDimensions() {
+        let valid = CGSize(width: 800, height: 600)
+        let invalidSizes = [
+            CGSize.zero,
+            CGSize(width: -1, height: 100),
+            CGSize(width: 100, height: -1),
+            CGSize(width: CGFloat.infinity, height: 100),
+            CGSize(width: 100, height: CGFloat.nan)
+        ]
+
+        for invalid in invalidSizes {
+            XCTAssertNil(ViewerGeometry.displayedSize(for: invalid, rotation: .zero))
+            XCTAssertNil(ViewerGeometry.canvasLayout(
+                imageSize: invalid,
+                viewportSize: valid,
+                rotation: .clockwise,
+                zoom: 1
+            ))
+            XCTAssertNil(ViewerGeometry.canvasLayout(
+                imageSize: valid,
+                viewportSize: invalid,
+                rotation: .clockwise,
+                zoom: 1
+            ))
+        }
     }
 
     func testNavigationPreviewCacheInvalidatesWhenFileChanges() throws {
@@ -536,19 +652,27 @@ final class LumaViewCoreTests: XCTestCase {
         let nextURL = try await MainActor.run { try XCTUnwrap(store.files.dropFirst().first?.url) }
         try await waitForNavigationPreview(at: nextURL)
 
-        let result = await MainActor.run { () -> (Int, Int?, CGFloat, Double) in
+        let result = await MainActor.run { () -> (Int, Int?, CGFloat, QuarterTurn) in
             for _ in 0..<10 { store.next() }
             for _ in 0..<10 { store.previous() }
             for _ in 0..<160 { store.zoomIn() }
             for _ in 0..<320 { store.zoomOut() }
             for _ in 0..<4 { store.rotate(by: 90) }
-            return (store.files.count, store.selectedIndex, store.zoom, store.rotation)
+            return (store.files.count, store.selectedIndex, store.zoom, store.quarterTurn)
         }
 
         XCTAssertEqual(result.0, 2)
         XCTAssertEqual(result.1, 0)
         XCTAssertEqual(result.2, 0.15)
-        XCTAssertEqual(result.3, 0)
+        XCTAssertEqual(result.3, .zero)
+
+        let leftThenRight = await MainActor.run { () -> QuarterTurn in
+            store.rotate(by: -90)
+            XCTAssertEqual(store.quarterTurn, .counterClockwise)
+            store.rotate(by: 90)
+            return store.quarterTurn
+        }
+        XCTAssertEqual(leftThenRight, .zero)
     }
 
     @MainActor
