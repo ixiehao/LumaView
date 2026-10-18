@@ -2,7 +2,7 @@
 
 ## Tabler Icons Outline
 
-The inline icons in this website are from [Tabler Icons Outline v3.49.0](https://github.com/tabler/tabler-icons/tree/v3.49.0) and are distributed under the MIT License.
+The icons in this website's inline SVG and `assets/tabler-icons.svg` sprite are from [Tabler Icons Outline v3.49.0](https://github.com/tabler/tabler-icons/tree/v3.49.0) and are distributed under the MIT License.
 
 MIT License
 
