@@ -63,7 +63,7 @@
         }
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20261017-hero" />
+    <link rel="stylesheet" href="styles.css?v=20261018-homepage-layout" />
   </head>
   <body>
     <header class="nav wrap">
@@ -72,9 +72,8 @@
         <span>LumaView</span>
       </a>
       <nav aria-label="Primary navigation">
-        <a href="#experience" data-i18n="navExperience">体验</a>
         <a href="#windows" data-i18n="navWindows">多窗口</a>
-        <a href="#principles" data-i18n="navPrinciples">优势</a>
+        <a href="#experience" data-i18n="navExperience">看图功能</a>
         <a href="#download" data-i18n="navDownload">下载</a>
       </nav>
       <button class="language-switch" type="button" aria-label="Switch to English">
@@ -85,32 +84,37 @@
     <main id="top">
       <section class="hero wrap">
         <div class="hero-copy reveal">
-          <p class="eyebrow"><i></i><span data-i18n="eyebrow">支持 Intel 与 Apple Silicon Mac</span></p>
           <h1 data-i18n="heroTitle">打开图片，<br /><em>极速浏览。</em></h1>
-          <p class="lede" data-i18n="heroLede">一款极简的Mac原生看图软件。</p>
+          <p class="lede" data-i18n="heroLede">一款极简的 Mac 原生看图软件。</p>
           <div class="hero-actions">
-            <a class="button button-primary" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">下载 v1.2.8</span><b aria-hidden="true">↗</b></a>
-            <a class="button button-secondary" href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer"><span data-i18n="sourceButton">查看源码</span><b aria-hidden="true">→</b></a>
+            <a class="button button-primary" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">下载 v1.2.8</span><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10" /><path d="M7 17 17 7" /></svg></a>
+            <a class="button button-secondary" href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer"><span data-i18n="sourceButton">查看源码</span><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg></a>
           </div>
-          <p class="compatibility" data-i18n="compatibility">macOS 13+ · Intel + Apple Silicon · 离线使用</p>
+          <p class="compatibility" data-i18n="compatibility">macOS 13+ · Intel + Apple Silicon</p>
         </div>
 
         <figure class="hero-shot reveal">
-          <div class="shot-glow" aria-hidden="true"></div>
           <img src="assets/lumaview-browse.png?v=20261017-alpha" alt="LumaView 在原生窗口中浏览图片，顶部有上一张、下一张、缩放和旋转操作" data-i18n-alt="heroImageAlt" />
         </figure>
       </section>
 
-      <section class="proof wrap" aria-label="LumaView highlights">
-        <div><b>01</b><span data-i18n="proofOne">打开即看，画面居中</span></div>
-        <div><b>02</b><span data-i18n="proofTwo">方向键快速前后浏览</span></div>
-        <div><b>03</b><span data-i18n="proofThree">Intel + Apple Silicon 通用版</span></div>
+      <section class="multiwindow wrap section" id="windows">
+        <div class="multiwindow-copy reveal">
+          <div class="section-heading">
+            <p class="eyebrow"><span data-i18n="windowsEyebrow">多图同看</span></p>
+            <h2 data-i18n="windowsTitle">无限窗口，<br /><em>自在对比。</em></h2>
+          </div>
+          <p class="multiwindow-lede" data-i18n="windowsLede">想打开几张，就打开几张。每张图片都有独立窗口、缩放和浏览进度；多图并排时，不必反复切换。</p>
+        </div>
+        <figure class="multiwindow-shot reveal">
+          <img src="assets/lumaview-multiwindow.png?v=20261016-windows-9grid" alt="九个 LumaView 原生图片窗口以网格并排显示，方便多图对比" data-i18n-alt="windowsImageAlt" loading="lazy" />
+        </figure>
       </section>
 
       <section class="experience wrap section" id="experience">
         <div class="section-heading reveal">
-          <p class="eyebrow"><i></i><span data-i18n="experienceEyebrow">简单看图</span></p>
-          <h2 data-i18n="experienceTitle">常用操作，<br /><em>一目了然。</em></h2>
+          <p class="eyebrow"><span data-i18n="experienceEyebrow">日常看图</span></p>
+          <h2 data-i18n="experienceTitle">常用操作，<br /><em>顺手就能找到。</em></h2>
         </div>
         <div class="experience-layout">
           <figure class="welcome-shot reveal">
@@ -118,48 +122,18 @@
           </figure>
           <div class="feature-list">
             <article class="feature reveal">
-              <b>01</b>
-              <div><h3 data-i18n="featureOneTitle">文件夹里的上一张 / 下一张</h3><p data-i18n="featureOneBody">从访达或“打开文件”进入后，可用工具栏和方向键切换同一文件夹里的图片。</p></div>
+              <svg class="feature-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19l2.757 -7.351a1 1 0 0 1 .936 -.649h12.307a1 1 0 0 1 .986 1.164l-.996 5.211a2 2 0 0 1 -1.964 1.625h-14.026a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v2" /></svg>
+              <div><h3 data-i18n="featureOneTitle">文件夹浏览</h3><p data-i18n="featureOneBody">用工具栏或方向键，切换同一文件夹里的上一张、下一张。</p></div>
             </article>
             <article class="feature reveal">
-              <b>02</b>
-              <div><h3 data-i18n="featureTwoTitle">大图按屏幕而生</h3><p data-i18n="featureTwoBody">支持适合窗口、缩放、平移和旋转；底部显示当前缩放比例。</p></div>
+              <svg class="feature-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8v-2a2 2 0 0 1 2 -2h2" /><path d="M4 16v2a2 2 0 0 0 2 2h2" /><path d="M16 4h2a2 2 0 0 1 2 2v2" /><path d="M16 20h2a2 2 0 0 0 2 -2v-2" /></svg>
+              <div><h3 data-i18n="featureTwoTitle">放大查看</h3><p data-i18n="featureTwoBody">适应窗口、缩放、平移与旋转，底部显示当前缩放比例。</p></div>
             </article>
             <article class="feature reveal">
-              <b>03</b>
-              <div><h3 data-i18n="featureThreeTitle">不止 PNG 和 JPG</h3><p data-i18n="featureThreeBody">支持 JPEG、PNG、HEIC、GIF、TIFF、WebP、PDF、RAW 和 Sketch 预览。</p></div>
+              <svg class="feature-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 8h.01" /><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12" /><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" /><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" /></svg>
+              <div><h3 data-i18n="featureThreeTitle">常见格式</h3><p data-i18n="featureThreeBody">支持 JPEG、PNG、HEIC、GIF、TIFF、WebP、PDF、RAW 和 Sketch 预览。</p></div>
             </article>
           </div>
-        </div>
-      </section>
-
-      <section class="multiwindow wrap section" id="windows">
-        <div class="multiwindow-copy reveal">
-          <div class="section-heading">
-            <p class="eyebrow"><i></i><span data-i18n="windowsEyebrow">多图同看</span></p>
-            <h2 data-i18n="windowsTitle">无限窗口，<br /><em>自在对比。</em></h2>
-          </div>
-          <p class="multiwindow-lede" data-i18n="windowsLede">想打开几张，就打开几张。每张图片都有独立窗口、缩放和浏览进度；多图并排时，不必反复切换。</p>
-          <ul class="multiwindow-points" aria-label="Multi-window benefits">
-            <li data-i18n="windowsPointOne">多图并排</li>
-            <li data-i18n="windowsPointTwo">独立缩放</li>
-            <li data-i18n="windowsPointThree">独立浏览</li>
-          </ul>
-        </div>
-        <figure class="multiwindow-shot reveal">
-          <img src="assets/lumaview-multiwindow.png?v=20261016-windows-9grid" alt="九个 LumaView 原生图片窗口以网格并排显示，方便多图对比" data-i18n-alt="windowsImageAlt" loading="lazy" />
-        </figure>
-      </section>
-
-      <section class="principles wrap section" id="principles">
-        <div class="section-heading reveal">
-          <p class="eyebrow"><i></i><span data-i18n="principlesEyebrow">为日常看图而做</span></p>
-          <h2 data-i18n="principlesTitle">极简。极速。<br /><em>极致轻量化。</em></h2>
-        </div>
-        <div class="principle-grid">
-          <article class="principle-card reveal"><b>01</b><h3 data-i18n="principleOneTitle">极简</h3><p data-i18n="principleOneBody">一个浏览框，一组常用操作。打开即看，让画面保持中心。</p></article>
-          <article class="principle-card reveal"><b>02</b><h3 data-i18n="principleTwoTitle">极速</h3><p data-i18n="principleTwoBody">迅捷浏览图片；上一张/下一张/放大/缩小/旋转...工具栏自然衔接。</p></article>
-          <article class="principle-card reveal"><b>03</b><h3 data-i18n="principleThreeTitle">极致轻量化</h3><p data-i18n="principleThreeBody">安装包仅2M，将代码轻量化到极致。</p></article>
         </div>
       </section>
 
@@ -167,10 +141,10 @@
         <div class="download-card reveal">
           <img src="assets/lumaview-app-icon.png" alt="" />
           <div>
-            <p class="eyebrow"><i></i><span data-i18n="readyEyebrow">现在开始看图</span></p>
+            <p class="eyebrow"><span data-i18n="readyEyebrow">现在开始看图</span></p>
             <h2 data-i18n="downloadTitle">免费下载<br /><em>LumaView。</em></h2>
           </div>
-          <div class="download-actions"><a class="button button-light" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">下载 v1.2.8</span><b aria-hidden="true">↗</b></a><p data-i18n="downloadNote">macOS 13+ · Universal (arm64 + x86_64)</p></div>
+          <div class="download-actions"><a class="button button-light" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">下载 v1.2.8</span><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10" /><path d="M7 17 17 7" /></svg></a><p data-i18n="downloadNote">macOS 13+ · Universal · 安装包约 2 MB</p></div>
         </div>
       </section>
     </main>
@@ -180,6 +154,6 @@
       <p data-i18n="footerTagline">本地原生图片浏览器 · 由 ixiehao 制作</p>
       <div><a href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer">GitHub</a><a href="https://github.com/ixiehao/LumaView/issues" target="_blank" rel="noreferrer" data-i18n="footerIssues">反馈</a><a href="https://github.com/ixiehao/LumaView/releases" target="_blank" rel="noreferrer" data-i18n="footerReleases">版本</a></div>
     </footer>
-    <script src="app.js?v=20261017-polish"></script>
+    <script src="app.js?v=20261018-homepage-layout"></script>
   </body>
 </html>
