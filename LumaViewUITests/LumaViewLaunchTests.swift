@@ -290,7 +290,7 @@ final class LumaViewLaunchTests: XCTestCase {
         chooseLanguage("English", in: app)
         defer { chooseLanguage("English", in: app) }
         let status = app.descendants(matching: .any)["image.status"]
-        expect(status, accessibilityLabelContaining: "Unable to preview this image.")
+        expectStatus(status, containing: "Unable to preview this image.")
 
         app.typeKey(",", modifierFlags: .command)
         let language = app.popUpButtons["settings.language"]
@@ -302,9 +302,17 @@ final class LumaViewLaunchTests: XCTestCase {
         app.typeKey("w", modifierFlags: .command)
 
         let message = "Impossible d’afficher un aperçu de cette image."
-        expect(status, accessibilityLabelContaining: message)
-        XCTAssertFalse(status.label.contains("Unable to preview"))
+        expectStatus(status, containing: message)
+        XCTAssertFalse((status.label + (status.value as? String ?? "")).contains("Unable to preview"))
         expect(app.descendants(matching: .any)["canvas.unavailable.broken.jpg"], accessibilityLabelContaining: message)
+    }
+
+    private func expectStatus(_ status: XCUIElement, containing message: String) {
+        // SwiftUI exposes this combined status as StaticText.value on macOS 14.
+        let translated = XCTNSPredicateExpectation(predicate: NSPredicate(
+            format: "label CONTAINS %@ OR value CONTAINS %@", message, message
+        ), object: status)
+        XCTAssertEqual(XCTWaiter.wait(for: [translated], timeout: 5), .completed)
     }
 
     private func chooseLanguage(_ name: String, in app: XCUIApplication) {
