@@ -19,6 +19,29 @@ final class LumaViewCoreTests: XCTestCase {
         ImageMetadataCache.shared.clear()
     }
 
+    @MainActor
+    func testFullScreenMenuIsInstalledOnceAndPreservesNativeCommand() throws {
+        let menu = NSMenu()
+        for name in ["App", "File", "Edit", "View"] {
+            let item = NSMenuItem(title: name, action: nil, keyEquivalent: "")
+            item.submenu = NSMenu(title: name)
+            menu.addItem(item)
+        }
+        let viewMenu = try XCTUnwrap(menu.items.last?.submenu)
+        let action = #selector(NSWindow.toggleFullScreen(_:))
+        MainMenuLocalization.apply(L10n(language: .english), to: menu)
+        let installed = try XCTUnwrap(viewMenu.items.first { $0.action == action })
+        XCTAssertNil(installed.target, "The native responder chain must choose the current window")
+        XCTAssertEqual(installed.keyEquivalent, "f")
+        XCTAssertEqual(installed.keyEquivalentModifierMask, [.control, .command])
+
+        MainMenuLocalization.apply(L10n(language: .japanese), to: menu)
+        XCTAssertEqual(viewMenu.items.filter { $0.action == action }.count, 1)
+        XCTAssertTrue(viewMenu.items.contains { $0 === installed })
+        let l = L10n(language: .japanese)
+        XCTAssertTrue([l.text("system.item.enterFullScreen"), l.text("system.item.exitFullScreen")].contains(installed.title))
+    }
+
     func testFolderScanFiltersAndUsesNaturalOrdering() throws {
         try makeFile("photo-10.jpg")
         try makeFile("photo-2.png")

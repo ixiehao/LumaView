@@ -146,6 +146,22 @@ enum MainMenuLocalization {
     }
 
     static func apply(_ l: L10n, to menu: NSMenu) {
+        // A Settings-only SwiftUI scene does not install this command on
+        // macOS 13/14 for our AppKit document windows. Keep the native responder
+        // action available even while the full-screen titlebar is hidden.
+        if !submenu(menu, containsAnyAction: ["toggleFullScreen:"]),
+           menu.items.indices.contains(3), let viewMenu = menu.items[3].submenu {
+            if !viewMenu.items.isEmpty && viewMenu.items.last?.isSeparatorItem == false {
+                viewMenu.addItem(.separator())
+            }
+            let item = NSMenuItem(
+                title: l.text("system.item.enterFullScreen"),
+                action: #selector(NSWindow.toggleFullScreen(_:)),
+                keyEquivalent: "f"
+            )
+            item.keyEquivalentModifierMask = [.control, .command]
+            viewMenu.addItem(item)
+        }
 
         // The first four menus are always application, File, Edit and the
         // system View menu. Indexing them prevents the application's separate

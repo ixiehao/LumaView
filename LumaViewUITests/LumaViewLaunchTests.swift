@@ -192,12 +192,14 @@ final class LumaViewLaunchTests: XCTestCase {
         // frame. Measure both instead of mistaking the missing 52 pt for a
         // failed transition. Hidden menus are not reliable state indicators.
         expectFullScreen(true, in: window)
+        XCTAssertTrue(app.menuItems["Exit Full Screen"].waitForExistence(timeout: 5))
         app.typeKey("]", modifierFlags: .command)
         expect(rendered, accessibilityLabelContaining: "90°")
-        // AppKit handles Escape in full screen. This avoids depending on the
-        // auto-hidden titlebar becoming mouse-hittable in a virtual display.
-        app.typeKey(.escape, modifierFlags: [])
+        // Exercise the native menu shortcut without relying on a titlebar that
+        // may stay auto-hidden in the CI virtual display.
+        app.typeKey("f", modifierFlags: [.control, .command])
         expectFullScreen(false, in: window)
+        XCTAssertTrue(app.menuItems["Enter Full Screen"].waitForExistence(timeout: 5))
         expectCanvasAspect(rendered, ratio: 1 / 1.2)
     }
 
