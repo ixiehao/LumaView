@@ -25,6 +25,8 @@ This runs core/UI tests in one XCTest session, then builds a release application
 LUMAVIEW_RUN_STRESS_TEST=1 ./Scripts/validate-project.sh
 ```
 
+Failed GitHub CI runs retain an `LumaView-test-results` artifact for seven days. Open its `.xcresult` in Xcode to inspect assertions, accessibility snapshots and generated-fixture screenshots. To retain a local result bundle, set `LUMAVIEW_TEST_RESULT_PATH` to a new absolute `.xcresult` path outside the temporary build directory; Xcode requires that destination not to exist yet.
+
 Run checks proportional to the change. Website-only and documentation-only changes use [website checks](WEBSITE.md) and link review; they do not require rebuilding an installer.
 
 ## Manual verification

@@ -161,7 +161,7 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertTrue(information.waitForExistence(timeout: 5))
         app.activate()
         information.click()
-        let inspector = app.descendants(matching: .any)["image.informationInspector"]
+        let inspector = app.popovers.firstMatch
         XCTAssertTrue(inspector.waitForExistence(timeout: 5))
         expectInspector(inspector, toShow: first.lastPathComponent)
 
@@ -188,34 +188,34 @@ final class LumaViewLaunchTests: XCTestCase {
         let fullScreenButton = window.buttons[XCUIIdentifierFullScreenWindow]
         XCTAssertTrue(fullScreenButton.waitForExistence(timeout: 5))
         fullScreenButton.click()
-        // AppKit can preserve the document's aspect constraint in full screen;
-        // its AX frame need not equal NSScreen.frame. The native menu action is
-        // refreshed when the window completes the full-screen transition.
-        // Read its state without clicking an auto-hidden menu bar.
-        expectFullScreen(true, in: app, window: window)
+        // In full screen, macOS 14 reports the toolbar outside the AX window
+        // frame. Measure both instead of mistaking the missing 52 pt for a
+        // failed transition. Hidden menus are not reliable state indicators.
+        expectFullScreen(true, in: window)
         app.typeKey("]", modifierFlags: .command)
         expect(rendered, accessibilityLabelContaining: "90°")
         // Reveal the native title bar, then use its full-screen control again.
         // The system's current keyboard shortcut is not fixed across releases.
-        window.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0)).hover()
+        let topInset = fullWindowFrame(window).minY - window.frame.minY
+        window.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0))
+            .withOffset(CGVector(dx: 0, dy: topInset)).hover()
         let exitAvailable = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "hittable == true"), object: fullScreenButton
         )
         XCTAssertEqual(XCTWaiter.wait(for: [exitAvailable], timeout: 5), .completed)
         fullScreenButton.click()
-        expectFullScreen(false, in: app, window: window)
+        expectFullScreen(false, in: window)
         expectCanvasAspect(rendered, ratio: 1 / 1.2)
     }
 
     private func expectInspector(_ inspector: XCUIElement, toShow fileName: String, excluding staleName: String? = nil) {
-        // Selectable SwiftUI Text can be an AX text field/value, not StaticText.
-        // Inspect the displayed content regardless of the OS's element type.
+        // SwiftUI can propagate the VStack identifier to every text row. Scope
+        // the query to the native popover, then match actual text/value instead
+        // of treating that inherited identifier as a unique parent element.
         func contains(_ name: String) -> Bool {
-            inspector.label.contains(name)
-                || (inspector.value as? String)?.contains(name) == true
-                || inspector.descendants(matching: .any).matching(NSPredicate(
-                    format: "label CONTAINS %@ OR value CONTAINS %@", name, name
-                )).firstMatch.exists
+            inspector.descendants(matching: .any).matching(NSPredicate(
+                format: "label == %@ OR value == %@", name, name
+            )).firstMatch.exists
         }
         let current = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             contains(fileName) && (staleName.map { !contains($0) } ?? true)
@@ -227,14 +227,27 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertEqual(result, .completed, "Inspector must show \(fileName), with no stale file name")
     }
 
-    private func expectFullScreen(_ fullScreen: Bool, in app: XCUIApplication, window: XCUIElement) {
-        let action = fullScreen ? "Exit Full Screen" : "Enter Full Screen"
-        let changed = app.menuItems[action].waitForExistence(timeout: 8)
-        if !changed {
-            print("Expected \(action); window frame: \(window.frame); screens: \(NSScreen.screens.map { $0.frame })")
-            print("Full-screen hierarchy:\n\(app.debugDescription)")
+    private func fullWindowFrame(_ window: XCUIElement) -> CGRect {
+        let toolbar = window.toolbars.firstMatch
+        return toolbar.exists ? window.frame.union(toolbar.frame) : window.frame
+    }
+
+    private func expectFullScreen(_ fullScreen: Bool, in window: XCUIElement) {
+        let screenSizes = NSScreen.screens.map { $0.frame.size }
+        let changed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            let size = self.fullWindowFrame(window).size
+            guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else { return false }
+            let fillsScreen = screenSizes.contains {
+                abs(size.width - $0.width) < 2 && abs(size.height - $0.height) < 2
+            }
+            return fillsScreen == fullScreen
+        }, object: nil)
+        let result = XCTWaiter.wait(for: [changed], timeout: 8)
+        if result != .completed {
+            print("Expected full screen: \(fullScreen); window and toolbar: \(fullWindowFrame(window)); screens: \(screenSizes)")
+            print("Full-screen hierarchy:\n\(window.debugDescription)")
         }
-        XCTAssertTrue(changed, "Native full-screen action must change to \(action)")
+        XCTAssertEqual(result, .completed, "Full-screen window geometry must match the requested state: \(fullScreen)")
     }
 
     func testEverySupportedLanguageHasCompleteToolbarLabelsWithoutPrintButton() throws {
