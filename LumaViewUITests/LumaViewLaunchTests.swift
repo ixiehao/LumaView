@@ -310,12 +310,12 @@ final class LumaViewLaunchTests: XCTestCase {
     private func chooseLanguage(_ name: String, in app: XCUIApplication) {
         let titles = ["Language", "语言", "Langue", "Язык", "Idioma", "言語", "언어"]
         let menu = app.menuBars.menuBarItems.matching(NSPredicate(
-            format: "label IN %@ OR identifier IN %@", titles, titles
+            format: "title IN %@ OR label IN %@", titles, titles
         )).firstMatch
         XCTAssertTrue(menu.waitForExistence(timeout: 5))
         menu.click()
         app.menuItems.matching(NSPredicate(
-            format: "label ENDSWITH %@ OR identifier ENDSWITH %@", name, name
+            format: "title ENDSWITH %@ OR label ENDSWITH %@", name, name
         )).firstMatch.click()
     }
 
@@ -331,10 +331,10 @@ final class LumaViewLaunchTests: XCTestCase {
 
         app.activate()
         app.menuBars.menuBarItems["Window"].click()
-        // AppKit menu titles may appear as identifiers rather than labels in
-        // XCTest on older macOS releases. Match the document in either field.
+        // Native macOS menus expose title separately from label. The CI AX
+        // snapshot reports this item with title and an action as its identifier.
         let restore = app.menuItems.matching(NSPredicate(
-            format: "label CONTAINS %@ OR identifier CONTAINS %@",
+            format: "title == %@ OR label == %@",
             file.lastPathComponent, file.lastPathComponent
         )).firstMatch
         XCTAssertTrue(restore.waitForExistence(timeout: 5), app.debugDescription)
