@@ -6,6 +6,9 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 STAGE_DIR="$(mktemp -d /tmp/lumaview-validation.XXXXXX)"
 DERIVED_DATA="$STAGE_DIR/DerivedData"
+# CI keeps its result bundle outside the disposable build directory so a
+# failed assertion retains the generated-fixture screenshots and AX hierarchy.
+TEST_RESULT_PATH="${LUMAVIEW_TEST_RESULT_PATH:-$STAGE_DIR/Tests.xcresult}"
 TEST_ARCHITECTURE="$(uname -m)"
 VALIDATION_BUNDLE_ID='com.lumaview.validation.$(PRODUCT_NAME)'
 
@@ -32,6 +35,7 @@ xcodebuild \
   -scheme LumaView \
   -configuration Debug \
   -derivedDataPath "$DERIVED_DATA" \
+  -resultBundlePath "$TEST_RESULT_PATH" \
   -destination "platform=macOS,arch=$TEST_ARCHITECTURE" \
   PRODUCT_BUNDLE_IDENTIFIER="$VALIDATION_BUNDLE_ID" \
   test CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY="-"

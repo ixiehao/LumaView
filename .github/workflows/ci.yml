@@ -18,4 +18,14 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v6
       - name: Validate project
+        env:
+          LUMAVIEW_TEST_RESULT_PATH: ${{ runner.temp }}/LumaViewTests.xcresult
         run: ./Scripts/validate-project.sh
+      - name: Keep failed test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LumaView-test-results
+          path: ${{ runner.temp }}/LumaViewTests.xcresult
+          retention-days: 7
+          if-no-files-found: warn
