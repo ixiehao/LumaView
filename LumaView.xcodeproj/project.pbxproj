@@ -37,6 +37,10 @@
 		A20000000000000000000013 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Resources/en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		A20000000000000000000014 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = Resources/zh-Hans.lproj/Localizable.strings; sourceTree = "<group>"; };
 		A20000000000000000000017 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = Resources/ja.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A20000000000000000000020 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = Resources/fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A20000000000000000000021 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = Resources/ru.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A20000000000000000000022 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = Resources/es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A20000000000000000000023 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = Resources/ko.lproj/Localizable.strings; sourceTree = "<group>"; };
 		A2000000000000000000000C /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
 		A2000000000000000000000D /* LumaViewCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LumaViewCoreTests.swift; sourceTree = "<group>"; };
 		A2000000000000000000000E /* LumaViewTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LumaViewTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -61,7 +65,7 @@
 /* End PBXGroup section */
 
 /* Begin PBXVariantGroup section */
-		A20000000000000000000015 /* Localizable.strings */ = {isa = PBXVariantGroup; children = (A20000000000000000000013 /* en */, A20000000000000000000014 /* zh-Hans */, A20000000000000000000017 /* ja */); name = Localizable.strings; sourceTree = "<group>"; };
+		A20000000000000000000015 /* Localizable.strings */ = {isa = PBXVariantGroup; children = (A20000000000000000000013 /* en */, A20000000000000000000014 /* zh-Hans */, A20000000000000000000017 /* ja */, A20000000000000000000020 /* fr */, A20000000000000000000021 /* ru */, A20000000000000000000022 /* es */, A20000000000000000000023 /* ko */); name = Localizable.strings; sourceTree = "<group>"; };
 /* End PBXVariantGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -76,7 +80,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXProject section */
-		A70000000000000000000001 /* Project object */ = { isa = PBXProject; attributes = { BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 1600; LastUpgradeCheck = 1600; TargetAttributes = { A50000000000000000000001 = { CreatedOnToolsVersion = 16.0; }; A5000000000000000000000B = { CreatedOnToolsVersion = 16.0; TestTargetID = A50000000000000000000001; }; A5000000000000000000000C = { CreatedOnToolsVersion = 16.0; TestTargetID = A50000000000000000000001; }; }; }; buildConfigurationList = A60000000000000000000002 /* Build configuration list for PBXProject "LumaView" */; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base, "zh-Hans", ja); mainGroup = A40000000000000000000001; productRefGroup = A40000000000000000000003 /* Products */; projectDirPath = ""; projectRoot = ""; targets = (A50000000000000000000001 /* LumaView */, A5000000000000000000000B /* LumaViewTests */, A5000000000000000000000C /* LumaViewUITests */); };
+		A70000000000000000000001 /* Project object */ = { isa = PBXProject; attributes = { BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 1600; LastUpgradeCheck = 1600; TargetAttributes = { A50000000000000000000001 = { CreatedOnToolsVersion = 16.0; }; A5000000000000000000000B = { CreatedOnToolsVersion = 16.0; TestTargetID = A50000000000000000000001; }; A5000000000000000000000C = { CreatedOnToolsVersion = 16.0; TestTargetID = A50000000000000000000001; }; }; }; buildConfigurationList = A60000000000000000000002 /* Build configuration list for PBXProject "LumaView" */; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base, "zh-Hans", ja, fr, ru, es, ko); mainGroup = A40000000000000000000001; productRefGroup = A40000000000000000000003 /* Products */; projectDirPath = ""; projectRoot = ""; targets = (A50000000000000000000001 /* LumaView */, A5000000000000000000000B /* LumaViewTests */, A5000000000000000000000C /* LumaViewUITests */); };
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */

@@ -70,7 +70,7 @@
 "metadata.capturedAt" = "Captured";
 "metadata.camera" = "Camera";
 "metadata.lens" = "Lens";
-"metadata.exposure" = "Exposure";
+"metadata.exposure" = "Exposure time";
 "metadata.aperture" = "Aperture";
 "metadata.iso" = "ISO";
 "metadata.focalLength" = "Focal length";

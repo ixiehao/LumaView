@@ -178,6 +178,7 @@ struct ImageInformationInspector: View {
         .padding(16)
         .frame(maxWidth: Self.maximumPreferredWidth, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
+        .environment(\.locale, l.language.locale)
         .accessibilityIdentifier("image.informationInspector")
     }
 

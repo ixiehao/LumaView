@@ -776,7 +776,8 @@ final class LumaViewCoreTests: XCTestCase {
     }
 
     func testEveryUserSelectableLanguageHasAllRequiredTranslations() {
-        for language in [AppLanguage.chinese, .english, .japanese] {
+        XCTAssertEqual(AppLanguage.allCases.first, .english)
+        for language in AppLanguage.allCases where language != .automatic {
             let l = L10n(language: language)
             for key in AppLanguage.requiredLocalizationKeys {
                 XCTAssertNotEqual(l.text(key), key, "\(language.rawValue) is missing \(key)")
@@ -795,6 +796,35 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertEqual(L10n(language: .japanese).text("toolbar.next"), "次の画像（→）")
         XCTAssertEqual(L10n(language: .japanese).text("toolbar.rotateLeft"), "左に回転")
         XCTAssertEqual(L10n(language: .japanese).text("toolbar.info"), "画像情報")
+        XCTAssertEqual(L10n(language: .french).text("system.menu.file"), "Fichier")
+        XCTAssertEqual(L10n(language: .russian).text("system.menu.file"), "Файл")
+        XCTAssertEqual(L10n(language: .spanish).text("system.menu.file"), "Archivo")
+        XCTAssertEqual(L10n(language: .korean).text("system.menu.file"), "파일")
+    }
+
+    func testAutomaticLanguageRespectsSupportedPreferenceOrderAndRegions() {
+        XCTAssertEqual(AppLanguage.preferredLanguage(in: ["de-DE", "fr-CA", "en"]), .french)
+        XCTAssertEqual(AppLanguage.preferredLanguage(in: ["ru_RU"]), .russian)
+        XCTAssertEqual(AppLanguage.preferredLanguage(in: ["es-MX"]), .spanish)
+        XCTAssertEqual(AppLanguage.preferredLanguage(in: ["ko-KR"]), .korean)
+        XCTAssertEqual(AppLanguage.preferredLanguage(in: ["zh-Hant-TW"]), .chinese)
+        XCTAssertEqual(AppLanguage.preferredLanguage(in: ["ja-JP", "en"]), .japanese)
+        XCTAssertEqual(AppLanguage.preferredLanguage(in: ["ar", "de"]), .english)
+        XCTAssertEqual(AppLanguage.preferredLanguage(in: []), .english)
+    }
+
+    @MainActor
+    func testNativeMenuTitlesCanSwitchBetweenEverySupportedLanguage() {
+        let menu = NSMenu()
+        let services = NSMenuItem(title: "Services", action: nil, keyEquivalent: "")
+        menu.addItem(services)
+        for language in AppLanguage.allCases where language != .automatic {
+            let l = L10n(language: language)
+            MainMenuLocalization.apply(l, to: menu)
+            XCTAssertEqual(services.title, l.text("system.item.services"))
+        }
+        MainMenuLocalization.apply(L10n(language: .english), to: menu)
+        XCTAssertEqual(services.title, "Services")
     }
 
     func testAppearanceModesHaveExplicitSwiftUIAndAppKitRepresentations() {

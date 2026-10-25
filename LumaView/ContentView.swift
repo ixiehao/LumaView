@@ -22,6 +22,7 @@ struct ContentView: View {
     var body: some View {
         viewer
             .preferredColorScheme(appearance.colorScheme)
+            .environment(\.locale, language.locale)
     }
 
     private var viewer: some View {

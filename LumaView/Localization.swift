@@ -4,10 +4,14 @@ import SwiftUI
 /// An in-app language choice. It is deliberately independent of macOS so the
 /// interface changes immediately and does not require a relaunch.
 enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
-    case automatic
-    case chinese
     case english
+    case chinese
+    case french
+    case russian
+    case spanish
     case japanese
+    case korean
+    case automatic
 
     var id: String { rawValue }
 
@@ -31,41 +35,45 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
         "metadata.title", "metadata.fileSection", "metadata.exifSection", "metadata.name", "metadata.format", "metadata.dimensions", "metadata.fileSize", "metadata.capturedAt", "metadata.camera", "metadata.lens", "metadata.exposure", "metadata.aperture", "metadata.iso", "metadata.focalLength", "metadata.noExif"
     ]
 
-    fileprivate var locale: Locale {
-        switch resolvedLanguage {
-        case .chinese: Locale(identifier: "zh-Hans")
-        case .english, .automatic: Locale(identifier: "en")
-        case .japanese: Locale(identifier: "ja")
+    var localizationCode: String? {
+        switch self {
+        case .automatic: nil
+        case .chinese: "zh-Hans"
+        case .english: "en"
+        case .french: "fr"
+        case .russian: "ru"
+        case .spanish: "es"
+        case .japanese: "ja"
+        case .korean: "ko"
         }
     }
+
+    var locale: Locale { Locale(identifier: resolvedLanguage.localizationCode ?? "en") }
 
     fileprivate var localizationBundle: Bundle {
         Self.localizationBundles[resolvedLanguage] ?? .module
     }
 
     private var resolvedLanguage: AppLanguage {
-        switch self {
-        case .automatic:
-            let preferredLanguage = Locale.preferredLanguages.first?.lowercased() ?? ""
-            if preferredLanguage.hasPrefix("zh") { return .chinese }
-            if preferredLanguage.hasPrefix("ja") { return .japanese }
-            return .english
-        case .chinese, .english, .japanese:
-            return self
+        self == .automatic ? Self.preferredLanguage(in: Locale.preferredLanguages) : self
+    }
+
+    /// Respect the user's full preference order, including regional variants.
+    static func preferredLanguage(in preferences: [String]) -> AppLanguage {
+        for preference in preferences {
+            let base = preference.lowercased().split(whereSeparator: { $0 == "-" || $0 == "_" }).first
+            if let language = allCases.first(where: {
+                $0.localizationCode?.lowercased().split(separator: "-").first == base && $0 != .automatic
+            }) { return language }
         }
+        return .english
     }
 
     /// Like ShotTessera, resource bundles are cached once instead of being rebuilt for
     /// every SwiftUI body refresh. Every user-selectable language owns a real .lproj.
     private static let localizationBundles: [AppLanguage: Bundle] = Dictionary(
-        uniqueKeysWithValues: [AppLanguage.chinese, .english, .japanese].compactMap { language in
-            let code: String
-            switch language {
-            case .chinese: code = "zh-Hans"
-            case .english: code = "en"
-            case .japanese: code = "ja"
-            case .automatic: return nil
-            }
+        uniqueKeysWithValues: AppLanguage.allCases.compactMap { language in
+            guard let code = language.localizationCode else { return nil }
             guard let path = Bundle.module.path(forResource: code, ofType: "lproj"),
                   let bundle = Bundle(path: path) else { return nil }
             return (language, bundle)
@@ -89,7 +97,11 @@ struct L10n {
         case .automatic: text("language.automatic")
         case .chinese: "中文"
         case .english: "English"
+        case .french: "Français"
+        case .russian: "Русский"
+        case .spanish: "Español"
         case .japanese: "日本語"
+        case .korean: "한국어"
         }
     }
 

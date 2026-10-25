@@ -145,6 +145,19 @@ enum MainMenuLocalization {
         apply(l, to: menu)
     }
 
+    // Some native items (for example Services) have no action selector. Match
+    // every supported translation so repeated language changes remain reversible.
+    private static let standardItemKeysByTitle: [String: String] = {
+        var result: [String: String] = [:]
+        for item in standardItems {
+            for title in item.titles { result[title] = item.key }
+            for language in AppLanguage.allCases where language != .automatic {
+                result[L10n(language: language).text(item.key)] = item.key
+            }
+        }
+        return result
+    }()
+
     static func apply(_ l: L10n, to menu: NSMenu) {
         // A Settings-only SwiftUI scene does not install this command on
         // macOS 13/14 for our AppKit document windows. Keep the native responder
@@ -194,7 +207,7 @@ enum MainMenuLocalization {
 
     private static func localizeStandardItems(in menu: NSMenu, localization: L10n) {
         for item in menu.items {
-            let titleKey = standardItems.first(where: { $0.titles.contains(item.title) })?.key
+            let titleKey = standardItemKeysByTitle[item.title]
             let actionName = item.action.map(NSStringFromSelector)
             let actionKey: String?
             if actionName == "toggleFullScreen:" {
@@ -815,6 +828,9 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
     func applyWindowPreferences(localization: L10n, appearance: AppAppearance) {
         window?.appearance = appearance.nsAppearance
         refreshToolbarLocalization(localization)
+        if let controller = informationPopover?.contentViewController as? NSHostingController<ImageInformationInspector> {
+            controller.rootView = ImageInformationInspector(information: controller.rootView.information, l: localization)
+        }
     }
 
     func acceptsCommands(from candidate: NSWindow) -> Bool {
@@ -1369,6 +1385,7 @@ private struct LumaSettingsView: View {
         .frame(width: 440)
         .fixedSize(horizontal: false, vertical: true)
         .preferredColorScheme(appearance.colorScheme)
+        .environment(\.locale, language.locale)
         .accessibilityIdentifier("settings.root")
         .alert(l.text("update.check.title"), isPresented: updateNoticeBinding) {
             Button(l.text("button.ok"), role: .cancel) {

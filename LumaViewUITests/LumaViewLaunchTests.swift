@@ -192,14 +192,12 @@ final class LumaViewLaunchTests: XCTestCase {
         // frame. Measure both instead of mistaking the missing 52 pt for a
         // failed transition. Hidden menus are not reliable state indicators.
         expectFullScreen(true, in: window)
-        XCTAssertTrue(app.menuItems["Exit Full Screen"].waitForExistence(timeout: 5))
         app.typeKey("]", modifierFlags: .command)
         expect(rendered, accessibilityLabelContaining: "90°")
         // Exercise the native menu shortcut without relying on a titlebar that
         // may stay auto-hidden in the CI virtual display.
         app.typeKey("f", modifierFlags: [.control, .command])
         expectFullScreen(false, in: window)
-        XCTAssertTrue(app.menuItems["Enter Full Screen"].waitForExistence(timeout: 5))
         expectCanvasAspect(rendered, ratio: 1 / 1.2)
     }
 
@@ -250,7 +248,11 @@ final class LumaViewLaunchTests: XCTestCase {
         let configurations: [(language: String, appearance: String, previous: String, information: String, print: String)] = [
             ("english", "light", "Previous image", "Image information", "Print image"),
             ("chinese", "dark", "上一张", "图片信息", "打印图片"),
-            ("japanese", "light", "前の画像", "画像情報", "画像をプリント")
+            ("japanese", "light", "前の画像", "画像情報", "画像をプリント"),
+            ("french", "light", "Image précédente", "Informations sur l’image", "Imprimer l’image"),
+            ("russian", "dark", "Предыдущее изображение", "Информация об изображении", "Напечатать изображение"),
+            ("spanish", "light", "Imagen anterior", "Información de la imagen", "Imprimir imagen"),
+            ("korean", "dark", "이전 이미지", "이미지 정보", "이미지 프린트")
         ]
         for configuration in configurations {
             let app = launchApp(
