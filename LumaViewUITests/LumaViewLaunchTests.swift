@@ -309,10 +309,14 @@ final class LumaViewLaunchTests: XCTestCase {
 
     private func chooseLanguage(_ name: String, in app: XCUIApplication) {
         let titles = ["Language", "语言", "Langue", "Язык", "Idioma", "言語", "언어"]
-        let menu = app.menuBars.menuBarItems.matching(NSPredicate(format: "label IN %@", titles)).firstMatch
+        let menu = app.menuBars.menuBarItems.matching(NSPredicate(
+            format: "label IN %@ OR identifier IN %@", titles, titles
+        )).firstMatch
         XCTAssertTrue(menu.waitForExistence(timeout: 5))
         menu.click()
-        app.menuItems.matching(NSPredicate(format: "label ENDSWITH %@", name)).firstMatch.click()
+        app.menuItems.matching(NSPredicate(
+            format: "label ENDSWITH %@ OR identifier ENDSWITH %@", name, name
+        )).firstMatch.click()
     }
 
     func testMinimizingReleasesCanvasWithoutReportingDecodeFailureAndRestoresImage() throws {
@@ -327,7 +331,14 @@ final class LumaViewLaunchTests: XCTestCase {
 
         app.activate()
         app.menuBars.menuBarItems["Window"].click()
-        app.menuItems.matching(NSPredicate(format: "label CONTAINS %@", file.lastPathComponent)).firstMatch.click()
+        // AppKit menu titles may appear as identifiers rather than labels in
+        // XCTest on older macOS releases. Match the document in either field.
+        let restore = app.menuItems.matching(NSPredicate(
+            format: "label CONTAINS %@ OR identifier CONTAINS %@",
+            file.lastPathComponent, file.lastPathComponent
+        )).firstMatch
+        XCTAssertTrue(restore.waitForExistence(timeout: 5), app.debugDescription)
+        restore.click()
         XCTAssertTrue(rendered.waitForExistence(timeout: 5))
         expectCanvasAspect(rendered, ratio: 1.2)
     }
@@ -372,7 +383,14 @@ final class LumaViewLaunchTests: XCTestCase {
                 "canvas.unavailable.\(file.lastPathComponent)"
             )).firstMatch
             XCTAssertTrue(content.waitForExistence(timeout: 8))
-            content.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+            if content.identifier.hasPrefix("image.rendered.") {
+                content.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+            } else {
+                // The unavailable canvas is an Open File button, not an inert
+                // focus target. Clicking it would start a modal file panel.
+                window.coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: 180, dy: 20)).click()
+            }
         } else {
             // The welcome window's brand/title area contains no action button.
             window.coordinate(withNormalizedOffset: .zero)
