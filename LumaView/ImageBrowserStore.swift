@@ -299,6 +299,8 @@ final class ImageBrowserStore: ObservableObject {
     /// followed by an explicit post-assignment change notification.
     @Published private(set) var canvasPresentationRevision: UInt64 = 0
     @Published var statusMessage: String?
+    @Published private(set) var folderScanErrorMessage: String?
+    @Published private var imageLoadErrorMessage: String?
     @Published private(set) var isScanning = false
     @Published private(set) var isPreparingPrint = false
     /// A minimised or occluded AppKit window should not pin a full-resolution
@@ -345,6 +347,22 @@ final class ImageBrowserStore: ObservableObject {
     }
 
     var windowTitle: String { selectedFile?.name ?? "LumaView" }
+
+    // Rendering, folder discovery and printing finish independently. A successful
+    // decode must not erase an unreadable-folder warning or print progress.
+    var displayStatusMessage: String? {
+        statusMessage ?? imageLoadErrorMessage ?? folderScanErrorMessage
+    }
+
+    var statusAccessibilityLabel: String {
+        let parts = [selectedFile?.name, selectedFile == nil ? nil : positionText, displayStatusMessage]
+            .compactMap { $0 }
+        return parts.isEmpty ? "LumaView" : parts.joined(separator: ", ")
+    }
+
+    func reportImageLoadResult(isAvailable: Bool, failureMessage: String) {
+        imageLoadErrorMessage = isAvailable ? nil : failureMessage
+    }
 
     func chooseImage(_ l: L10n) {
         let panel = NSOpenPanel()
@@ -400,7 +418,7 @@ final class ImageBrowserStore: ObservableObject {
             statusMessage = l.text("error.unsupportedFormat")
             return
         }
-        if isDirectory.boolValue {
+        if isDirectory.boolValue && url.pathExtension.lowercased() != "sketch" {
             open(folder: url, selecting: nil, emptyFolderMessage: l.text("error.emptyFolder"))
         } else {
             open(
@@ -420,6 +438,8 @@ final class ImageBrowserStore: ObservableObject {
         folderURL = canonicalURL
         isScanning = true
         statusMessage = nil
+        folderScanErrorMessage = nil
+        imageLoadErrorMessage = nil
         folderScanTask?.cancel()
         cancelNavigationPrefetches()
         scanGeneration += 1
@@ -435,6 +455,11 @@ final class ImageBrowserStore: ObservableObject {
             selectedIndex = nil
             select(index: 0)
         } else {
+            pixelSizeTask?.cancel()
+            metadataOperation?.cancel()
+            printPreparationOperation?.cancel()
+            printPreparationOperation = nil
+            isPreparingPrint = false
             files = []
             selectedIndex = nil
             originalPixelSize = nil
@@ -465,23 +490,41 @@ final class ImageBrowserStore: ObservableObject {
         _ url: URL,
         isCancelled: @escaping @Sendable () -> Bool
     ) -> Result<[ImageFile], Error> {
+        guard !isCancelled() else { return .failure(CancellationError()) }
         let canonicalURL = url.standardizedFileURL.resolvingSymlinksInPath()
+        do {
+            guard try canonicalURL.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true else {
+                return .failure(POSIXError(.ENOTDIR))
+            }
+        } catch {
+            return .failure(error)
+        }
+        guard !isCancelled() else { return .failure(CancellationError()) }
+        var enumerationError: Error?
         guard let enumerator = FileManager.default.enumerator(
             at: canonicalURL,
             includingPropertiesForKeys: [.isRegularFileKey, .contentTypeKey],
-            options: [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants]
+            options: [.skipsHiddenFiles, .skipsPackageDescendants, .skipsSubdirectoryDescendants],
+            errorHandler: { _, error in
+                enumerationError = error
+                return false
+            }
         ) else {
-            return .failure(CocoaError(.fileNoSuchFile))
+            return .failure(enumerationError ?? CocoaError(.fileReadUnknown))
         }
 
         var files: [ImageFile] = []
-        while let candidate = enumerator.nextObject() as? URL {
+        while !isCancelled() {
+            // A synchronous filesystem call may still wait for macOS (for
+            // example a privacy prompt); cancellation is observed on return.
+            guard let candidate = enumerator.nextObject() as? URL else { break }
             if isCancelled() { return .failure(CancellationError()) }
             if ImageFile.canOpen(candidate) {
                 files.append(ImageFile(url: candidate))
             }
         }
         if isCancelled() { return .failure(CancellationError()) }
+        if let enumerationError { return .failure(enumerationError) }
         guard sortFilesNaturally(&files, isCancelled: isCancelled) else {
             return .failure(CancellationError())
         }
@@ -569,6 +612,7 @@ final class ImageBrowserStore: ObservableObject {
         originalPixelSize = nil
         resetViewport()
         statusMessage = nil
+        imageLoadErrorMessage = nil
         selectionGeneration += 1
         let generation = selectionGeneration
         let url = files[index].url
@@ -646,11 +690,15 @@ final class ImageBrowserStore: ObservableObject {
     func suspendCanvasRendering() {
         guard !isCanvasRenderingSuspended else { return }
         isCanvasRenderingSuspended = true
+        cancelNavigationPrefetches()
     }
 
     func resumeCanvasRendering() {
         guard isCanvasRenderingSuspended else { return }
         isCanvasRenderingSuspended = false
+        if let selectedIndex {
+            prefetchNavigationNeighbours(around: selectedIndex)
+        }
     }
 
     func revealInFinder() {
@@ -664,6 +712,7 @@ final class ImageBrowserStore: ObservableObject {
     /// remains on its own high-priority queue.
     private func prefetchNavigationNeighbours(around index: Int) {
         cancelNavigationPrefetches()
+        guard !isCanvasRenderingSuspended, files.indices.contains(index) else { return }
         let selectedURL = files[index].url
         let neighbourURLs = [index + 1, index - 1]
             .compactMap { files.indices.contains($0) ? files[$0].url : nil }
@@ -714,7 +763,15 @@ final class ImageBrowserStore: ObservableObject {
         isScanning = false
         folderScanTask = nil
         switch result {
-        case .success(let discovered):
+        case .success(var discovered):
+            // Directory browsing skips hidden files. An explicitly opened file
+            // still belongs to this window even when enumeration omits it.
+            if let selected = selectedFile, !discovered.contains(where: { $0.url == selected.url }) {
+                let insertion = discovered.firstIndex {
+                    selected.name.localizedStandardCompare($0.name) == .orderedAscending
+                } ?? discovered.endIndex
+                discovered.insert(selected, at: insertion)
+            }
             if let activeURL = selectedURL ?? preferredURL,
                let index = discovered.firstIndex(where: { $0.url == activeURL }) {
                 files = discovered
@@ -738,11 +795,12 @@ final class ImageBrowserStore: ObservableObject {
         case .failure(let error):
             // Keep an already-rendering direct file usable even if its folder
             // becomes unavailable while the background navigation scan runs.
+            pendingNavigationOffset = 0
+            folderScanErrorMessage = error.localizedDescription
             if selectedURL == nil {
                 files = []
                 selectedIndex = nil
                 originalPixelSize = nil
-                statusMessage = error.localizedDescription
             }
         }
     }

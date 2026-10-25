@@ -29,6 +29,27 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertTrue(app.buttons["Open file"].waitForExistence(timeout: 5))
     }
 
+    func testOpenShortcutWorksAfterTheLastDocumentWindowCloses() throws {
+        let app = launchApp()
+        XCTAssertTrue(app.buttons["Open file"].waitForExistence(timeout: 5))
+        app.typeKey("w", modifierFlags: .command)
+        app.typeKey("o", modifierFlags: .command)
+
+        // Limit the query to the native panel, excluding the similarly named
+        // Touch Bar item that can survive a change of key window.
+        let dialog = app.dialogs.containing(.button, identifier: "CancelButton").firstMatch
+        let panelWindow = app.windows.containing(.button, identifier: "CancelButton").firstMatch
+        let presented = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            dialog.exists || panelWindow.exists
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [presented], timeout: 5), .completed,
+                       "File → Open must remain available without a document window")
+        let panel = dialog.exists ? dialog : panelWindow
+        panel.buttons["CancelButton"].click()
+        let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: panel)
+        XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 5), .completed)
+    }
+
     func testFinderStyleOpenLoadsFirstImageAndArrowKeysNavigateFolder() throws {
         let app = launchApp(opening: fixtureDirectory.appendingPathComponent("01-first.png"))
         XCTAssertTrue(app.windows["01-first.png"].waitForExistence(timeout: 5))
@@ -47,42 +68,83 @@ final class LumaViewLaunchTests: XCTestCase {
         try makePNG(at: portrait, width: 900, height: 1_600)
 
         let app = launchApp(opening: landscape)
-        XCTAssertTrue(canvas(in: app, named: landscape.lastPathComponent).waitForExistence(timeout: 8))
+        let landscapeCanvas = canvas(in: app, named: landscape.lastPathComponent)
+        XCTAssertTrue(landscapeCanvas.waitForExistence(timeout: 8))
+        expectCanvasAspect(landscapeCanvas, ratio: 16.0 / 9.0)
 
         app.typeKey(.rightArrow, modifierFlags: [])
         let portraitCanvas = canvas(in: app, named: portrait.lastPathComponent)
         XCTAssertTrue(portraitCanvas.waitForExistence(timeout: 8))
         XCTAssertTrue(portraitCanvas.label.contains("0°"))
+        expectCanvasAspect(portraitCanvas, ratio: 9.0 / 16.0)
     }
 
     func testToolbarRotationCyclesThroughEveryRightAngle() throws {
+        exerciseRotationSequence(verifyPixels: false)
+    }
+
+    func testRenderedRotationPixelsFillTheCanvasAtEveryRightAngle() throws {
+        try XCTSkipUnless(
+            CGPreflightScreenCaptureAccess(),
+            "Screen Recording permission is required for pixel verification. Perform the documented visual rotation check when this test is skipped."
+        )
+        exerciseRotationSequence(verifyPixels: true)
+    }
+
+    private func exerciseRotationSequence(verifyPixels: Bool) {
         let file = fixtureDirectory.appendingPathComponent("03-toolbar.png")
         let app = launchApp(opening: file)
         let canvas = app.descendants(matching: .any)["image.rendered.03-toolbar.png"]
         XCTAssertTrue(canvas.waitForExistence(timeout: 5))
 
-        // Exercise the visible toolbar action only. Keyboard/menu routing is
-        // tested at the command layer; making this end-to-end test depend on
-        // focus and the native overflow menu was the source of prior flakes.
-        for expectedAngle in [90, 180, 270, 0] {
+        // Inspect actual pixels as well as the accessible angle. A label-only
+        // assertion used to pass even when 90°/270° left the pixels unrotated.
+        let red = NSColor(srgbRed: 1, green: 0, blue: 0, alpha: 1)
+        let green = NSColor(srgbRed: 0, green: 1, blue: 0, alpha: 1)
+        let blue = NSColor(srgbRed: 0, green: 0, blue: 1, alpha: 1)
+        let yellow = NSColor(srgbRed: 1, green: 1, blue: 0, alpha: 1)
+        func verify(_ colors: [NSColor], ratio: CGFloat) {
+            if verifyPixels {
+                expectCanvasPixels(canvas, in: app, colors: colors, ratio: ratio)
+            } else {
+                expectCanvasAspect(canvas, ratio: ratio)
+            }
+        }
+        verify([red, green, blue, yellow], ratio: 1.2)
+        let turns: [(angle: Int, colors: [NSColor], ratio: CGFloat)] = [
+            (90, [blue, red, yellow, green], 1 / 1.2),
+            (180, [yellow, blue, green, red], 1.2),
+            (270, [green, yellow, red, blue], 1 / 1.2),
+            (0, [red, green, blue, yellow], 1.2)
+        ]
+        for turn in turns {
             let rotateRight = app.buttons
                 .matching(NSPredicate(format: "label == %@", "Rotate right"))
                 .firstMatch
             XCTAssertTrue(rotateRight.waitForExistence(timeout: 5))
             XCTAssertTrue(rotateRight.isEnabled)
             rotateRight.click()
-            expect(canvas, accessibilityLabelContaining: "\(expectedAngle)°")
+            expect(canvas, accessibilityLabelContaining: "\(turn.angle)°")
+            verify(turn.colors, ratio: turn.ratio)
         }
+
+        app.typeKey("[", modifierFlags: .command)
+        expect(canvas, accessibilityLabelContaining: "270°")
+        verify([green, yellow, red, blue], ratio: 1 / 1.2)
+        app.typeKey("]", modifierFlags: .command)
+        expect(canvas, accessibilityLabelContaining: "0°")
+        verify([red, green, blue, yellow], ratio: 1.2)
     }
 
     func testImageInformationToolbarPresentsMetadataInspector() throws {
-        let file = fixtureDirectory.appendingPathComponent("03-toolbar.png")
+        let file = fixtureDirectory.appendingPathComponent("90-exif-current.png")
         let app = launchApp(opening: file)
         XCTAssertTrue(canvas(in: app, named: file.lastPathComponent).waitForExistence(timeout: 5))
 
         let information = app.buttons["Image information"]
         XCTAssertTrue(information.waitForExistence(timeout: 5))
         XCTAssertTrue(information.isEnabled)
+        app.activate()
         information.click()
 
         XCTAssertTrue(app.descendants(matching: .any)["image.informationInspector"].waitForExistence(timeout: 5))
@@ -105,6 +167,48 @@ final class LumaViewLaunchTests: XCTestCase {
         app.typeKey(.rightArrow, modifierFlags: [])
         XCTAssertTrue(canvas(in: app, named: next.lastPathComponent).waitForExistence(timeout: 5))
         XCTAssertFalse(inspector.waitForExistence(timeout: 1))
+
+        information.click()
+        XCTAssertTrue(inspector.waitForExistence(timeout: 5))
+        XCTAssertTrue(inspector.staticTexts[next.lastPathComponent].waitForExistence(timeout: 5))
+        XCTAssertFalse(inspector.staticTexts[first.lastPathComponent].exists)
+    }
+
+    func testExitingFullScreenRefitsTheImageRotatedWhileFullScreen() throws {
+        let file = fixtureDirectory.appendingPathComponent("03-toolbar.png")
+        let app = launchApp(opening: file)
+        let rendered = canvas(in: app, named: file.lastPathComponent)
+        XCTAssertTrue(rendered.waitForExistence(timeout: 5))
+        expectCanvasAspect(rendered, ratio: 1.2)
+
+        let window = app.windows[file.lastPathComponent]
+        let initialSize = window.frame.size
+        let screenSizes = NSScreen.screens.map { $0.frame.size }
+        let fullScreenButton = window.buttons[XCUIIdentifierFullScreenWindow]
+        XCTAssertTrue(fullScreenButton.waitForExistence(timeout: 5))
+        fullScreenButton.click()
+        // The menu bar can auto-hide in full screen, exposing an AX element
+        // with an infinite frame. Observe the actual document geometry instead
+        // of clicking that hidden menu or assuming the shortcut succeeded.
+        let enteredFullScreen = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            let size = window.frame.size
+            return size.width > initialSize.width + 20
+                && screenSizes.contains {
+                    abs(size.width - $0.width) < 2 && abs(size.height - $0.height) < 2
+                }
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [enteredFullScreen], timeout: 8), .completed)
+        app.typeKey("]", modifierFlags: .command)
+        expect(rendered, accessibilityLabelContaining: "90°")
+        // Reveal the native title bar, then use its full-screen control again.
+        // The system's current keyboard shortcut is not fixed across releases.
+        window.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0)).hover()
+        let exitAvailable = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "hittable == true"), object: fullScreenButton
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [exitAvailable], timeout: 5), .completed)
+        fullScreenButton.click()
+        expectCanvasAspect(rendered, ratio: 1 / 1.2)
     }
 
     func testEverySupportedLanguageHasCompleteToolbarLabelsWithoutPrintButton() throws {
@@ -168,6 +272,25 @@ final class LumaViewLaunchTests: XCTestCase {
             app.launchEnvironment["LUMAVIEW_UI_TEST_OPEN_FILE"] = file.path
         }
         app.launch()
+        app.activate()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 5))
+        let window = app.windows.firstMatch
+        XCTAssertTrue(window.waitForExistence(timeout: 5))
+        // A foreground process is not necessarily the key document window on
+        // macOS. Give the actual content focus before sending keyboard input.
+        if let file {
+            let content = window.descendants(matching: .any).matching(NSPredicate(
+                format: "identifier == %@ OR identifier == %@",
+                "image.rendered.\(file.lastPathComponent)",
+                "canvas.unavailable.\(file.lastPathComponent)"
+            )).firstMatch
+            XCTAssertTrue(content.waitForExistence(timeout: 8))
+            content.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        } else {
+            // The welcome window's brand/title area contains no action button.
+            window.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: 180, dy: 20)).click()
+        }
         return app
     }
 
@@ -184,12 +307,15 @@ final class LumaViewLaunchTests: XCTestCase {
             bytesPerRow: 0,
             bitsPerPixel: 0
         ))
-        let context = try XCTUnwrap(NSGraphicsContext(bitmapImageRep: bitmap))
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current = context
-        NSColor.systemIndigo.setFill()
-        NSBezierPath(rect: NSRect(x: 0, y: 0, width: width, height: height)).fill()
-        NSGraphicsContext.restoreGraphicsState()
+        let pixels = try XCTUnwrap(bitmap.bitmapData)
+        let quadrants: [[UInt8]] = [[255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255], [255, 255, 0, 255]]
+        for y in 0..<height {
+            for x in 0..<width {
+                let color = quadrants[(y < height / 2 ? 0 : 2) + (x < width / 2 ? 0 : 1)]
+                let offset = y * bitmap.bytesPerRow + x * 4
+                for channel in 0..<4 { pixels[offset + channel] = color[channel] }
+            }
+        }
         try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
             .write(to: fixtureDirectory.appendingPathComponent("03-toolbar.png"), options: .atomic)
     }
@@ -227,6 +353,102 @@ final class LumaViewLaunchTests: XCTestCase {
         )
         wait(for: [expectation], timeout: 5)
         XCTAssertTrue(element.label.contains(expectedValue), message)
+    }
+
+    private func expectCanvasAspect(_ element: XCUIElement, ratio: CGFloat) {
+        let fitted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            let size = element.frame.size
+            return size.height > 0 && abs(size.width / size.height - ratio) < 0.015
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [fitted], timeout: 5), .completed,
+                       "Canvas \(element.frame.size) must adapt to image aspect \(ratio)")
+    }
+
+    private func expectCanvasPixels(_ element: XCUIElement, in app: XCUIApplication, colors: [NSColor], ratio: CGFloat) {
+        expectCanvasAspect(element, ratio: ratio)
+        app.activate()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 5))
+        var captureFailure: String?
+        let displayed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            let bitmap: NSBitmapImageRep
+            do {
+                bitmap = try self.captureCanvas(element, in: app)
+            } catch {
+                captureFailure = error.localizedDescription
+                return true // Finish polling and report a capture failure, never skip it.
+            }
+            // Sample near both side edges, away from the native rounded corners
+            // and status pill. This catches the historic white rails as well as
+            // wrong orientation, stale frames, and blank render transitions.
+            let points: [(CGFloat, CGFloat)] = [(0.02, 0.2), (0.98, 0.2), (0.02, 0.7), (0.98, 0.7)]
+            return zip(points, colors).allSatisfy { point, expected in
+                guard let color = bitmap.colorAt(
+                    x: Int(CGFloat(bitmap.pixelsWide - 1) * point.0),
+                    y: Int(CGFloat(bitmap.pixelsHigh - 1) * point.1)
+                )?.usingColorSpace(.sRGB) else { return false }
+                return abs(color.redComponent - expected.redComponent) < 0.15
+                    && abs(color.greenComponent - expected.greenComponent) < 0.15
+                    && abs(color.blueComponent - expected.blueComponent) < 0.15
+            }
+        }, object: nil)
+        let result = XCTWaiter.wait(for: [displayed], timeout: 5)
+        XCTAssertNil(captureFailure, captureFailure ?? "")
+        XCTAssertEqual(result, .completed,
+                       "Rendered quadrants must rotate and fill the canvas")
+    }
+
+    private func captureCanvas(_ element: XCUIElement, in app: XCUIApplication) throws -> NSBitmapImageRep {
+        func failure(_ description: String) -> NSError {
+            NSError(domain: "LumaViewUICapture", code: 1, userInfo: [NSLocalizedDescriptionKey: description])
+        }
+        guard app.state == .runningForeground,
+              let frontmost = NSWorkspace.shared.frontmostApplication,
+              frontmost.bundleURL?.lastPathComponent == "LumaView.app" else {
+            throw failure("The tested LumaView must be foreground before capturing its window")
+        }
+        let frame = app.windows.firstMatch.frame
+        let canvasFrame = element.frame
+        let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+            as? [[String: Any]] ?? []
+        let match = windows.first { window in
+            guard (window[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value == frontmost.processIdentifier,
+                  (window[kCGWindowLayer as String] as? NSNumber)?.intValue == 0,
+                  let bounds = window[kCGWindowBounds as String] as? [String: Any],
+                  let windowFrame = CGRect(dictionaryRepresentation: bounds as CFDictionary) else { return false }
+            return abs(windowFrame.minX - frame.minX) < 2 && abs(windowFrame.minY - frame.minY) < 2
+                && abs(windowFrame.width - frame.width) < 2 && abs(windowFrame.height - frame.height) < 2
+        }
+        guard let windowID = (match?[kCGWindowNumber as String] as? NSNumber)?.uint32Value,
+              frame.width > 0, frame.height > 0, frame.contains(canvasFrame) else {
+            throw failure("Cannot identify the tested LumaView window and its canvas; refusing to capture another surface")
+        }
+
+        // XCUIScreenshot's HEVC encoding can fail on a secondary display. The
+        // system PNG capture keeps the same real-pixel test without capturing
+        // the desktop, menu bar, or any other application's window.
+        let url = fixtureDirectory.appendingPathComponent("rotation-window.png")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let capture = Process()
+        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        capture.arguments = ["-x", "-o", "-l", String(windowID), "-t", "png", url.path]
+        capture.standardError = FileHandle.nullDevice
+        try capture.run()
+        capture.waitUntilExit()
+        guard capture.terminationStatus == 0,
+              let image = NSImage(contentsOf: url),
+              let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            throw failure("Cannot capture the validation window as PNG; check the test host's Screen Recording permission")
+        }
+        let scaleX = CGFloat(cgImage.width) / frame.width
+        let scaleY = CGFloat(cgImage.height) / frame.height
+        let crop = CGRect(
+            x: (canvasFrame.minX - frame.minX) * scaleX,
+            y: (canvasFrame.minY - frame.minY) * scaleY,
+            width: canvasFrame.width * scaleX,
+            height: canvasFrame.height * scaleY
+        ).integral
+        guard let canvas = cgImage.cropping(to: crop) else { throw failure("Cannot crop the captured canvas") }
+        return NSBitmapImageRep(cgImage: canvas)
     }
 
 }

@@ -12,6 +12,7 @@ struct ImageCanvasView: View {
     @Environment(\.displayScale) private var displayScale
     @State private var image: NSImage?
     @State private var displayedURL: URL?
+    @State private var decodedURL: URL?
     @State private var isLoading = false
     @State private var activeRequest: ImageRenderRequest?
     @State private var renderOperation: Operation?
@@ -220,12 +221,12 @@ struct ImageCanvasView: View {
                 statusDot
                 Text(absoluteZoomPercent.map { "\($0)%" } ?? "—")
                     .monospacedDigit()
-                if let message = browser.statusMessage {
+                if let message = browser.displayStatusMessage {
                     statusDot
                     Text(message)
                         .lineLimit(1)
                 }
-            } else if let message = browser.statusMessage {
+            } else if let message = browser.displayStatusMessage {
                 Text(message)
             }
         }
@@ -235,24 +236,17 @@ struct ImageCanvasView: View {
         .padding(.vertical, 8)
         .background(.ultraThinMaterial, in: Capsule())
         .padding(14)
-        .opacity(browser.selectedFile == nil && browser.statusMessage == nil ? 0 : 1)
+        .opacity(browser.selectedFile == nil && browser.displayStatusMessage == nil ? 0 : 1)
         // A combined status line gives VoiceOver one concise announcement and
         // gives the multi-window UI gate a stable way to wait for folder
         // indexing before it sends a navigation command.
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("image.status")
-        .accessibilityLabel(statusAccessibilityLabel)
+        .accessibilityLabel(browser.statusAccessibilityLabel)
     }
 
     private var statusDot: some View {
         Circle().fill(.secondary.opacity(0.45)).frame(width: 2.5, height: 2.5)
-    }
-
-    private var statusAccessibilityLabel: String {
-        if let selected = browser.selectedFile {
-            return "\(selected.name), \(browser.positionText)"
-        }
-        return browser.statusMessage ?? "LumaView"
     }
 
     /// `zoom == 1` means “fit this window”; it is not inherently 100%. The value shown
@@ -303,16 +297,20 @@ struct ImageCanvasView: View {
         guard let url = request.url else {
             image = nil
             displayedURL = nil
+            decodedURL = nil
             isLoading = false
             return
         }
 
-        // Do not leave pixels from the previous URL on screen while a new image
-        // decodes. A compact preview is safe because it is explicitly keyed to
-        // the requested URL; otherwise the canvas shows its loading state.
-        let preview = ImageMemoryCache.shared.hotNavigationPreview(for: url)
-        image = preview
-        displayedURL = preview == nil ? nil : url
+        // A resize/zoom can request a sharper decode of the same image. Keep
+        // its current pixels until that decode completes, avoiding a flash or
+        // a downgrade to the navigation preview. Never keep a different file.
+        if displayedURL != url || image == nil {
+            decodedURL = nil
+            let preview = ImageMemoryCache.shared.hotNavigationPreview(for: url)
+            image = preview
+            displayedURL = preview == nil ? nil : url
+        }
         isLoading = true
     }
 
@@ -322,6 +320,7 @@ struct ImageCanvasView: View {
         activeRequest = nil
         image = nil
         displayedURL = nil
+        decodedURL = nil
         isLoading = false
     }
 
@@ -343,12 +342,20 @@ struct ImageCanvasView: View {
             guard operation?.isCancelled == false else { return }
             DispatchQueue.main.async {
                 guard renderOperation === operation, activeRequest == request, operation?.isCancelled == false else { return }
-                image = decoded
-                displayedURL = decoded == nil ? nil : request.url
+                // A failed resolution upgrade should not erase an already
+                // usable image. A new URL still reports its normal decode error.
+                if let decoded {
+                    image = decoded
+                    displayedURL = request.url
+                    decodedURL = request.url
+                } else if decodedURL != request.url {
+                    // A navigation preview is only a bridge, not proof that
+                    // this file still decodes successfully.
+                    image = nil
+                    displayedURL = nil
+                }
                 isLoading = false
-                browser.statusMessage = decoded == nil
-                    ? l.text("canvas.noPreview")
-                    : nil
+                browser.reportImageLoadResult(isAvailable: image != nil, failureMessage: l.text("canvas.noPreview"))
             }
         }
         renderOperation = operation

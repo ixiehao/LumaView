@@ -89,7 +89,6 @@ enum MainMenuLocalization {
         "selectAll:": "system.item.selectAll",
         "startDictation:": "system.item.dictation",
         "orderFrontCharacterPalette:": "system.item.emoji",
-        "toggleFullScreen:": "system.item.enterFullScreen",
         "toggleToolbarShown:": "system.item.showToolbar",
         "runToolbarCustomizationPalette:": "system.item.customizeToolbar",
         "performMiniaturize:": "system.item.minimize",
@@ -180,7 +179,18 @@ enum MainMenuLocalization {
     private static func localizeStandardItems(in menu: NSMenu, localization: L10n) {
         for item in menu.items {
             let titleKey = standardItems.first(where: { $0.titles.contains(item.title) })?.key
-            let actionKey = item.action.flatMap { standardItemActionKeys[NSStringFromSelector($0)] }
+            let actionName = item.action.map(NSStringFromSelector)
+            let actionKey: String?
+            if actionName == "toggleFullScreen:" {
+                // One selector handles both directions. Derive its title from
+                // the target window, so relocalizing cannot turn Exit into Enter.
+                let window = (item.target as? NSWindow) ?? NSApp?.keyWindow ?? NSApp?.mainWindow
+                actionKey = window.map {
+                    $0.styleMask.contains(.fullScreen) ? "system.item.exitFullScreen" : "system.item.enterFullScreen"
+                } ?? titleKey ?? "system.item.enterFullScreen"
+            } else {
+                actionKey = actionName.flatMap { standardItemActionKeys[$0] }
+            }
             if let key = actionKey ?? titleKey {
                 item.title = localization.text(key)
             }
@@ -573,26 +583,32 @@ final class LumaViewWindowRegistry: ObservableObject {
 
     private var commandDocumentController: LumaViewWindowController? {
         // Opening the menu bar can briefly clear `keyWindow` on some macOS
-        // releases. `mainWindow` remains the document that owned the menu in
-        // that interval. Both candidates must be controllers registered by
-        // this registry; never fall back to an arbitrary open document.
+        // releases. Fall back to `mainWindow` only during that interval; an
+        // unrelated key window (Settings/About) must not edit a background image.
         // SwiftUI may validate Commands before AppKit has assigned NSApp,
         // especially when XCTest launches the application on a fresh runner.
-        guard let application = NSApp else { return nil }
-        for candidate in [application.keyWindow, application.mainWindow].compactMap({ $0 }) {
-            if let controller = controllers.values.first(where: { $0.window === candidate }) {
-                return controller
-            }
-        }
-        return nil
+        guard !hasBlockingModalPresentation, let application = NSApp else { return nil }
+        guard let candidate = application.keyWindow ?? application.mainWindow else { return nil }
+        return controllers.values.first(where: { $0.acceptsCommands(from: candidate) })
+    }
+
+    private var hasBlockingModalPresentation: Bool {
+        guard let application = NSApp else { return false }
+        let candidate = application.keyWindow ?? application.mainWindow
+        return application.modalWindow != nil || candidate?.sheetParent != nil || candidate?.attachedSheet != nil
     }
 
     fileprivate func perform(_ command: ViewerCommand, localization: L10n) {
+        guard canPerform(command) else { return }
+        if case .open = command, commandDocumentController == nil {
+            openWelcomeWindow()
+        }
         commandDocumentController?.perform(command, localization: localization)
     }
 
     fileprivate func canPerform(_ command: ViewerCommand) -> Bool {
-        commandDocumentController?.canPerform(command) ?? false
+        if case .open = command { return !hasBlockingModalPresentation }
+        return commandDocumentController?.canPerform(command) ?? false
     }
 
     fileprivate func remove(_ controller: LumaViewWindowController) {
@@ -650,15 +666,19 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
     private(set) var documentURL: URL?
 
     private var browserChangeObserver: AnyCancellable?
+    private var informationSelectionObserver: AnyCancellable?
     private var pixelSizeObserver: AnyCancellable?
     private var quarterTurnObserver: AnyCancellable?
     private var informationPopover: NSPopover?
     private var informationPopoverDocumentURL: URL?
+    private var informationOperation: Operation?
+    private var informationRequestedURL: URL?
     /// The current document whose image-led frame has been applied.  This is
     /// intentionally per selection, not per window: browsing from a landscape
     /// to a portrait must reshape the same window before the new canvas draws.
     private var sizedDocumentURL: URL?
     private var sizedDocumentOrientation: Bool?
+    private var isFullScreenTransitionInProgress = false
     private let authoredMinimumContentSize = NSSize(width: 560, height: 380)
 
     init(documentURL: URL?, updateChecker: UpdateChecker) {
@@ -710,9 +730,20 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
                 guard let self else { return }
                 self.refreshTitle()
                 self.window?.toolbar?.validateVisibleItems()
-                self.dismissInformationPopover(unlessShowing: self.browser.selectedURL)
             }
         }
+        // Observe the emitted selection, not a later objectWillChange callback:
+        // rapid A → B → A navigation must still cancel A's pending inspector.
+        informationSelectionObserver = browser.$selectedIndex
+            .combineLatest(browser.$files)
+            .map { index, files -> URL? in
+                guard let index, files.indices.contains(index) else { return nil }
+                return files[index].url
+            }
+            .removeDuplicates()
+            .sink { [weak self] selectedURL in
+                self?.dismissInformationPopover(unlessShowing: selectedURL)
+            }
         pixelSizeObserver = browser.$originalPixelSize
             .compactMap { $0 }
             .sink { [weak self] size in
@@ -770,6 +801,14 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         refreshToolbarLocalization(localization)
     }
 
+    func acceptsCommands(from candidate: NSWindow) -> Bool {
+        guard window?.attachedSheet == nil else { return false }
+        return window === candidate || (
+            informationPopover?.isShown == true &&
+            informationPopover?.contentViewController?.view.window === candidate
+        )
+    }
+
     /// The toolbar, its overflow menu, and the main menu all end here. Keeping
     /// the routing on the owning window prevents a background document from
     /// receiving actions when several viewers are open.
@@ -818,6 +857,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
     func windowDidBecomeKey(_ notification: Notification) {
         browser.resumeCanvasRendering()
         LumaViewWindowRegistry.shared.activate(browser)
+        MainMenuLocalization.applyToMainMenu(Self.currentLocalization)
     }
 
     func windowDidMiniaturize(_ notification: Notification) {
@@ -829,15 +869,62 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
     }
 
     func windowDidChangeOcclusionState(_ notification: Notification) {
+        updateCanvasVisibility()
+    }
+
+    private func updateCanvasVisibility() {
         guard let window else { return }
-        if window.occlusionState.contains(.visible) {
+        // AppKit temporarily occludes a window while moving it between Spaces.
+        // Keep its decoded frame through that animation; actual minimization
+        // still releases the canvas immediately.
+        if !window.isMiniaturized && (isFullScreenTransitionInProgress || window.occlusionState.contains(.visible)) {
             browser.resumeCanvasRendering()
         } else {
             browser.suspendCanvasRendering()
         }
     }
 
+    func windowWillEnterFullScreen(_ notification: Notification) {
+        isFullScreenTransitionInProgress = true
+        updateCanvasVisibility()
+    }
+
+    func windowWillExitFullScreen(_ notification: Notification) {
+        isFullScreenTransitionInProgress = true
+        updateCanvasVisibility()
+    }
+
+    func windowDidEnterFullScreen(_ notification: Notification) {
+        finishFullScreenTransition()
+    }
+
+    func windowDidExitFullScreen(_ notification: Notification) {
+        defer { finishFullScreenTransition() }
+        guard let pixelSize = browser.originalPixelSize,
+              let selectedURL = browser.selectedURL else { return }
+        // Full-screen selection/rotation deliberately skips ordinary window
+        // sizing. Reapply the current image after AppKit restores the old frame.
+        sizedDocumentURL = nil
+        applyDocumentSize(for: pixelSize, documentURL: selectedURL, quarterTurn: browser.quarterTurn)
+    }
+
+    func windowDidFailToEnterFullScreen(_ window: NSWindow) {
+        finishFullScreenTransition()
+    }
+
+    func windowDidFailToExitFullScreen(_ window: NSWindow) {
+        finishFullScreenTransition()
+    }
+
+    private func finishFullScreenTransition() {
+        isFullScreenTransitionInProgress = false
+        MainMenuLocalization.applyToMainMenu(Self.currentLocalization)
+        updateCanvasVisibility()
+    }
+
     func windowWillClose(_ notification: Notification) {
+        dismissInformationPopover()
+        browser.suspendCanvasRendering()
         LumaViewWindowRegistry.shared.remove(self)
     }
 
@@ -1015,18 +1102,35 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
     @objc private func informationToolbarAction(_ sender: Any?) {
         guard let selectedURL = browser.selectedURL else { return }
         dismissInformationPopover()
+        informationRequestedURL = selectedURL
         let anchor = sender as? NSView
-        Task { [weak self, weak anchor] in
-            let information = await Task.detached(priority: .userInitiated) {
-                ImageInformationReader.read(from: selectedURL)
-            }.value
-            guard let self, self.browser.selectedURL == selectedURL else { return }
-            self.presentInformationPopover(information, for: selectedURL, anchor: anchor)
+        let operation = BlockOperation()
+        operation.addExecutionBlock { [weak self, weak anchor, weak operation] in
+            guard operation?.isCancelled == false else { return }
+            let information = autoreleasepool { ImageInformationReader.read(from: selectedURL) }
+            guard operation?.isCancelled == false else { return }
+            DispatchQueue.main.async {
+                guard let self, self.informationOperation === operation,
+                      operation?.isCancelled == false,
+                      self.browser.selectedURL == selectedURL,
+                      self.window?.isVisible == true else { return }
+                self.informationOperation = nil
+                self.informationRequestedURL = nil
+                self.presentInformationPopover(information, for: selectedURL, anchor: anchor)
+            }
         }
+        informationOperation = operation
+        // Share the bounded header-reading queue rather than creating an
+        // unbounded detached reader for every click across every window.
+        ImageDecodeQueue.metadata.addOperation(operation)
     }
 
     private func dismissInformationPopover(unlessShowing selectedURL: URL? = nil) {
-        guard informationPopoverDocumentURL != selectedURL else { return }
+        if let selectedURL,
+           informationPopoverDocumentURL == selectedURL || informationRequestedURL == selectedURL { return }
+        informationOperation?.cancel()
+        informationOperation = nil
+        informationRequestedURL = nil
         informationPopover?.close()
         informationPopover = nil
         informationPopoverDocumentURL = nil
@@ -1055,7 +1159,8 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             // A toolbar item moved into the overflow menu sends an NSMenuItem,
             // not its original NSButton. Anchor the same popover to the current
             // window's upper-right content edge so the action stays available.
-            let edge = NSRect(x: fallbackAnchor.bounds.maxX - 28, y: fallbackAnchor.bounds.maxY - 1, width: 1, height: 1)
+            let top = fallbackAnchor.isFlipped ? fallbackAnchor.bounds.minY : fallbackAnchor.bounds.maxY - 1
+            let edge = NSRect(x: fallbackAnchor.bounds.maxX - 28, y: top, width: 1, height: 1)
             popover.show(relativeTo: edge, of: fallbackAnchor, preferredEdge: .minY)
         }
     }

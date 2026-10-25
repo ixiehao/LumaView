@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import ImageIO
 
 typealias ImageCancellationProbe = @Sendable () -> Bool
@@ -61,13 +62,14 @@ enum SketchPreviewExtractor {
             return Data(referencing: cached)
         }
 
+        let deadline = DispatchTime.now() + extractionTimeout
         var isDirectory = ObjCBool(false)
         let isPackage = FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
             && isDirectory.boolValue
         if isPackage {
             for path in previewPaths {
                 guard !isCancelled() else { return nil }
-                if let data = boundedData(at: url.appendingPathComponent(path), isCancelled: isCancelled) {
+                if let data = boundedData(at: url.appendingPathComponent(path), deadline: deadline, isCancelled: isCancelled) {
                     storePreview(data, for: cacheKey)
                     return data
                 }
@@ -77,7 +79,7 @@ enum SketchPreviewExtractor {
 
         for path in previewPaths {
             guard !isCancelled() else { return nil }
-            if let data = archiveEntry(path, in: url, isCancelled: isCancelled) {
+            if let data = archiveEntry(path, in: url, deadline: deadline, isCancelled: isCancelled) {
                 storePreview(data, for: cacheKey)
                 return data
             }
@@ -85,14 +87,34 @@ enum SketchPreviewExtractor {
         return nil
     }
 
-    private static func boundedData(at url: URL, isCancelled: ImageCancellationProbe) -> Data? {
-        guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
-              let size = (attributes[.size] as? NSNumber)?.intValue,
-              size > 0,
-              size <= maximumPreviewBytes,
-              !isCancelled(),
-              let data = try? Data(contentsOf: url),
-              !isCancelled(),
+    private static func boundedData(at url: URL, deadline: DispatchTime, isCancelled: ImageCancellationProbe) -> Data? {
+        guard !isCancelled(), DispatchTime.now() < deadline else { return nil }
+        // Validate the opened file, not a pathname that may be a symlink or
+        // change between the size check and the read. O_NONBLOCK also prevents
+        // an invalid package preview backed by a FIFO from hanging open().
+        // A single remote filesystem read can still wait for the OS; the
+        // monotonic deadline is checked before opening and between reads.
+        let descriptor = open(url.path, O_RDONLY | O_NONBLOCK | O_CLOEXEC)
+        guard descriptor >= 0 else { return nil }
+        defer { close(descriptor) }
+        var attributes = stat()
+        guard fstat(descriptor, &attributes) == 0,
+              attributes.st_mode & mode_t(S_IFMT) == mode_t(S_IFREG),
+              attributes.st_size > 0,
+              attributes.st_size <= Int64(maximumPreviewBytes) else { return nil }
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 32 * 1024)
+        while !isCancelled(), DispatchTime.now() < deadline {
+            let count = buffer.withUnsafeMutableBytes { Darwin.read(descriptor, $0.baseAddress!, $0.count) }
+            if count == 0 { break }
+            if count < 0 {
+                if errno == EINTR { continue }
+                return nil
+            }
+            guard count <= maximumPreviewBytes - data.count else { return nil }
+            data.append(contentsOf: buffer.prefix(count))
+        }
+        guard !isCancelled(), DispatchTime.now() < deadline, !data.isEmpty,
               CGImageSourceCreateWithData(data as CFData, nil) != nil else { return nil }
         return data
     }
@@ -103,86 +125,82 @@ enum SketchPreviewExtractor {
     private static func archiveEntry(
         _ entry: String,
         in archive: URL,
+        deadline: DispatchTime,
         isCancelled: @escaping ImageCancellationProbe
     ) -> Data? {
         let values = try? archive.resourceValues(forKeys: [.isRegularFileKey])
         guard values?.isRegularFile == true else { return nil }
 
         let process = Process()
-        let output = Pipe()
-        let termination = DispatchSemaphore(value: 0)
-        let readerFinished = DispatchSemaphore(value: 0)
-        let captureLock = NSLock()
-        var captured = Data()
-        var exceededLimit = false
-
         process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
         process.arguments = ["-p", archive.path, entry]
+        guard let data = boundedOutput(
+            from: process,
+            byteLimit: maximumPreviewBytes,
+            deadline: deadline,
+            isCancelled: isCancelled
+        ), !data.isEmpty,
+              CGImageSourceCreateWithData(data as CFData, nil) != nil else { return nil }
+        return data
+    }
+
+    /// Drain on this worker so cancellation never closes a descriptor owned by
+    /// another reader. Nonblocking reads make the output limit and shared
+    /// deadline apply even when a subprocess emits nothing or ignores SIGTERM.
+    static func boundedOutput(
+        from process: Process,
+        byteLimit: Int,
+        deadline: DispatchTime,
+        isCancelled: ImageCancellationProbe = { false }
+    ) -> Data? {
+        guard byteLimit > 0, !isCancelled(), DispatchTime.now() < deadline else { return nil }
+        let output = Pipe()
+        let termination = DispatchSemaphore(value: 0)
         process.standardOutput = output
         process.standardError = FileHandle.nullDevice
         process.terminationHandler = { _ in termination.signal() }
-
-        DispatchQueue.global(qos: .userInitiated).async {
-            defer { readerFinished.signal() }
-            while true {
-                if isCancelled() {
-                    if process.isRunning { process.terminate() }
-                    return
+        defer {
+            if process.isRunning {
+                process.terminate()
+                if termination.wait(timeout: .now() + .milliseconds(250)) != .success, process.isRunning {
+                    kill(process.processIdentifier, SIGKILL)
+                    _ = termination.wait(timeout: .now() + .seconds(1))
                 }
-                let chunk = output.fileHandleForReading.availableData
-                guard !chunk.isEmpty else { return }
-
-                captureLock.lock()
-                let remaining = Self.maximumPreviewBytes - captured.count
-                if remaining <= 0 || chunk.count > remaining {
-                    if remaining > 0 {
-                        captured.append(chunk.prefix(remaining))
-                    }
-                    exceededLimit = true
-                    captureLock.unlock()
-                    if process.isRunning { process.terminate() }
-                    continue
-                }
-                captured.append(chunk)
-                captureLock.unlock()
             }
+            try? output.fileHandleForReading.close()
+            try? output.fileHandleForWriting.close()
         }
-
+        let descriptor = output.fileHandleForReading.fileDescriptor
+        let flags = fcntl(descriptor, F_GETFL)
+        guard flags >= 0, fcntl(descriptor, F_SETFL, flags | O_NONBLOCK) >= 0 else { return nil }
         do {
             try process.run()
         } catch {
-            output.fileHandleForReading.closeFile()
             return nil
         }
+        // Process may already close the parent's pipe writer on launch.
+        try? output.fileHandleForWriting.close()
 
-        let deadline = DispatchTime.now() + extractionTimeout
-        var completedInTime = false
-        while DispatchTime.now() < deadline {
-            if isCancelled() { break }
-            if termination.wait(timeout: .now() + .milliseconds(40)) == .success {
-                completedInTime = true
-                break
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 32 * 1024)
+        while !isCancelled(), DispatchTime.now() < deadline {
+            let count = buffer.withUnsafeMutableBytes { Darwin.read(descriptor, $0.baseAddress!, $0.count) }
+            if count > 0 {
+                guard count <= byteLimit - data.count else { return nil }
+                data.append(contentsOf: buffer.prefix(count))
+            } else if count == 0 {
+                if termination.wait(timeout: .now() + .milliseconds(40)) == .success {
+                    guard !isCancelled(), process.terminationStatus == 0 else { return nil }
+                    return data
+                }
+            } else if errno == EAGAIN {
+                var descriptorState = pollfd(fd: descriptor, events: Int16(POLLIN), revents: 0)
+                _ = poll(&descriptorState, 1, 40)
+            } else if errno != EINTR {
+                return nil
             }
         }
-        if (!completedInTime || isCancelled()), process.isRunning {
-            process.terminate()
-            _ = termination.wait(timeout: .now() + .seconds(1))
-        }
-        _ = readerFinished.wait(timeout: .now() + .seconds(1))
-        output.fileHandleForReading.closeFile()
-
-        captureLock.lock()
-        let data = captured
-        let wasTooLarge = exceededLimit
-        captureLock.unlock()
-        guard completedInTime,
-              !isCancelled(),
-              !wasTooLarge,
-              process.terminationStatus == 0,
-              data.count > 0,
-              data.count <= maximumPreviewBytes,
-              CGImageSourceCreateWithData(data as CFData, nil) != nil else { return nil }
-        return data
+        return nil
     }
 
     private static func storePreview(_ data: Data, for key: NSString) {
@@ -230,9 +248,13 @@ private final class ImageLRUCache {
         if let oldEntry = entries.removeValue(forKey: stringKey) {
             totalCost -= oldEntry.cost
         }
+        // A frame larger than the entire budget cannot be cached. Reject it
+        // before eviction so it cannot flush every useful smaller frame.
+        let cost = max(cost, 1)
+        guard cost <= costLimit else { return }
         accessCounter &+= 1
-        entries[stringKey] = Entry(image: image, cost: max(cost, 1), lastAccess: accessCounter)
-        totalCost += max(cost, 1)
+        entries[stringKey] = Entry(image: image, cost: cost, lastAccess: accessCounter)
+        totalCost += cost
         trimIfNeeded()
     }
 
@@ -344,16 +366,30 @@ final class ImageMemoryCache {
     /// Including the filesystem identity, modification time and size prevents stale pixels
     /// being reused while retaining a lightweight, memory-only cache.
     static func cacheKey(for url: URL) -> NSString {
-        let values = try? url.resourceValues(forKeys: [.fileResourceIdentifierKey])
         let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
-        let identifier = values?.fileResourceIdentifier.map { String(describing: $0) } ?? ""
+        var key = fileFingerprint(for: url, attributes: attributes)
+        if url.pathExtension.lowercased() == "sketch", attributes?[.type] as? FileAttributeType == .typeDirectory {
+            // Updating a file inside an existing package does not necessarily
+            // change the package directory's modification date.
+            for name in ["preview.png", "preview.jpg", "preview.jpeg"] {
+                let preview = url.appendingPathComponent("previews/\(name)").resolvingSymlinksInPath()
+                key += "|\(fileFingerprint(for: preview, attributes: try? FileManager.default.attributesOfItem(atPath: preview.path)))"
+            }
+        }
+        return key as NSString
+    }
+
+    private static func fileFingerprint(for url: URL, attributes: [FileAttributeKey: Any]?) -> String {
+        let identifier = (attributes?[.systemFileNumber] as? NSNumber)?.stringValue ?? ""
         let modified = (attributes?[.modificationDate] as? Date)?.timeIntervalSinceReferenceDate ?? 0
         let size = (attributes?[.size] as? NSNumber)?.intValue ?? 0
-        return "\(url.path)|\(identifier)|\(modified)|\(size)" as NSString
+        return "\(url.path)|\(identifier)|\(modified)|\(size)"
     }
 
     private static func pathKey(for url: URL) -> String {
-        url.standardizedFileURL.resolvingSymlinksInPath().path
+        // Browsing already supplies canonical URLs. This lookup runs on the
+        // UI thread, so it must not touch symlinks on slow/removable volumes.
+        url.standardizedFileURL.path
     }
 
     private func updateNavigationKey(_ key: NSString, for url: URL, if shouldStore: Bool) {
@@ -376,13 +412,15 @@ final class ImageMemoryCache {
     }
 
     private static func byteCost(for image: NSImage, fallbackPixelSize: Int) -> Int {
-        let widest = image.representations.map(\.pixelsWide).max() ?? 0
-        let tallest = image.representations.map(\.pixelsHigh).max() ?? 0
-        let width = max(widest, 1)
-        let height = max(tallest, 1)
-        let actual = width * height * 4
-        // Do not trust an image representation to be smaller than the requested decode.
-        return min(actual, fallbackPixelSize * fallbackPixelSize * 4)
+        if let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+            // High-bit-depth ImageIO output can use more than four bytes per
+            // pixel. Charge its actual row stride instead of capping the cost
+            // at the requested dimensions and quietly exceeding the LRU budget.
+            let (cost, overflow) = bitmap.bytesPerRow.multipliedReportingOverflow(by: bitmap.height)
+            return overflow ? Int.max : max(cost, 1)
+        }
+        let size = max(1, min(fallbackPixelSize, 5_120))
+        return size * size * 4
     }
 }
 
@@ -435,7 +473,8 @@ struct ImageRenderRequest: Hashable {
     init(url: URL?, maxPixelSize: Int) {
         self.url = url
         // Bucket sizes prevent tiny resize/zoom changes from decoding a fresh image.
-        self.maxPixelSize = max(1024, min(((maxPixelSize + 511) / 512) * 512, 5120))
+        let size = max(1_024, min(maxPixelSize, 5_120))
+        self.maxPixelSize = ((size + 511) / 512) * 512
     }
 }
 
@@ -455,17 +494,30 @@ enum ImageDecoder {
         guard !isCancelled() else { return nil }
         if let source = imageSource(for: url, isCancelled: isCancelled),
            let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-           let width = (properties[kCGImagePropertyPixelWidth] as? NSNumber)?.doubleValue,
-           let height = (properties[kCGImagePropertyPixelHeight] as? NSNumber)?.doubleValue,
-           width > 0, height > 0, !isCancelled() {
-            return CGSize(width: width, height: height)
+           let size = orientedPixelSize(from: properties), !isCancelled() {
+            return size
         }
 
-        guard !isCancelled(), let image = sourceImage(for: url, isCancelled: isCancelled), !isCancelled() else { return nil }
-        let width = image.representations.map(\.pixelsWide).max() ?? Int(image.size.width)
-        let height = image.representations.map(\.pixelsHigh).max() ?? Int(image.size.height)
-        guard width > 0, height > 0 else { return nil }
+        guard url.pathExtension.lowercased() != "sketch",
+              !isCancelled(), fallbackSourceIsWithinBudget(url),
+              let image = sourceImage(for: url, isCancelled: isCancelled), !isCancelled() else { return nil }
+        let width = image.representations.map { CGFloat($0.pixelsWide) }.max() ?? image.size.width
+        let height = image.representations.map { CGFloat($0.pixelsHigh) }.max() ?? image.size.height
+        guard width > 0, height > 0, width.isFinite, height.isFinite else { return nil }
         return CGSize(width: width, height: height)
+    }
+
+    /// Thumbnails apply EXIF orientation while decoding. Geometry and the
+    /// inspector must use that same displayed orientation, including mirrored
+    /// quarter turns, rather than the encoded sensor dimensions.
+    static func orientedPixelSize(from properties: [CFString: Any]) -> CGSize? {
+        guard let width = (properties[kCGImagePropertyPixelWidth] as? NSNumber)?.doubleValue,
+              let height = (properties[kCGImagePropertyPixelHeight] as? NSNumber)?.doubleValue,
+              width > 0, height > 0, width.isFinite, height.isFinite else { return nil }
+        let orientation = (properties[kCGImagePropertyOrientation] as? NSNumber)?.intValue ?? 1
+        return (5...8).contains(orientation)
+            ? CGSize(width: height, height: width)
+            : CGSize(width: width, height: height)
     }
 
     /// Decodes an intentionally bounded bridge frame used only while a neighbour is
@@ -517,8 +569,9 @@ enum ImageDecoder {
         isCancelled: @escaping ImageCancellationProbe = { false }
     ) -> NSImage? {
         guard !isCancelled() else { return nil }
-        if let data = SketchPreviewExtractor.previewData(from: url, isCancelled: isCancelled) {
-            return NSImage(data: data)
+        if url.pathExtension.lowercased() == "sketch" {
+            return SketchPreviewExtractor.previewData(from: url, isCancelled: isCancelled)
+                .flatMap { NSImage(data: $0) }
         }
         guard !isCancelled() else { return nil }
         return NSImage(contentsOf: url)
@@ -531,6 +584,7 @@ enum ImageDecoder {
     ) -> NSImage? {
         guard !isCancelled() else { return nil }
         guard let source = imageSource(for: url, isCancelled: isCancelled) else {
+            guard url.pathExtension.lowercased() != "sketch" else { return nil }
             return fallbackDecode(url: url, maxPixelSize: maxPixelSize, isCancelled: isCancelled)
         }
         let options: [CFString: Any] = [
@@ -547,8 +601,9 @@ enum ImageDecoder {
 
     private static func imageSource(for url: URL, isCancelled: @escaping ImageCancellationProbe) -> CGImageSource? {
         guard !isCancelled() else { return nil }
-        if let data = SketchPreviewExtractor.previewData(from: url, isCancelled: isCancelled) {
-            return CGImageSourceCreateWithData(data as CFData, nil)
+        if url.pathExtension.lowercased() == "sketch" {
+            return SketchPreviewExtractor.previewData(from: url, isCancelled: isCancelled)
+                .flatMap { CGImageSourceCreateWithData($0 as CFData, nil) }
         }
         guard !isCancelled() else { return nil }
         return CGImageSourceCreateWithURL(url as CFURL, nil)
@@ -590,7 +645,8 @@ enum ImageDecoder {
         source.draw(in: NSRect(x: 0, y: 0, width: width, height: height), from: .zero, operation: .copy, fraction: 1)
         NSGraphicsContext.restoreGraphicsState()
         guard !isCancelled() else { return nil }
-        return NSImage(cgImage: bitmap.cgImage!, size: .zero)
+        guard let cgImage = bitmap.cgImage else { return nil }
+        return NSImage(cgImage: cgImage, size: .zero)
     }
 
     private static func fallbackSourceIsWithinBudget(_ url: URL) -> Bool {

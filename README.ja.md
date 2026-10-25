@@ -4,7 +4,7 @@
 
 画像を 1 枚開けば、同じフォルダ内を続けて閲覧できます。LumaView は画像を中心に据え、日常的な操作をすぐ手の届く場所に置きます。
 
-**[LumaView 1.2.8 ユニバーサル DMG をダウンロード](https://github.com/ixiehao/LumaView/releases/download/v1.2.8/LumaView-1.2.8-universal.dmg)** · [公式サイト](https://ixiehao.github.io/LumaView/?lang=ja) · [English](README.md) · [简体中文](README.zh-CN.md) · [変更履歴](CHANGELOG.md)
+**[LumaView 1.2.9 ユニバーサル DMG をダウンロード](https://github.com/ixiehao/LumaView/releases/download/v1.2.9/LumaView-1.2.9-universal.dmg)** · [公式サイト](https://ixiehao.github.io/LumaView/?lang=ja) · [English](README.md) · [简体中文](README.zh-CN.md) · [変更履歴](CHANGELOG.md)
 
 macOS 13 以降 · Intel + Apple Silicon · ユニバーサル DMG · 約 2 MB
 
@@ -24,7 +24,7 @@ macOS 13 以降 · Intel + Apple Silicon · ユニバーサル DMG · 約 2 MB
 
 ## インストール
 
-1. [ユニバーサル DMG をダウンロード](https://github.com/ixiehao/LumaView/releases/download/v1.2.8/LumaView-1.2.8-universal.dmg)します。
+1. [ユニバーサル DMG をダウンロード](https://github.com/ixiehao/LumaView/releases/download/v1.2.9/LumaView-1.2.9-universal.dmg)します。
 2. 開いた DMG から **LumaView.app** を **アプリケーション** フォルダへドラッグします。
 3. LumaView を開くか、画像をダブルクリックして Finder の「このアプリケーションで開く」から選びます。
 

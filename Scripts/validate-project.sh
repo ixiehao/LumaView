@@ -6,8 +6,17 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 STAGE_DIR="$(mktemp -d /tmp/lumaview-validation.XXXXXX)"
 DERIVED_DATA="$STAGE_DIR/DerivedData"
+TEST_ARCHITECTURE="$(uname -m)"
+VALIDATION_BUNDLE_ID='com.lumaview.validation.$(PRODUCT_NAME)'
 
 cleanup() {
+  # XCTest registers its temporary app with LaunchServices. Remove that entry
+  # before deleting the build so Finder cannot offer a vanished validation app.
+  local registration_tool="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+  local app
+  for app in "$DERIVED_DATA"/Build/Products/{Debug,Release}/*.app(N); do
+    "$registration_tool" -u "$app" >/dev/null 2>&1 || true
+  done
   rm -rf "$STAGE_DIR"
 }
 trap cleanup EXIT
@@ -23,7 +32,8 @@ xcodebuild \
   -scheme LumaView \
   -configuration Debug \
   -derivedDataPath "$DERIVED_DATA" \
-  -destination 'platform=macOS,arch=arm64' \
+  -destination "platform=macOS,arch=$TEST_ARCHITECTURE" \
+  PRODUCT_BUNDLE_IDENTIFIER="$VALIDATION_BUNDLE_ID" \
   test CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY="-"
 
 xcodebuild \
@@ -31,6 +41,7 @@ xcodebuild \
   -scheme LumaView \
   -configuration Release \
   -derivedDataPath "$DERIVED_DATA" \
+  PRODUCT_BUNDLE_IDENTIFIER="$VALIDATION_BUNDLE_ID" \
   ARCHS='arm64 x86_64' ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO \
   build
 

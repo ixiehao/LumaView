@@ -4,7 +4,7 @@
 
 打开一张图片，直接浏览同一文件夹。LumaView 将画面留在中心，把日常操作放在顺手的位置。
 
-**[下载 LumaView 1.2.8 · 通用 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.8/LumaView-1.2.8-universal.dmg)** · [官网](https://ixiehao.github.io/LumaView/?lang=zh) · [English](README.md) · [日本語](README.ja.md) · [变更记录](CHANGELOG.md)
+**[下载 LumaView 1.2.9 · 通用 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.9/LumaView-1.2.9-universal.dmg)** · [官网](https://ixiehao.github.io/LumaView/?lang=zh) · [English](README.md) · [日本語](README.ja.md) · [变更记录](CHANGELOG.md)
 
 macOS 13+ · Intel + Apple Silicon · 通用版 DMG · 约 2 MB
 
@@ -24,7 +24,7 @@ macOS 13+ · Intel + Apple Silicon · 通用版 DMG · 约 2 MB
 
 ## 安装
 
-1. [下载通用版 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.8/LumaView-1.2.8-universal.dmg)。
+1. [下载通用版 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.9/LumaView-1.2.9-universal.dmg)。
 2. 打开它，将 **LumaView.app** 拖进“应用程序”。
 3. 直接打开 LumaView，或双击图片后，在访达的“打开方式”中选择它。
 

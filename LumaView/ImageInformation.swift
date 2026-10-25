@@ -46,6 +46,7 @@ enum ImageInformationReader {
         }
         let exif = properties?[kCGImagePropertyExifDictionary] as? [CFString: Any]
         let tiff = properties?[kCGImagePropertyTIFFDictionary] as? [CFString: Any]
+        let pixelSize = properties.flatMap { ImageDecoder.orientedPixelSize(from: $0) }
 
         let make = string(in: tiff, for: kCGImagePropertyTIFFMake)
         let model = string(in: tiff, for: kCGImagePropertyTIFFModel)
@@ -55,8 +56,8 @@ enum ImageInformationReader {
             fileName: url.lastPathComponent,
             fileFormat: displayFormat(for: url),
             fileSize: fileValues?.fileSize,
-            pixelWidth: integer(in: properties, for: kCGImagePropertyPixelWidth),
-            pixelHeight: integer(in: properties, for: kCGImagePropertyPixelHeight),
+            pixelWidth: pixelSize.flatMap { Int(exactly: $0.width) },
+            pixelHeight: pixelSize.flatMap { Int(exactly: $0.height) },
             capturedAt: formattedCaptureDate(string(in: exif, for: kCGImagePropertyExifDateTimeOriginal)),
             camera: camera.isEmpty ? nil : camera,
             lens: string(in: exif, for: kCGImagePropertyExifLensModel),
@@ -71,12 +72,6 @@ enum ImageInformationReader {
         guard let value = dictionary?[key] as? String else { return nil }
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
-    }
-
-    private static func integer(in dictionary: [CFString: Any]?, for key: CFString) -> Int? {
-        guard let value = dictionary?[key] as? NSNumber else { return nil }
-        let integer = value.intValue
-        return integer > 0 ? integer : nil
     }
 
     private static func number(in dictionary: [CFString: Any]?, for key: CFString) -> Double? {
@@ -112,10 +107,12 @@ enum ImageInformationReader {
         return "\(components[0].replacingOccurrences(of: ":", with: "-")) \(components[1])"
     }
 
-    private static func formattedExposure(_ seconds: Double?) -> String? {
-        guard let seconds else { return nil }
+    static func formattedExposure(_ seconds: Double?) -> String? {
+        guard let seconds, seconds.isFinite, seconds > 0 else { return nil }
         if seconds < 1 {
-            return "1/\(Int((1 / seconds).rounded())) s"
+            let reciprocal = (1 / seconds).rounded()
+            guard reciprocal.isFinite else { return "\(String(format: "%.3g", seconds)) s" }
+            return "1/\(formattedDecimal(reciprocal)) s"
         }
         return "\(formattedDecimal(seconds)) s"
     }
@@ -138,8 +135,10 @@ enum ImageInformationReader {
         focalLength.map { "\(formattedDecimal($0)) mm" }
     }
 
-    private static func formattedDecimal(_ value: Double) -> String {
-        if value.rounded() == value { return String(Int(value)) }
+    static func formattedDecimal(_ value: Double) -> String {
+        // Metadata is untrusted: finite Double values may still lie outside
+        // Int's range. Formatting directly avoids a conversion trap.
+        if value.rounded() == value { return String(format: "%.0f", value) }
         return String(format: "%.1f", value)
     }
 }

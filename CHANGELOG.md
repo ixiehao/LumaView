@@ -4,6 +4,29 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
+## 1.2.9 — 2026-10-25
+
+### English
+
+- Keep the image visible during full-screen transitions and refit the window to its current rotation when leaving full screen.
+- Fix stale Image Information results while browsing and improve access from the toolbar overflow menu.
+- Keep explicitly opened hidden images selected and report folder access errors without closing the current image. Restore ⌘O after the last window closes.
+- Tighten image-cache accounting and cancel unnecessary prefetching. Bound Sketch preview extraction by output size and time.
+
+### 中文
+
+- 修复全屏切换时画面被清空的问题，退出全屏后按当前旋转方向适配窗口。
+- 修复切图后图片信息可能显示旧结果的问题，完善折叠工具栏中的信息按钮。
+- 正确保留主动打开的隐藏图片；目录无法读取时显示原因并保留当前图片。关闭最后一个窗口后仍可用 ⌘O 打开文件。
+- 优化图片缓存计费和预读取消，为 Sketch 预览解压设置大小与时间上限。
+
+### 日本語
+
+- フルスクリーンへの切り替え中に画像が消える問題を修正。フルスクリーンを終了すると、現在の回転方向に合わせてウインドウを調整します。
+- 画像を切り替えた後に「画像情報」に古い結果が表示される問題を修正し、ツールバーの隠れた項目からも開けるよう改善しました。
+- 直接開いた隠し画像の選択を維持し、フォルダを読み取れない場合も現在の画像を表示したままエラーを知らせます。最後のウインドウを閉じた後も ⌘O でファイルを開けます。
+- 画像キャッシュの使用量計算と不要な先読みのキャンセルを改善。Sketch プレビューの展開に出力サイズと時間の上限を設けました。
+
 ## 1.2.8 — 2026-10-17
 
 ### English

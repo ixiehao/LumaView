@@ -31,6 +31,88 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertFalse(ImageFile.canOpen(directory.appendingPathComponent("missing.jpg")))
     }
 
+    func testMissingFolderReportsFailureInsteadOfAnEmptyIndex() async throws {
+        let missing = directory.appendingPathComponent("missing", isDirectory: true)
+        XCTAssertThrowsError(try ImageBrowserStore.scanFolder(missing).get())
+        XCTAssertThrowsError(try ImageBrowserStore.scanFolder(missing, isCancelled: { true }).get()) {
+            XCTAssertTrue($0 is CancellationError)
+        }
+
+        let store = await MainActor.run { ImageBrowserStore() }
+        await MainActor.run { store.open(folder: missing, selecting: nil) }
+        try await waitForScan(store)
+        await MainActor.run {
+            XCTAssertTrue(store.files.isEmpty)
+            XCTAssertNil(store.selectedURL)
+            XCTAssertNotNil(store.folderScanErrorMessage)
+            XCTAssertEqual(store.displayStatusMessage, store.folderScanErrorMessage)
+            XCTAssertEqual(store.statusAccessibilityLabel, store.folderScanErrorMessage)
+        }
+    }
+
+    func testFolderScanRejectsARegularFile() throws {
+        let file = directory.appendingPathComponent("image.png")
+        try makePNG(at: file, width: 96, height: 64)
+        XCTAssertThrowsError(try ImageBrowserStore.scanFolder(file).get()) { error in
+            XCTAssertEqual((error as NSError).domain, NSPOSIXErrorDomain)
+            XCTAssertEqual((error as NSError).code, Int(POSIXErrorCode.ENOTDIR.rawValue))
+        }
+    }
+
+    func testUnreadableFolderReportsFailureInsteadOfAnEmptyIndex() throws {
+        try makePNG(at: directory.appendingPathComponent("image.png"), width: 96, height: 64)
+        try FileManager.default.setAttributes([.posixPermissions: 0o111], ofItemAtPath: directory.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: directory.path) }
+        guard !FileManager.default.isReadableFile(atPath: directory.path) else {
+            throw XCTSkip("The test process can bypass directory read permissions")
+        }
+        XCTAssertThrowsError(try ImageBrowserStore.scanFolder(directory).get())
+    }
+
+    func testUnreadableParentKeepsDirectImageAndWarningAfterDecode() async throws {
+        let file = directory.appendingPathComponent("first.png")
+        try makePNG(at: file, width: 96, height: 64)
+        try makePNG(at: directory.appendingPathComponent("second.png"), width: 96, height: 64)
+        // Search permission lets the explicitly chosen image remain readable,
+        // while listing its siblings requires directory read permission.
+        try FileManager.default.setAttributes([.posixPermissions: 0o111], ofItemAtPath: directory.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: directory.path) }
+        guard !FileManager.default.isReadableFile(atPath: directory.path) else {
+            throw XCTSkip("The test process can bypass directory read permissions")
+        }
+        XCTAssertNotNil(ImageDecoder.navigationPreview(for: file))
+        let store = await MainActor.run { ImageBrowserStore() }
+        await MainActor.run { store.open(file: file) }
+        try await waitForScan(store)
+
+        try await MainActor.run {
+            let warning = try XCTUnwrap(store.folderScanErrorMessage)
+            XCTAssertEqual(store.selectedURL, file.standardizedFileURL.resolvingSymlinksInPath())
+            XCTAssertEqual(store.files.count, 1)
+            XCTAssertFalse(store.isScanning)
+            store.reportImageLoadResult(isAvailable: true, failureMessage: "No preview")
+            XCTAssertEqual(store.displayStatusMessage, warning)
+            XCTAssertTrue(store.statusAccessibilityLabel.contains(warning))
+            XCTAssertTrue(store.statusAccessibilityLabel.contains(file.lastPathComponent))
+
+            store.statusMessage = "Preparing to print"
+            store.reportImageLoadResult(isAvailable: false, failureMessage: "No preview")
+            store.reportImageLoadResult(isAvailable: true, failureMessage: "No preview")
+            XCTAssertEqual(store.displayStatusMessage, "Preparing to print")
+            store.statusMessage = nil
+            XCTAssertEqual(store.displayStatusMessage, warning)
+        }
+
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: directory.path)
+        await MainActor.run { store.open(file: file) }
+        try await waitForScan(store)
+        await MainActor.run {
+            XCTAssertEqual(store.files.count, 2)
+            XCTAssertNil(store.folderScanErrorMessage)
+            XCTAssertNil(store.displayStatusMessage)
+        }
+    }
+
     @MainActor
     func testExternalDocumentRouterBuffersLaunchEventsAndDeliversLaterFinderEvents() throws {
         let first = directory.appendingPathComponent("first.png")
@@ -411,6 +493,44 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertTrue(information.hasEXIF)
     }
 
+    func testEXIFOrientationAgreesWithTheDecodedImageDimensions() throws {
+        // The window uses the header dimensions, while ImageIO applies EXIF
+        // orientation when decoding. A disagreement introduces white rails or
+        // crops the portrait photograph before the user rotates it even once.
+        for orientation in 1...8 {
+            let url = directory.appendingPathComponent("orientation-\(orientation).jpg")
+            try makeJPEGWithEXIF(at: url, orientation: orientation)
+            let expectedSize = orientation >= 5
+                ? CGSize(width: 240, height: 320)
+                : CGSize(width: 320, height: 240)
+            let preview = try XCTUnwrap(ImageDecoder.navigationPreview(for: url, maxPixelSize: 1_024))
+            let rendered = try XCTUnwrap(ImageDecoder.renderedImage(
+                for: ImageRenderRequest(url: url, maxPixelSize: 1_024)
+            ))
+
+            XCTAssertEqual(ImageDecoder.pixelSize(for: url), expectedSize, "EXIF orientation \(orientation)")
+            XCTAssertEqual(ViewerGeometry.decodedSize(for: preview), expectedSize, "EXIF orientation \(orientation)")
+            XCTAssertEqual(ViewerGeometry.decodedSize(for: rendered), expectedSize, "EXIF orientation \(orientation)")
+            XCTAssertEqual(ImageInformationReader.read(from: url).dimensions,
+                           "\(Int(expectedSize.width)) × \(Int(expectedSize.height))")
+        }
+    }
+
+    func testExtremeEXIFNumbersDoNotOverflowOrProduceAnInfiniteExposure() throws {
+        for seconds in [Double.leastNonzeroMagnitude, 1e-30, Double.greatestFiniteMagnitude] {
+            let exposure = try XCTUnwrap(ImageInformationReader.formattedExposure(seconds))
+            XCTAssertTrue(exposure.hasSuffix(" s"))
+            XCTAssertFalse(exposure.lowercased().contains("inf"))
+            XCTAssertFalse(exposure.lowercased().contains("nan"))
+        }
+        for seconds in [0, -1, Double.infinity, Double.nan] {
+            XCTAssertNil(ImageInformationReader.formattedExposure(seconds))
+        }
+        XCTAssertEqual(ImageInformationReader.formattedExposure(1.0 / 125), "1/125 s")
+        XCTAssertEqual(ImageInformationReader.formattedDecimal(50), "50")
+        XCTAssertEqual(ImageInformationReader.formattedDecimal(2.8), "2.8")
+    }
+
     @MainActor
     func testImageInformationInspectorFitsCompleteEXIFWithoutInternalScrolling() {
         let information = ImageInformation(
@@ -520,6 +640,116 @@ final class LumaViewCoreTests: XCTestCase {
             for: ImageRenderRequest(url: documentURL, maxPixelSize: 1_024),
             isCancelled: { true }
         ))
+    }
+
+    func testSketchExtractionEnforcesOutputLimitAndHandlesLaunchFailure() {
+        func run(_ command: String, limit: Int) -> Data? {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/bin/sh")
+            process.arguments = ["-c", command]
+            let result = SketchPreviewExtractor.boundedOutput(
+                from: process, byteLimit: limit, deadline: .now() + .seconds(2)
+            )
+            XCTAssertFalse(process.isRunning, "An extraction must not leave its subprocess running")
+            return result
+        }
+        XCTAssertEqual(run("printf 12345678", limit: 8), Data("12345678".utf8))
+        XCTAssertNil(run("printf 123456789", limit: 8))
+        XCTAssertNil(run("printf partial; exit 1", limit: 64))
+
+        let missing = Process()
+        missing.executableURL = directory.appendingPathComponent("missing-unzip")
+        XCTAssertNil(SketchPreviewExtractor.boundedOutput(
+            from: missing, byteLimit: 64, deadline: .now() + .seconds(2)
+        ))
+    }
+
+    func testSketchExtractionTimeoutAndCancellationTerminateAStalledProcess() {
+        for cancel in [false, true] {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/bin/sh")
+            // No descendant process: SIGTERM is deliberately ignored to verify
+            // the extractor's bounded escalation also reaps the child.
+            process.arguments = ["-c", "trap '' TERM; printf partial; while :; do :; done"]
+            let cancellationTime = DispatchTime.now() + .milliseconds(150)
+            let result = SketchPreviewExtractor.boundedOutput(
+                from: process,
+                byteLimit: 64,
+                deadline: .now() + .milliseconds(cancel ? 2_000 : 150),
+                isCancelled: { cancel && DispatchTime.now() >= cancellationTime }
+            )
+            XCTAssertNil(result)
+            XCTAssertFalse(process.isRunning)
+        }
+    }
+
+    func testSketchPackagePreviewReplacementInvalidatesCachedDimensionsAndPixels() throws {
+        let package = directory.appendingPathComponent("replaced.sketch", isDirectory: true)
+        let previews = package.appendingPathComponent("previews", isDirectory: true)
+        try FileManager.default.createDirectory(at: previews, withIntermediateDirectories: true)
+        let preview = previews.appendingPathComponent("preview.png")
+        try makePNG(at: preview, width: 144, height: 96)
+        let packageDate = try XCTUnwrap(
+            FileManager.default.attributesOfItem(atPath: package.path)[.modificationDate] as? Date
+        )
+        let oldKey = ImageMemoryCache.cacheKey(for: package)
+        XCTAssertEqual(ImageMetadataCache.shared.pixelSize(for: package), CGSize(width: 144, height: 96))
+        XCTAssertNotNil(ImageDecoder.navigationPreview(for: package))
+
+        try makePNG(at: preview, width: 300, height: 200)
+        try FileManager.default.setAttributes([.modificationDate: packageDate], ofItemAtPath: package.path)
+        XCTAssertNotEqual(ImageMemoryCache.cacheKey(for: package), oldKey)
+        XCTAssertEqual(ImageMetadataCache.shared.pixelSize(for: package), CGSize(width: 300, height: 200))
+        let replaced = try XCTUnwrap(ImageDecoder.navigationPreview(for: package))
+        XCTAssertEqual(ViewerGeometry.decodedSize(for: replaced), CGSize(width: 300, height: 200))
+    }
+
+    func testSketchPackageOpensAsADocumentAndNavigatesItsParentFolder() async throws {
+        let package = directory.appendingPathComponent("01-design.sketch", isDirectory: true)
+        let previews = package.appendingPathComponent("previews", isDirectory: true)
+        try FileManager.default.createDirectory(at: previews, withIntermediateDirectories: true)
+        try makePNG(at: previews.appendingPathComponent("preview.png"), width: 144, height: 96)
+        let next = directory.appendingPathComponent("02-photo.png")
+        try makePNG(at: next, width: 96, height: 64)
+        let store = await MainActor.run { ImageBrowserStore() }
+
+        await MainActor.run { store.open(url: package, l: L10n(language: .english)) }
+        let immediateURL = await MainActor.run { store.selectedURL }
+        XCTAssertEqual(immediateURL, package.standardizedFileURL.resolvingSymlinksInPath())
+        try await waitForScan(store)
+        let state = await MainActor.run { (store.folderURL, store.files.map(\.name), store.selectedURL) }
+        XCTAssertEqual(state.0, directory.standardizedFileURL.resolvingSymlinksInPath())
+        XCTAssertEqual(state.1, ["01-design.sketch", "02-photo.png"])
+        XCTAssertEqual(state.2, package.standardizedFileURL.resolvingSymlinksInPath())
+
+        await MainActor.run { store.next() }
+        let nextURL = await MainActor.run { store.selectedURL }
+        XCTAssertEqual(nextURL, next.standardizedFileURL.resolvingSymlinksInPath())
+    }
+
+    func testReplacingAnInFlightFolderOpenKeepsTheLatestDocument() async throws {
+        let firstFolder = directory.appendingPathComponent("first", isDirectory: true)
+        let secondFolder = directory.appendingPathComponent("second", isDirectory: true)
+        try FileManager.default.createDirectory(at: firstFolder, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: secondFolder, withIntermediateDirectories: true)
+        let first = firstFolder.appendingPathComponent("first.png")
+        let second = secondFolder.appendingPathComponent("second.png")
+        try makePNG(at: first, width: 120, height: 80)
+        try makePNG(at: second, width: 80, height: 120)
+        let store = await MainActor.run { ImageBrowserStore() }
+
+        // The first scan cannot publish its result until this actor turn yields.
+        await MainActor.run {
+            store.open(url: first, l: L10n(language: .english))
+            store.next()
+            store.open(url: second, l: L10n(language: .english))
+        }
+        try await waitForScan(store)
+        let state = await MainActor.run { (store.folderURL, store.files.map(\.name), store.selectedURL, store.isScanning) }
+        XCTAssertEqual(state.0, secondFolder.standardizedFileURL.resolvingSymlinksInPath())
+        XCTAssertEqual(state.1, ["second.png"])
+        XCTAssertEqual(state.2, second.standardizedFileURL.resolvingSymlinksInPath())
+        XCTAssertFalse(state.3)
     }
 
     func testEveryUserSelectableLanguageHasAllRequiredTranslations() {
@@ -733,6 +963,26 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertEqual(indexedState.2, "2 / 2")
     }
 
+    func testExplicitlyOpenedHiddenImageSurvivesIndexingAndCanNavigate() async throws {
+        let hidden = directory.appendingPathComponent(".selected.png")
+        let visible = directory.appendingPathComponent("visible.png")
+        try makePNG(at: hidden, width: 96, height: 64)
+        try makePNG(at: visible, width: 96, height: 64)
+        let store = await MainActor.run { ImageBrowserStore() }
+
+        await MainActor.run { store.open(url: hidden, l: L10n(language: .english)) }
+        try await waitForScan(store)
+        let selected = await MainActor.run { store.selectedURL }
+        XCTAssertEqual(selected, hidden.standardizedFileURL.resolvingSymlinksInPath())
+        let names = await MainActor.run { store.files.map(\.name) }
+        XCTAssertEqual(Set(names), Set([hidden.lastPathComponent, visible.lastPathComponent]))
+        await MainActor.run {
+            if store.hasNext { store.next() } else { store.previous() }
+        }
+        let navigated = await MainActor.run { store.selectedURL }
+        XCTAssertEqual(navigated, visible.standardizedFileURL.resolvingSymlinksInPath())
+    }
+
     func testNavigationPressedDuringFolderScanIsAppliedAfterIndexing() async throws {
         let first = directory.appendingPathComponent("photo-1.png")
         let second = directory.appendingPathComponent("photo-2.png")
@@ -813,7 +1063,7 @@ final class LumaViewCoreTests: XCTestCase {
         try Data("fixture".utf8).write(to: directory.appendingPathComponent(name))
     }
 
-    private func makeJPEGWithEXIF(at url: URL) throws {
+    private func makeJPEGWithEXIF(at url: URL, orientation: Int = 1) throws {
         let bitmap = try XCTUnwrap(NSBitmapImageRep(
             bitmapDataPlanes: nil,
             pixelsWide: 320,
@@ -831,6 +1081,7 @@ final class LumaViewCoreTests: XCTestCase {
             CGImageDestinationCreateWithURL(url as CFURL, "public.jpeg" as CFString, 1, nil)
         )
         let properties: [CFString: Any] = [
+            kCGImagePropertyOrientation: orientation,
             kCGImagePropertyTIFFDictionary: [
                 kCGImagePropertyTIFFMake: "Luma Labs",
                 kCGImagePropertyTIFFModel: "LumaCam 1"
