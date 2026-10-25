@@ -85,7 +85,7 @@ struct ContentView: View {
             guard let data = item as? Data,
                   let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
             DispatchQueue.main.async {
-                browser.open(url: url, l: l)
+                browser.open(url: url)
             }
         }
         return true

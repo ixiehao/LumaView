@@ -5,7 +5,9 @@ Run this checklist before creating a universal (`arm64` + `x86_64`) release DMG.
 - [ ] `./Scripts/validate-project.sh` passes on the host Mac and verifies both universal Release slices. Validation uses an isolated bundle identifier and unregisters temporary builds from LaunchServices on exit; it does not replace the installed app.
 - [ ] For a lifecycle or performance release, run the optional real-window 1 / 4 / 8 5K rendering gate with `LUMAVIEW_RUN_STRESS_TEST=1 ./Scripts/validate-project.sh`: first canvas appears within 25 seconds; all canvases appear within `30 + 12 × window count` seconds; every source has exactly one AppKit window, stable document accessibility scope, and an independent initial canvas/viewport state; target RSS stays below 1.2 GiB. These are broad lifecycle safety limits, not a device benchmark; routine functional releases skip this opt-in gate.
 - [ ] The automated Finder-style opening test passes: a file opened at launch shows before directory indexing completes, and `←` / `→` moves between its natural-order siblings. The router unit test separately covers buffered pre-launch URLs, duplicate filtering, unsupported URLs, and a new open event while the app is already running.
-- [ ] English, Simplified Chinese, and Japanese have been checked in Light and Dark appearance, including every visible toolbar label.
+- [ ] English, Simplified Chinese, French, Russian, Spanish, Japanese, and Korean have been checked in Light and Dark appearance, including menus, settings and toolbar labels. English is first in both language selectors; the stored language survives restart.
+- [ ] With an existing error visible, switch languages and verify both the canvas and bottom status/VoiceOver text update. Also check empty-folder and print feedback; changing language must not require repeating the failed operation.
+- [ ] Minimize an image window, then restore it from the Window menu. The suspended canvas must not report a decode failure, and the same image must return at its previous angle and zoom.
 - [ ] Open **LumaView → Settings…** (`⌘,`) and confirm the window is not blank: it must contain the appearance picker, language picker, installed-version text, and **Check for Updates…** button. This is a manual check because macOS exposes the app-level Settings command unreliably to XCTest across host versions.
 - [ ] Folder scan, previous/next, zoom, fit, rotation, print, Finder reveal, drag-and-drop, and unsupported-file feedback have been checked manually. For print, use a non-sensitive image, open `⌘P`, verify the standard macOS panel, then cancel or save to a disposable PDF. For drag-and-drop, use a real Finder drag rather than a synthetic provider.
 - [ ] Click the **Image Information** toolbar button for a photo with EXIF and for a PNG without EXIF. Confirm the compact inspector shows file facts in both cases, only shows camera rows when they exist, and does not change the displayed image.
@@ -38,8 +40,10 @@ angle label for the displayed pixels or enable system permissions automatically.
 Native UI tests need the document window to own keyboard focus. Activation alone
 can leave another panel or application intercepting input on a multi-display
 desktop. Open/print panel controls must be queried inside their panel; a global
-`Cancel` query can match the Touch Bar instead. Full-screen tests use the native
-window control rather than assuming a fixed system keyboard shortcut.
+`Cancel` query can match the Touch Bar instead. Full-screen tests enter through
+the native window control and exit through LumaView's Control-Command-F command.
+Measure the union of the AX window and its toolbar, since macOS can expose them
+as separate frames. Verify the rotated image's aspect ratio after exiting.
 
 ## LaunchServices coverage boundary
 

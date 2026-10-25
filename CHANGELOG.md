@@ -11,18 +11,21 @@ marketing version.
 - Add French, Russian, Spanish, and Korean. English appears first in both language selectors; existing language preferences are preserved.
 - Replace both rotation icons with clearer directional arrows from Tabler Icons.
 - Keep native menu translations and the full-screen shortcut working after menu updates.
+- Update existing error messages when the language changes, and avoid showing a preview failure while a window is paused in the background.
 
 ### 中文
 
 - 新增法语、俄语、西班牙语和韩语；菜单与设置中的 English 均置于首位，保留已有语言偏好。
 - 更换一对方向更清晰的 Tabler 旋转图标。
 - 修复菜单刷新后原生菜单译文丢失、全屏快捷键失效的问题。
+- 切换语言时同步更新已有错误提示；后台暂停画布时不再误显示预览失败。
 
 ### 日本語
 
 - フランス語、ロシア語、スペイン語、韓国語を追加。言語メニューと設定では English を先頭に表示し、選択済みの言語は維持します。
 - 回転方向が分かりやすい Tabler Icons のアイコンに変更しました。
 - メニュー更新後に翻訳が元に戻る問題と、フルスクリーンのショートカットが使えなくなる問題を修正しました。
+- 言語を変更すると表示中のエラーメッセージも切り替わります。バックグラウンドで画像表示を一時停止している間に、プレビュー失敗と表示される問題を修正しました。
 
 ## 1.2.9 — 2026-10-25
 

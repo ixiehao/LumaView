@@ -70,8 +70,8 @@ final class LumaViewCoreTests: XCTestCase {
             XCTAssertTrue(store.files.isEmpty)
             XCTAssertNil(store.selectedURL)
             XCTAssertNotNil(store.folderScanErrorMessage)
-            XCTAssertEqual(store.displayStatusMessage, store.folderScanErrorMessage)
-            XCTAssertEqual(store.statusAccessibilityLabel, store.folderScanErrorMessage)
+            XCTAssertEqual(store.displayStatusMessage(L10n(language: .english)), store.folderScanErrorMessage)
+            XCTAssertEqual(store.statusAccessibilityLabel(L10n(language: .english)), store.folderScanErrorMessage)
         }
     }
 
@@ -115,17 +115,17 @@ final class LumaViewCoreTests: XCTestCase {
             XCTAssertEqual(store.selectedURL, file.standardizedFileURL.resolvingSymlinksInPath())
             XCTAssertEqual(store.files.count, 1)
             XCTAssertFalse(store.isScanning)
-            store.reportImageLoadResult(isAvailable: true, failureMessage: "No preview")
-            XCTAssertEqual(store.displayStatusMessage, warning)
-            XCTAssertTrue(store.statusAccessibilityLabel.contains(warning))
-            XCTAssertTrue(store.statusAccessibilityLabel.contains(file.lastPathComponent))
+            store.reportImageLoadResult(isAvailable: true)
+            XCTAssertEqual(store.displayStatusMessage(L10n(language: .english)), warning)
+            XCTAssertTrue(store.statusAccessibilityLabel(L10n(language: .english)).contains(warning))
+            XCTAssertTrue(store.statusAccessibilityLabel(L10n(language: .english)).contains(file.lastPathComponent))
 
-            store.statusMessage = "Preparing to print"
-            store.reportImageLoadResult(isAvailable: false, failureMessage: "No preview")
-            store.reportImageLoadResult(isAvailable: true, failureMessage: "No preview")
-            XCTAssertEqual(store.displayStatusMessage, "Preparing to print")
-            store.statusMessage = nil
-            XCTAssertEqual(store.displayStatusMessage, warning)
+            store.status = .preparingPrint
+            store.reportImageLoadResult(isAvailable: false)
+            store.reportImageLoadResult(isAvailable: true)
+            XCTAssertEqual(store.displayStatusMessage(L10n(language: .english)), L10n(language: .english).text("status.preparingPrint"))
+            store.status = nil
+            XCTAssertEqual(store.displayStatusMessage(L10n(language: .english)), warning)
         }
 
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: directory.path)
@@ -134,7 +134,7 @@ final class LumaViewCoreTests: XCTestCase {
         await MainActor.run {
             XCTAssertEqual(store.files.count, 2)
             XCTAssertNil(store.folderScanErrorMessage)
-            XCTAssertNil(store.displayStatusMessage)
+            XCTAssertNil(store.displayStatusMessage(L10n(language: .english)))
         }
     }
 
@@ -738,7 +738,7 @@ final class LumaViewCoreTests: XCTestCase {
         try makePNG(at: next, width: 96, height: 64)
         let store = await MainActor.run { ImageBrowserStore() }
 
-        await MainActor.run { store.open(url: package, l: L10n(language: .english)) }
+        await MainActor.run { store.open(url: package) }
         let immediateURL = await MainActor.run { store.selectedURL }
         XCTAssertEqual(immediateURL, package.standardizedFileURL.resolvingSymlinksInPath())
         try await waitForScan(store)
@@ -765,9 +765,9 @@ final class LumaViewCoreTests: XCTestCase {
 
         // The first scan cannot publish its result until this actor turn yields.
         await MainActor.run {
-            store.open(url: first, l: L10n(language: .english))
+            store.open(url: first)
             store.next()
-            store.open(url: second, l: L10n(language: .english))
+            store.open(url: second)
         }
         try await waitForScan(store)
         let state = await MainActor.run { (store.folderURL, store.files.map(\.name), store.selectedURL, store.isScanning) }
@@ -848,22 +848,64 @@ final class LumaViewCoreTests: XCTestCase {
         // The extension is deliberately accepted by Finder/drop routing, but
         // ImageIO cannot decode it. Keep the selected document state so the
         // canvas shows its explicit unavailable state rather than welcome UI.
-        store.open(url: unsupported, l: localization)
+        store.open(url: unsupported)
         XCTAssertEqual(store.selectedURL, unsupported.standardizedFileURL.resolvingSymlinksInPath())
         XCTAssertNil(ImageDecoder.renderedImage(for: ImageRenderRequest(url: unsupported, maxPixelSize: 1_024)))
 
         let rejected = directory.appendingPathComponent("not-an-image.txt")
         try Data("not an image".utf8).write(to: rejected)
-        store.open(url: rejected, l: localization)
-        XCTAssertEqual(store.statusMessage, localization.text("error.unsupportedFormat"))
+        store.open(url: rejected)
+        XCTAssertEqual(store.displayStatusMessage(localization), localization.text("error.unsupportedFormat"))
     }
 
     @MainActor
     func testPrintWithoutSelectionReportsLocalizedFeedbackInsteadOfPresentingAPanel() {
         let store = ImageBrowserStore()
         let localization = L10n(language: .english)
-        store.printSelectedImage(localization)
-        XCTAssertEqual(store.statusMessage, localization.text("error.noPrintSelection"))
+        store.printSelectedImage()
+        XCTAssertEqual(store.displayStatusMessage(localization), localization.text("error.noPrintSelection"))
+    }
+
+    @MainActor
+    func testExistingFeedbackUsesCurrentLanguageWithoutRepeatingOperations() async throws {
+        let store = ImageBrowserStore()
+        let english = L10n(language: .english)
+        let french = L10n(language: .french)
+        let unsupported = directory.appendingPathComponent("notes.txt")
+        try Data("text".utf8).write(to: unsupported)
+        store.open(file: unsupported)
+        XCTAssertEqual(store.displayStatusMessage(english), "Unsupported image format.")
+        XCTAssertEqual(store.displayStatusMessage(french), "Format d’image non pris en charge.")
+
+        store.printSelectedImage()
+        XCTAssertEqual(store.displayStatusMessage(french), french.text("error.noPrintSelection"))
+        try FileManager.default.removeItem(at: unsupported)
+        store.open(folder: directory, selecting: nil)
+        try await waitForScan(store)
+        XCTAssertEqual(store.displayStatusMessage(french), french.text("error.emptyFolder"))
+
+        let file = directory.appendingPathComponent("broken.jpg")
+        try Data("not an image".utf8).write(to: file)
+        store.open(file: file)
+        try await waitForScan(store)
+        store.reportImageLoadResult(isAvailable: false)
+        for language in AppLanguage.allCases where language != .automatic {
+            let l = L10n(language: language)
+            XCTAssertEqual(store.displayStatusMessage(l), l.text("canvas.noPreview"))
+            XCTAssertTrue(store.statusAccessibilityLabel(l).contains(l.text("canvas.noPreview")))
+            XCTAssertEqual(store.selectedURL, file)
+        }
+        store.reportImageLoadResult(isAvailable: true)
+        XCTAssertNil(store.displayStatusMessage(french))
+    }
+
+    func testPrintBitmapRemainsBoundedAndHonorsCancellation() throws {
+        let file = directory.appendingPathComponent("print.png")
+        try makePNG(at: file, width: 2_400, height: 1_200)
+        let bitmap = try XCTUnwrap(ImageDecoder.printBitmap(for: file, maxPixelSize: 2_048))
+        XCTAssertEqual(bitmap.width, 2_048)
+        XCTAssertEqual(bitmap.height, 1_024)
+        XCTAssertNil(ImageDecoder.printBitmap(for: file, maxPixelSize: 2_048, isCancelled: { true }))
     }
 
     func testReleaseUpdateOnlyAcceptsNewStableVersionsFromLumaViewRepository() throws {
@@ -991,7 +1033,7 @@ final class LumaViewCoreTests: XCTestCase {
         try makePNG(at: second, width: 96, height: 64)
         let store = await MainActor.run { ImageBrowserStore() }
 
-        await MainActor.run { store.open(url: second, l: L10n(language: .english)) }
+        await MainActor.run { store.open(url: second) }
         try await waitForScan(store)
 
         let state = await MainActor.run { (store.selectedFile?.url, store.files.count, store.hasNext) }
@@ -1007,7 +1049,7 @@ final class LumaViewCoreTests: XCTestCase {
         try makePNG(at: second, width: 96, height: 64)
         let store = await MainActor.run { ImageBrowserStore() }
 
-        await MainActor.run { store.open(url: second, l: L10n(language: .english)) }
+        await MainActor.run { store.open(url: second) }
         let immediateSelection = await MainActor.run { store.selectedURL }
         XCTAssertEqual(immediateSelection, second.standardizedFileURL.resolvingSymlinksInPath())
 
@@ -1025,7 +1067,7 @@ final class LumaViewCoreTests: XCTestCase {
         try makePNG(at: visible, width: 96, height: 64)
         let store = await MainActor.run { ImageBrowserStore() }
 
-        await MainActor.run { store.open(url: hidden, l: L10n(language: .english)) }
+        await MainActor.run { store.open(url: hidden) }
         try await waitForScan(store)
         let selected = await MainActor.run { store.selectedURL }
         XCTAssertEqual(selected, hidden.standardizedFileURL.resolvingSymlinksInPath())
@@ -1048,7 +1090,7 @@ final class LumaViewCoreTests: XCTestCase {
         // Execute both actions in one main-actor turn. The folder index cannot complete
         // until that turn yields, which is the real Finder/Open File edge case.
         await MainActor.run {
-            store.open(url: first, l: L10n(language: .english))
+            store.open(url: first)
             store.next()
         }
         try await waitForScan(store)
@@ -1065,7 +1107,7 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertNotNil(ImageDecoder.navigationPreview(for: first))
 
         let otherWindow = await MainActor.run { ImageBrowserStore() }
-        await MainActor.run { otherWindow.open(url: second, l: L10n(language: .english)) }
+        await MainActor.run { otherWindow.open(url: second) }
         XCTAssertNotNil(ImageMemoryCache.shared.navigationPreview(for: first))
     }
 
@@ -1080,8 +1122,8 @@ final class LumaViewCoreTests: XCTestCase {
         let secondWindow = await MainActor.run { ImageBrowserStore() }
 
         await MainActor.run {
-            firstWindow.open(url: first, l: L10n(language: .english))
-            secondWindow.open(url: second, l: L10n(language: .english))
+            firstWindow.open(url: first)
+            secondWindow.open(url: second)
         }
         try await waitForScan(firstWindow)
         try await waitForScan(secondWindow)
@@ -1102,8 +1144,8 @@ final class LumaViewCoreTests: XCTestCase {
         let secondWindow = await MainActor.run { ImageBrowserStore() }
 
         await MainActor.run {
-            firstWindow.open(url: first, l: L10n(language: .english))
-            secondWindow.open(url: third, l: L10n(language: .english))
+            firstWindow.open(url: first)
+            secondWindow.open(url: third)
         }
         try await waitForScan(firstWindow)
         try await waitForScan(secondWindow)

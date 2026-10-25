@@ -282,6 +282,56 @@ final class LumaViewLaunchTests: XCTestCase {
         )
     }
 
+    func testChangingLanguageRelocalizesExistingDecodeFailure() throws {
+        let corrupted = fixtureDirectory.appendingPathComponent("broken.jpg")
+        try Data("not a JPEG".utf8).write(to: corrupted)
+        // A launch-argument preference would override changes made in Settings.
+        let app = launchApp(opening: corrupted, language: nil)
+        chooseLanguage("English", in: app)
+        defer { chooseLanguage("English", in: app) }
+        let status = app.descendants(matching: .any)["image.status"]
+        expect(status, accessibilityLabelContaining: "Unable to preview this image.")
+
+        app.typeKey(",", modifierFlags: .command)
+        let language = app.popUpButtons["settings.language"]
+        XCTAssertTrue(language.waitForExistence(timeout: 5))
+        language.click()
+        app.menuItems["Français"].click()
+        let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Français"), object: language)
+        XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 5), .completed)
+        app.typeKey("w", modifierFlags: .command)
+
+        let message = "Impossible d’afficher un aperçu de cette image."
+        expect(status, accessibilityLabelContaining: message)
+        XCTAssertFalse(status.label.contains("Unable to preview"))
+        expect(app.descendants(matching: .any)["canvas.unavailable.broken.jpg"], accessibilityLabelContaining: message)
+    }
+
+    private func chooseLanguage(_ name: String, in app: XCUIApplication) {
+        let titles = ["Language", "语言", "Langue", "Язык", "Idioma", "言語", "언어"]
+        let menu = app.menuBars.menuBarItems.matching(NSPredicate(format: "label IN %@", titles)).firstMatch
+        XCTAssertTrue(menu.waitForExistence(timeout: 5))
+        menu.click()
+        app.menuItems.matching(NSPredicate(format: "label ENDSWITH %@", name)).firstMatch.click()
+    }
+
+    func testMinimizingReleasesCanvasWithoutReportingDecodeFailureAndRestoresImage() throws {
+        let file = fixtureDirectory.appendingPathComponent("03-toolbar.png")
+        let app = launchApp(opening: file)
+        let rendered = canvas(in: app, named: file.lastPathComponent)
+        XCTAssertTrue(rendered.waitForExistence(timeout: 5))
+        app.windows[file.lastPathComponent].buttons[XCUIIdentifierMinimizeWindow].click()
+        let released = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: rendered)
+        XCTAssertEqual(XCTWaiter.wait(for: [released], timeout: 5), .completed)
+        XCTAssertFalse(app.descendants(matching: .any)["canvas.unavailable.\(file.lastPathComponent)"].exists)
+
+        app.activate()
+        app.menuBars.menuBarItems["Window"].click()
+        app.menuItems.matching(NSPredicate(format: "label CONTAINS %@", file.lastPathComponent)).firstMatch.click()
+        XCTAssertTrue(rendered.waitForExistence(timeout: 5))
+        expectCanvasAspect(rendered, ratio: 1.2)
+    }
+
     private func canvas(in window: XCUIElement, named sourceName: String) -> XCUIElement {
         window.descendants(matching: .any)["image.rendered.\(sourceName)"]
     }
@@ -292,15 +342,15 @@ final class LumaViewLaunchTests: XCTestCase {
 
     private func launchApp(
         opening file: URL? = nil,
-        language: String = "automatic",
+        language: String? = "automatic",
         appearance: String? = nil
     ) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
             "-AppleLanguages", "(en)",
-            "-AppleLocale", "en_US",
-            "-luma.language", language
+            "-AppleLocale", "en_US"
         ]
+        if let language { app.launchArguments += ["-luma.language", language] }
         if let appearance {
             app.launchArguments += ["-luma.appearance", appearance]
         }

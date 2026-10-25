@@ -39,7 +39,10 @@ struct ImageCanvasView: View {
                 ? image.flatMap { absoluteZoomPercent(for: $0, in: geometry.size, rotation: rotation) }
                 : nil
             ZStack {
-                if isCurrentImage, let image {
+                if renderTask.isSuspended {
+                    Color.clear
+                        .accessibilityHidden(true)
+                } else if isCurrentImage, let image {
                     imageViewport(
                         image,
                         in: geometry.size,
@@ -50,7 +53,7 @@ struct ImageCanvasView: View {
                     // decode. Recreating this visual subtree clears SwiftUI's
                     // cached transform/layout while retaining the NSImage.
                     .id(presentationRevision)
-                } else if isLoading {
+                } else if isLoading || (browser.selectedURL != nil && !browser.imageLoadFailed) {
                     ProgressView()
                         .controlSize(.small)
                         .tint(.secondary)
@@ -221,12 +224,12 @@ struct ImageCanvasView: View {
                 statusDot
                 Text(absoluteZoomPercent.map { "\($0)%" } ?? "—")
                     .monospacedDigit()
-                if let message = browser.displayStatusMessage {
+                if let message = browser.displayStatusMessage(l) {
                     statusDot
                     Text(message)
                         .lineLimit(1)
                 }
-            } else if let message = browser.displayStatusMessage {
+            } else if let message = browser.displayStatusMessage(l) {
                 Text(message)
             }
         }
@@ -236,13 +239,13 @@ struct ImageCanvasView: View {
         .padding(.vertical, 8)
         .background(.ultraThinMaterial, in: Capsule())
         .padding(14)
-        .opacity(browser.selectedFile == nil && browser.displayStatusMessage == nil ? 0 : 1)
+        .opacity(browser.selectedFile == nil && browser.displayStatusMessage(l) == nil ? 0 : 1)
         // A combined status line gives VoiceOver one concise announcement and
         // gives the multi-window UI gate a stable way to wait for folder
         // indexing before it sends a navigation command.
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("image.status")
-        .accessibilityLabel(browser.statusAccessibilityLabel)
+        .accessibilityLabel(browser.statusAccessibilityLabel(l))
     }
 
     private var statusDot: some View {
@@ -355,7 +358,7 @@ struct ImageCanvasView: View {
                     displayedURL = nil
                 }
                 isLoading = false
-                browser.reportImageLoadResult(isAvailable: image != nil, failureMessage: l.text("canvas.noPreview"))
+                browser.reportImageLoadResult(isAvailable: image != nil)
             }
         }
         renderOperation = operation

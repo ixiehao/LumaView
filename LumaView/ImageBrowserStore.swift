@@ -283,6 +283,17 @@ final class ImageMetadataCache {
     }
 }
 
+/// Keep app-owned feedback semantic until it is displayed. A language change
+/// must not require repeating I/O or clearing an existing warning.
+enum ImageBrowserStatus: String, CaseIterable, Sendable {
+    case unsupportedFormat = "error.unsupportedFormat"
+    case emptyFolder = "error.emptyFolder"
+    case noPrintSelection = "error.noPrintSelection"
+    case preparingPrint = "status.preparingPrint"
+    case printPreparationFailed = "error.printPreparation"
+    case previewUnavailable = "canvas.noPreview"
+}
+
 @MainActor
 final class ImageBrowserStore: ObservableObject {
     @Published private(set) var folderURL: URL?
@@ -298,9 +309,9 @@ final class ImageBrowserStore: ObservableObject {
     /// This revision is incremented only after `quarterTurn` is assigned and
     /// followed by an explicit post-assignment change notification.
     @Published private(set) var canvasPresentationRevision: UInt64 = 0
-    @Published var statusMessage: String?
+    @Published var status: ImageBrowserStatus?
     @Published private(set) var folderScanErrorMessage: String?
-    @Published private var imageLoadErrorMessage: String?
+    @Published private(set) var imageLoadFailed = false
     @Published private(set) var isScanning = false
     @Published private(set) var isPreparingPrint = false
     /// A minimised or occluded AppKit window should not pin a full-resolution
@@ -350,18 +361,22 @@ final class ImageBrowserStore: ObservableObject {
 
     // Rendering, folder discovery and printing finish independently. A successful
     // decode must not erase an unreadable-folder warning or print progress.
-    var displayStatusMessage: String? {
-        statusMessage ?? imageLoadErrorMessage ?? folderScanErrorMessage
+    func displayStatusMessage(_ l: L10n) -> String? {
+        if let status = status ?? (imageLoadFailed ? .previewUnavailable : nil) {
+            return l.text(status.rawValue)
+        }
+        // File-system diagnostics are supplied by macOS in its system language.
+        return folderScanErrorMessage
     }
 
-    var statusAccessibilityLabel: String {
-        let parts = [selectedFile?.name, selectedFile == nil ? nil : positionText, displayStatusMessage]
+    func statusAccessibilityLabel(_ l: L10n) -> String {
+        let parts = [selectedFile?.name, selectedFile == nil ? nil : positionText, displayStatusMessage(l)]
             .compactMap { $0 }
         return parts.isEmpty ? "LumaView" : parts.joined(separator: ", ")
     }
 
-    func reportImageLoadResult(isAvailable: Bool, failureMessage: String) {
-        imageLoadErrorMessage = isAvailable ? nil : failureMessage
+    func reportImageLoadResult(isAvailable: Bool) {
+        imageLoadFailed = !isAvailable
     }
 
     func chooseImage(_ l: L10n) {
@@ -384,62 +399,48 @@ final class ImageBrowserStore: ObservableObject {
         panel.allowsOtherFileTypes = false
         panel.prompt = l.text("dialog.openImage.action")
         if panel.runModal() == .OK, let url = panel.url {
-            open(
-                file: url,
-                unsupportedMessage: l.text("error.unsupportedFormat"),
-                emptyFolderMessage: l.text("error.emptyFolder")
-            )
+            open(file: url)
         }
     }
 
-    func open(
-        file url: URL,
-        unsupportedMessage: String = "Unsupported image format.",
-        emptyFolderMessage: String = "No supported images in this folder."
-    ) {
+    func open(file url: URL) {
         let canonicalURL = url.standardizedFileURL.resolvingSymlinksInPath()
         guard ImageFile.canOpen(canonicalURL) else {
-            statusMessage = unsupportedMessage
+            status = .unsupportedFormat
             return
         }
         open(
             folder: canonicalURL.deletingLastPathComponent(),
-            selecting: canonicalURL,
-            emptyFolderMessage: emptyFolderMessage
+            selecting: canonicalURL
         )
     }
 
     /// The common entry point for Finder document events and drag-and-drop. Opening a
     /// single file still scans only its parent folder, preserving LumaView's lightweight
     /// previous/next navigation without creating an image library.
-    func open(url: URL, l: L10n) {
+    func open(url: URL) {
         var isDirectory = ObjCBool(false)
         guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
-            statusMessage = l.text("error.unsupportedFormat")
+            status = .unsupportedFormat
             return
         }
         if isDirectory.boolValue && url.pathExtension.lowercased() != "sketch" {
-            open(folder: url, selecting: nil, emptyFolderMessage: l.text("error.emptyFolder"))
+            open(folder: url, selecting: nil)
         } else {
-            open(
-                file: url,
-                unsupportedMessage: l.text("error.unsupportedFormat"),
-                emptyFolderMessage: l.text("error.emptyFolder")
-            )
+            open(file: url)
         }
     }
 
     func open(
         folder url: URL,
-        selecting preferredURL: URL?,
-        emptyFolderMessage: String = "No supported images in this folder."
+        selecting preferredURL: URL?
     ) {
         let canonicalURL = url.standardizedFileURL.resolvingSymlinksInPath()
         folderURL = canonicalURL
         isScanning = true
-        statusMessage = nil
+        status = nil
         folderScanErrorMessage = nil
-        imageLoadErrorMessage = nil
+        imageLoadFailed = false
         folderScanTask?.cancel()
         cancelNavigationPrefetches()
         scanGeneration += 1
@@ -473,8 +474,7 @@ final class ImageBrowserStore: ObservableObject {
                   generation == self.scanGeneration else { return }
             self.finishFolderScan(
                 result,
-                preferredURL: preferredURL,
-                emptyFolderMessage: emptyFolderMessage
+                preferredURL: preferredURL
             )
         }
     }
@@ -611,8 +611,8 @@ final class ImageBrowserStore: ObservableObject {
         selectedIndex = index
         originalPixelSize = nil
         resetViewport()
-        statusMessage = nil
-        imageLoadErrorMessage = nil
+        status = nil
+        imageLoadFailed = false
         selectionGeneration += 1
         let generation = selectionGeneration
         let url = files[index].url
@@ -640,7 +640,7 @@ final class ImageBrowserStore: ObservableObject {
                     cancellation.isCancelled
                 })
                 guard operation.isCancelled == false else { return }
-                DispatchQueue.main.async {
+                DispatchQueue.main.async { [weak self] in
                     guard let self,
                           self.metadataOperation === operation,
                           generation == self.selectionGeneration,
@@ -757,8 +757,7 @@ final class ImageBrowserStore: ObservableObject {
 
     private func finishFolderScan(
         _ result: Result<[ImageFile], Error>,
-        preferredURL: URL?,
-        emptyFolderMessage: String
+        preferredURL: URL?
     ) {
         isScanning = false
         folderScanTask = nil
@@ -777,18 +776,18 @@ final class ImageBrowserStore: ObservableObject {
                 files = discovered
                 selectedIndex = index
                 prefetchNavigationNeighbours(around: index)
-                statusMessage = nil
+                status = nil
                 applyPendingNavigation(from: index)
             } else if discovered.isEmpty {
                 files = []
                 selectedIndex = nil
                 originalPixelSize = nil
                 resetViewport()
-                statusMessage = emptyFolderMessage
+                status = .emptyFolder
             } else {
                 files = discovered
                 select(index: 0)
-                statusMessage = nil
+                status = nil
             }
         case .failure(let error) where error is CancellationError:
             break
@@ -832,15 +831,15 @@ final class ImageBrowserStore: ObservableObject {
     /// Prepares a print-quality, but bounded, representation off the main actor.
     /// A fixed source decode could turn one 100 MP RAW or TIFF into a multi-hundred-
     /// megabyte spike; 300 DPI at the largest common paper size fits below this limit.
-    func printSelectedImage(_ l: L10n, from hostWindow: NSWindow? = nil) {
+    func printSelectedImage(from hostWindow: NSWindow? = nil) {
         guard let url = selectedURL else {
-            statusMessage = l.text("error.noPrintSelection")
+            status = .noPrintSelection
             return
         }
         guard !isPreparingPrint else { return }
 
         isPreparingPrint = true
-        statusMessage = l.text("status.preparingPrint")
+        status = .preparingPrint
         let paperSize = NSPrintInfo.shared.paperSize
         let printPixelLimit = min(
             5_120,
@@ -852,25 +851,28 @@ final class ImageBrowserStore: ObservableObject {
         let cancellation = ImageOperationCancellation(preparation)
         preparation.addExecutionBlock { [weak self, weak preparation] in
             guard let preparation, preparation.isCancelled == false else { return }
-            let image: NSImage? = autoreleasepool {
+            let bitmap: CGImage? = autoreleasepool {
                 guard preparation.isCancelled == false else { return nil }
-                return ImageDecoder.printImage(
+                return ImageDecoder.printBitmap(
                     for: url,
                     maxPixelSize: printPixelLimit,
                     isCancelled: { cancellation.isCancelled }
                 )
             }
             guard preparation.isCancelled == false else { return }
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
                 guard let self, self.printPreparationOperation === preparation else { return }
                 self.printPreparationOperation = nil
                 self.isPreparingPrint = false
                 guard preparation.isCancelled == false, self.selectedURL == url else { return }
-                guard let image else {
-                    self.statusMessage = l.text("error.printPreparation")
+                guard let bitmap else {
+                    self.status = .printPreparationFailed
                     return
                 }
 
+                // Cross the worker boundary with immutable pixels; create the
+                // AppKit image only on the main actor that owns the print UI.
+                let image = NSImage(cgImage: bitmap, size: .zero)
                 let printInfo = NSPrintInfo.shared.copy() as! NSPrintInfo
                 printInfo.horizontalPagination = .fit
                 printInfo.verticalPagination = .fit
@@ -878,7 +880,7 @@ final class ImageBrowserStore: ObservableObject {
                 let operation = NSPrintOperation(view: view, printInfo: printInfo)
                 operation.showsPrintPanel = true
                 operation.showsProgressPanel = true
-                self.statusMessage = nil
+                self.status = nil
                 if let hostWindow {
                     operation.runModal(for: hostWindow, delegate: nil, didRun: nil, contextInfo: nil)
                 } else {

@@ -550,16 +550,17 @@ enum ImageDecoder {
     /// A print representation is deliberately separate from the screen cache:
     /// it uses enough detail for normal 300 DPI output while retaining a firm
     /// memory ceiling for very large TIFF, RAW, PDF and Sketch documents.
-    static func printImage(
+    static func printBitmap(
         for url: URL,
         maxPixelSize: Int,
         isCancelled: @escaping ImageCancellationProbe = { false }
-    ) -> NSImage? {
-        decode(
+    ) -> CGImage? {
+        guard let image = decode(
             url: url,
             maxPixelSize: max(2_048, min(maxPixelSize, 5_120)),
             isCancelled: isCancelled
-        )
+        ), !isCancelled() else { return nil }
+        return image.cgImage(forProposedRect: nil, context: nil, hints: nil)
     }
 
     /// The image used for printing. Sketch documents print their exported page preview;

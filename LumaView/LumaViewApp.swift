@@ -848,7 +848,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             }
 
         if let documentURL {
-            browser.open(url: documentURL, l: Self.currentLocalization)
+            browser.open(url: documentURL)
         }
         refreshTitle()
         // XCTest supplies this flag so UI coverage stays offline, deterministic and
@@ -876,7 +876,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         guard canBecomeDocumentWindow else { return }
         self.documentURL = documentURL
         sizedDocumentURL = nil
-        browser.open(url: documentURL, l: Self.currentLocalization)
+        browser.open(url: documentURL)
     }
 
     func applyWindowPreferences(localization: L10n, appearance: AppAppearance) {
@@ -942,7 +942,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         case .revealInFinder:
             browser.revealInFinder()
         case .print:
-            browser.printSelectedImage(localization, from: window)
+            browser.printSelectedImage(from: window)
         }
     }
 
@@ -1201,12 +1201,12 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         let anchor = sender as? NSView
         let operation = BlockOperation()
         operation.addExecutionBlock { [weak self, weak anchor, weak operation] in
-            guard operation?.isCancelled == false else { return }
+            guard let operation, !operation.isCancelled else { return }
             let information = autoreleasepool { ImageInformationReader.read(from: selectedURL) }
-            guard operation?.isCancelled == false else { return }
-            DispatchQueue.main.async {
+            guard !operation.isCancelled else { return }
+            DispatchQueue.main.async { [weak self, weak anchor] in
                 guard let self, self.informationOperation === operation,
-                      operation?.isCancelled == false,
+                      !operation.isCancelled,
                       self.browser.selectedURL == selectedURL,
                       self.window?.isVisible == true else { return }
                 self.informationOperation = nil
