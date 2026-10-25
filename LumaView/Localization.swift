@@ -22,6 +22,7 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
         "update.available", "update.about.available", "update.menu.available", "update.menu.check", "update.check.title", "update.check.upToDate", "update.check.unavailable", "button.downloadUpdate", "button.ok",
         "menu.browse", "menu.image", "menu.more", "menu.openImage", "menu.printImage", "menu.reveal",
         "system.menu.file", "system.menu.edit", "system.menu.view", "system.menu.window", "system.menu.help",
+        "system.item.settings", "system.item.showTabBar", "system.item.hideTabBar", "system.item.showAllTabs",
         "system.item.about", "system.item.services", "system.item.hideApp", "system.item.hideOthers", "system.item.showAll", "system.item.quit",
         "system.item.close", "system.item.save", "system.item.duplicate", "system.item.rename", "system.item.moveTo", "system.item.exportPDF", "system.item.print",
         "system.item.undo", "system.item.redo", "system.item.cut", "system.item.copy", "system.item.paste", "system.item.pasteMatch", "system.item.delete", "system.item.selectAll", "system.item.dictation", "system.item.emoji",

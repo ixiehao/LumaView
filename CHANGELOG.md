@@ -4,6 +4,26 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
+## Unreleased
+
+### English
+
+- Add French, Russian, Spanish, and Korean. English appears first in both language selectors; existing language preferences are preserved.
+- Replace both rotation icons with clearer directional arrows from Tabler Icons.
+- Keep native menu translations and the full-screen shortcut working after menu updates.
+
+### 中文
+
+- 新增法语、俄语、西班牙语和韩语；菜单与设置中的 English 均置于首位，保留已有语言偏好。
+- 更换一对方向更清晰的 Tabler 旋转图标。
+- 修复菜单刷新后原生菜单译文丢失、全屏快捷键失效的问题。
+
+### 日本語
+
+- フランス語、ロシア語、スペイン語、韓国語を追加。言語メニューと設定では English を先頭に表示し、選択済みの言語は維持します。
+- 回転方向が分かりやすい Tabler Icons のアイコンに変更しました。
+- メニュー更新後に翻訳が元に戻る問題と、フルスクリーンのショートカットが使えなくなる問題を修正しました。
+
 ## 1.2.9 — 2026-10-25
 
 ### English

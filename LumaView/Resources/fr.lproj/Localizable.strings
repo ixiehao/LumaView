@@ -108,3 +108,7 @@
 "system.item.zoom" = "Zoom";
 "system.item.bringAllToFront" = "Tout ramener au premier plan";
 "system.item.help" = "Aide LumaView";
+"system.item.settings" = "Réglages…";
+"system.item.showTabBar" = "Afficher la barre d’onglets";
+"system.item.hideTabBar" = "Masquer la barre d’onglets";
+"system.item.showAllTabs" = "Afficher tous les onglets";

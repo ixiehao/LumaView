@@ -245,14 +245,14 @@ final class LumaViewLaunchTests: XCTestCase {
 
     func testEverySupportedLanguageHasCompleteToolbarLabelsWithoutPrintButton() throws {
         let image = fixtureDirectory.appendingPathComponent("03-toolbar.png")
-        let configurations: [(language: String, appearance: String, previous: String, information: String, print: String)] = [
-            ("english", "light", "Previous image", "Image information", "Print image"),
-            ("chinese", "dark", "上一张", "图片信息", "打印图片"),
-            ("japanese", "light", "前の画像", "画像情報", "画像をプリント"),
-            ("french", "light", "Image précédente", "Informations sur l’image", "Imprimer l’image"),
-            ("russian", "dark", "Предыдущее изображение", "Информация об изображении", "Напечатать изображение"),
-            ("spanish", "light", "Imagen anterior", "Información de la imagen", "Imprimir imagen"),
-            ("korean", "dark", "이전 이미지", "이미지 정보", "이미지 프린트")
+        let configurations: [(language: String, appearance: String, previous: String, information: String, print: String, fileMenu: String)] = [
+            ("english", "light", "Previous image", "Image information", "Print image", "File"),
+            ("chinese", "dark", "上一张", "图片信息", "打印图片", "文件"),
+            ("japanese", "light", "前の画像", "画像情報", "画像をプリント", "ファイル"),
+            ("french", "light", "Image précédente", "Informations sur l’image", "Imprimer l’image", "Fichier"),
+            ("russian", "dark", "Предыдущее изображение", "Информация об изображении", "Напечатать изображение", "Файл"),
+            ("spanish", "light", "Imagen anterior", "Información de la imagen", "Imprimir imagen", "Archivo"),
+            ("korean", "dark", "이전 이미지", "이미지 정보", "이미지 프린트", "파일")
         ]
         for configuration in configurations {
             let app = launchApp(
@@ -264,6 +264,7 @@ final class LumaViewLaunchTests: XCTestCase {
             XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", configuration.previous)).firstMatch.waitForExistence(timeout: 5))
             XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", configuration.information)).firstMatch.waitForExistence(timeout: 5))
             XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", configuration.print)).firstMatch.exists)
+            XCTAssertTrue(app.menuBars.menuBarItems[configuration.fileMenu].waitForExistence(timeout: 5))
             app.terminate()
         }
     }

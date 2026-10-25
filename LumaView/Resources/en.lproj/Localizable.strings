@@ -108,3 +108,7 @@
 "system.item.zoom" = "Zoom";
 "system.item.bringAllToFront" = "Bring All to Front";
 "system.item.help" = "LumaView Help";
+"system.item.settings" = "Settings…";
+"system.item.showTabBar" = "Show Tab Bar";
+"system.item.hideTabBar" = "Hide Tab Bar";
+"system.item.showAllTabs" = "Show All Tabs";

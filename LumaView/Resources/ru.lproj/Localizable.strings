@@ -108,3 +108,7 @@
 "system.item.zoom" = "Масштабировать";
 "system.item.bringAllToFront" = "Все окна на передний план";
 "system.item.help" = "Справка LumaView";
+"system.item.settings" = "Настройки…";
+"system.item.showTabBar" = "Показать панель вкладок";
+"system.item.hideTabBar" = "Скрыть панель вкладок";
+"system.item.showAllTabs" = "Показать все вкладки";

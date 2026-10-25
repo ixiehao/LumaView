@@ -108,3 +108,7 @@
 "system.item.zoom" = "확대/축소";
 "system.item.bringAllToFront" = "모두 앞으로 가져오기";
 "system.item.help" = "LumaView 도움말";
+"system.item.settings" = "설정…";
+"system.item.showTabBar" = "탭 막대 보기";
+"system.item.hideTabBar" = "탭 막대 가리기";
+"system.item.showAllTabs" = "모든 탭 보기";

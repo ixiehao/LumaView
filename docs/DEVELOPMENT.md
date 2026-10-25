@@ -33,6 +33,14 @@ Run checks proportional to the change. Website-only and documentation-only chang
 
 Follow [QA](QA.md) for browsing, unsupported files, large images, navigation and language changes. Decode/navigation changes need real authorized image samples in addition to synthetic tests. Keep rotation, navigation and asynchronous image results tied to current state; cancellation must not allow an old result to replace a newer selection.
 
+## Localization
+
+The app supports English (`en`), Simplified Chinese (`zh-Hans`), French (`fr`), Russian (`ru`), Spanish (`es`), Japanese (`ja`) and Korean (`ko`). `AppLanguage.allCases` is the shared menu/settings order, with English first and Automatic last. Automatic remains the default preference; it follows the system language preference order and falls back to English.
+
+Each language needs a real `.lproj/Localizable.strings` resource registered in the Xcode variant group and `knownRegions`. Keep key sets and format placeholders identical, use native language names in the selector, and verify actual toolbar/menu labels in the built app. Core tests also check region matching and repeated menu language changes.
+
+SwiftUI owns command creation, including the full-screen command for AppKit viewer windows. Native menu-title localization follows menu-change notifications; coalesce updates, skip unchanged titles and ignore self-generated notifications. Do not insert persistent commands during localization: SwiftUI can remove them on its next rebuild.
+
 ## Packaging
 
 Follow [RELEASE.md](RELEASE.md); it distinguishes preview builds from Developer ID–signed, notarized distribution. Do not treat a successful local build as a release authorization.

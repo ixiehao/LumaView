@@ -108,3 +108,7 @@
 "system.item.zoom" = "缩放";
 "system.item.bringAllToFront" = "全部置于最前";
 "system.item.help" = "LumaView 帮助";
+"system.item.settings" = "设置…";
+"system.item.showTabBar" = "显示标签页栏";
+"system.item.hideTabBar" = "隐藏标签页栏";
+"system.item.showAllTabs" = "显示所有标签页";

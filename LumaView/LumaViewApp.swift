@@ -72,6 +72,9 @@ enum MainMenuLocalization {
     // fallback for menu items without actions.
     private static let standardItemActionKeys: [String: String] = [
         "orderFrontStandardAboutPanel:": "system.item.about",
+        "showSettingsWindow:": "system.item.settings",
+        "showPreferencesWindow:": "system.item.settings",
+        "toggleTabOverview:": "system.item.showAllTabs",
         "hide:": "system.item.hideApp",
         "hideOtherApplications:": "system.item.hideOthers",
         "unhideAllApplications:": "system.item.showAll",
@@ -110,6 +113,10 @@ enum MainMenuLocalization {
     // by SwiftUI's app-local localization bundle. Translate the visible standard
     // items too so switching languages never leaves a mixed menu hierarchy.
     private static let standardItems: [(titles: Set<String>, key: String)] = [
+        (["Settings…", "Preferences…", "设置…", "偏好设置…", "設定…", "環境設定…"], "system.item.settings"),
+        (["Show Tab Bar", "显示标签页栏", "タブバーを表示"], "system.item.showTabBar"),
+        (["Hide Tab Bar", "隐藏标签页栏", "タブバーを非表示"], "system.item.hideTabBar"),
+        (["Show All Tabs", "显示所有标签页", "すべてのタブを表示"], "system.item.showAllTabs"),
         (["About LumaView", "关于 LumaView", "LumaViewについて"], "system.item.about"),
         (["Services", "服务", "サービス"], "system.item.services"),
         (["Hide LumaView", "隐藏 LumaView", "LumaViewを隠す"], "system.item.hideApp"),
@@ -875,8 +882,10 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
     func applyWindowPreferences(localization: L10n, appearance: AppAppearance) {
         window?.appearance = appearance.nsAppearance
         refreshToolbarLocalization(localization)
-        if let controller = informationPopover?.contentViewController as? NSHostingController<ImageInformationInspector> {
+        if let controller = informationPopover?.contentViewController as? NSHostingController<ImageInformationInspector>,
+           controller.rootView.l.language != localization.language {
             controller.rootView = ImageInformationInspector(information: controller.rootView.information, l: localization)
+            resizeInformationPopover()
         }
     }
 
@@ -1231,14 +1240,9 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             rootView: ImageInformationInspector(information: information, l: Self.currentLocalization)
         )
         popover.contentViewController = controller
-        controller.view.layoutSubtreeIfNeeded()
-        let fittingSize = controller.view.fittingSize
-        popover.contentSize = NSSize(
-            width: min(fittingSize.width, ImageInformationInspector.maximumPreferredWidth),
-            height: max(1, fittingSize.height)
-        )
         informationPopover = popover
         informationPopoverDocumentURL = documentURL
+        resizeInformationPopover()
         if let anchor {
             popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
         } else {
@@ -1249,6 +1253,16 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             let edge = NSRect(x: fallbackAnchor.bounds.maxX - 28, y: top, width: 1, height: 1)
             popover.show(relativeTo: edge, of: fallbackAnchor, preferredEdge: .minY)
         }
+    }
+
+    private func resizeInformationPopover() {
+        guard let popover = informationPopover, let controller = popover.contentViewController else { return }
+        controller.view.layoutSubtreeIfNeeded()
+        let fittingSize = controller.view.fittingSize
+        popover.contentSize = NSSize(
+            width: min(fittingSize.width, ImageInformationInspector.maximumPreferredWidth),
+            height: max(1, fittingSize.height)
+        )
     }
     private func applyDocumentSize(
         for imagePixelSize: CGSize,

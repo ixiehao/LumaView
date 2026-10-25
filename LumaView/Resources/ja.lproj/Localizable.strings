@@ -108,3 +108,7 @@
 "system.item.zoom" = "拡大/縮小";
 "system.item.bringAllToFront" = "すべてを手前に移動";
 "system.item.help" = "LumaViewヘルプ";
+"system.item.settings" = "設定…";
+"system.item.showTabBar" = "タブバーを表示";
+"system.item.hideTabBar" = "タブバーを非表示";
+"system.item.showAllTabs" = "すべてのタブを表示";
