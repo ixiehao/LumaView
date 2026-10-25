@@ -194,16 +194,9 @@ final class LumaViewLaunchTests: XCTestCase {
         expectFullScreen(true, in: window)
         app.typeKey("]", modifierFlags: .command)
         expect(rendered, accessibilityLabelContaining: "90°")
-        // Reveal the native title bar, then use its full-screen control again.
-        // The system's current keyboard shortcut is not fixed across releases.
-        let topInset = fullWindowFrame(window).minY - window.frame.minY
-        window.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0))
-            .withOffset(CGVector(dx: 0, dy: topInset)).hover()
-        let exitAvailable = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "hittable == true"), object: fullScreenButton
-        )
-        XCTAssertEqual(XCTWaiter.wait(for: [exitAvailable], timeout: 5), .completed)
-        fullScreenButton.click()
+        // AppKit handles Escape in full screen. This avoids depending on the
+        // auto-hidden titlebar becoming mouse-hittable in a virtual display.
+        app.typeKey(.escape, modifierFlags: [])
         expectFullScreen(false, in: window)
         expectCanvasAspect(rendered, ratio: 1 / 1.2)
     }
