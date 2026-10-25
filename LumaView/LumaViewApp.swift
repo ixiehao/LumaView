@@ -51,6 +51,10 @@ private enum AboutCredits {
 /// leaving a mixed-language macOS menu.
 @MainActor
 enum MainMenuLocalization {
+    private static var pendingUpdate: DispatchWorkItem?
+    private static var menuObservers: [NSObjectProtocol] = []
+    private static var currentLocalization = L10n(language: .automatic)
+    private static var isApplying = false
     private static let leadingSystemMenus: [(index: Int, key: String)] = [
         (1, "system.menu.file"),
         (2, "system.menu.edit"),
@@ -141,8 +145,61 @@ enum MainMenuLocalization {
     ]
 
     static func applyToMainMenu(_ l: L10n) {
-        guard let menu = NSApp?.mainMenu else { return }
-        apply(l, to: menu)
+        currentLocalization = l
+        if menuObservers.isEmpty {
+            // SwiftUI may rebuild native menus after an AppStorage change.
+            // React to that rebuild rather than polling or replacing its delegate.
+            menuObservers = [NSMenu.didAddItemNotification, NSMenu.didChangeItemNotification].map { name in
+                NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { notification in
+                    MainActor.assumeIsolated { menuDidChange(notification) }
+                }
+            }
+        }
+        scheduleUpdate()
+    }
+
+    private static func menuDidChange(_ notification: Notification) {
+        guard !isApplying, let menu = notification.object as? NSMenu,
+              let mainMenu = NSApp?.mainMenu else { return }
+        var root = menu
+        while let parent = root.supermenu { root = parent }
+        guard root === mainMenu else { return }
+        if menu !== mainMenu,
+           let index = notification.userInfo?["NSMenuItemIndex"] as? Int,
+           menu.items.indices.contains(index) {
+            let item = menu.items[index]
+            let action = item.action.map(NSStringFromSelector)
+            let key = action.flatMap { standardItemActionKeys[$0] } ?? standardItemKeysByTitle[item.title]
+            // Enabled/checked changes need no translation. A native full-screen
+            // item is removed because our SwiftUI command already owns it.
+            if action != "toggleFullScreen:", item.submenu == nil,
+               key.map({ item.title == currentLocalization.text($0) }) ?? true { return }
+        }
+        scheduleUpdate()
+    }
+
+    private static func scheduleUpdate() {
+        guard pendingUpdate == nil else { return }
+        let update = DispatchWorkItem {
+            defer { pendingUpdate = nil }
+            guard let menu = NSApp?.mainMenu else { return }
+            isApplying = true
+            defer { isApplying = false }
+            removeNativeFullScreenItems(in: menu)
+            apply(currentLocalization, to: menu)
+        }
+        pendingUpdate = update
+        DispatchQueue.main.async(execute: update)
+    }
+
+    private static func removeNativeFullScreenItems(in menu: NSMenu) {
+        for item in menu.items {
+            if item.action == #selector(NSWindow.toggleFullScreen(_:)) {
+                menu.removeItem(item)
+            } else if let submenu = item.submenu {
+                removeNativeFullScreenItems(in: submenu)
+            }
+        }
     }
 
     // Some native items (for example Services) have no action selector. Match
@@ -159,23 +216,6 @@ enum MainMenuLocalization {
     }()
 
     static func apply(_ l: L10n, to menu: NSMenu) {
-        // A Settings-only SwiftUI scene does not install this command on
-        // macOS 13/14 for our AppKit document windows. Keep the native responder
-        // action available even while the full-screen titlebar is hidden.
-        if !submenu(menu, containsAnyAction: ["toggleFullScreen:"]),
-           menu.items.indices.contains(3), let viewMenu = menu.items[3].submenu {
-            if !viewMenu.items.isEmpty && viewMenu.items.last?.isSeparatorItem == false {
-                viewMenu.addItem(.separator())
-            }
-            let item = NSMenuItem(
-                title: l.text("system.item.enterFullScreen"),
-                action: #selector(NSWindow.toggleFullScreen(_:)),
-                keyEquivalent: "f"
-            )
-            item.keyEquivalentModifierMask = [.control, .command]
-            viewMenu.addItem(item)
-        }
-
         // The first four menus are always application, File, Edit and the
         // system View menu. Indexing them prevents the application's separate
         // image View menu from being renamed as the system menu during a
@@ -201,8 +241,8 @@ enum MainMenuLocalization {
         // SwiftUI's standard CommandGroups retain a menu title separately from
         // their parent menu item. Updating both is necessary for the title
         // rendered in the macOS menu bar and for the opened submenu header.
-        item.title = title
-        item.submenu?.title = title
+        if item.title != title { item.title = title }
+        if let submenu = item.submenu, submenu.title != title { submenu.title = title }
     }
 
     private static func localizeStandardItems(in menu: NSMenu, localization: L10n) {
@@ -221,7 +261,8 @@ enum MainMenuLocalization {
                 actionKey = actionName.flatMap { standardItemActionKeys[$0] }
             }
             if let key = actionKey ?? titleKey {
-                item.title = localization.text(key)
+                let title = localization.text(key)
+                if item.title != title { item.title = title }
             }
             if let submenu = item.submenu {
                 localizeStandardItems(in: submenu, localization: localization)
@@ -531,6 +572,7 @@ enum ImageWindowSizing {
 /// of mutating an arbitrary background window.
 fileprivate enum ViewerCommand {
     case open
+    case toggleFullScreen
     case previous
     case next
     case zoomOut
@@ -597,6 +639,7 @@ final class LumaViewWindowRegistry: ObservableObject {
     }
 
     fileprivate func activate(_ browser: ImageBrowserStore) {
+        objectWillChange.send()
         guard activeBrowser !== browser else { return }
         activeBrowserObserver?.cancel()
         activeBrowser = browser
@@ -619,6 +662,10 @@ final class LumaViewWindowRegistry: ObservableObject {
         guard !hasBlockingModalPresentation, let application = NSApp else { return nil }
         guard let candidate = application.keyWindow ?? application.mainWindow else { return nil }
         return controllers.values.first(where: { $0.acceptsCommands(from: candidate) })
+    }
+
+    fileprivate var isFullScreen: Bool {
+        commandDocumentController?.window?.styleMask.contains(.fullScreen) == true
     }
 
     private var hasBlockingModalPresentation: Bool {
@@ -848,6 +895,8 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         switch command {
         case .open:
             return window != nil
+        case .toggleFullScreen:
+            return window != nil && !isFullScreenTransitionInProgress
         case .previous:
             return browser.hasPrevious || browser.isScanning
         case .next:
@@ -865,6 +914,8 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         switch command {
         case .open:
             browser.chooseImage(localization)
+        case .toggleFullScreen:
+            window?.toggleFullScreen(nil)
         case .previous:
             browser.previous()
         case .next:
@@ -918,11 +969,13 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
 
     func windowWillEnterFullScreen(_ notification: Notification) {
         isFullScreenTransitionInProgress = true
+        LumaViewWindowRegistry.shared.objectWillChange.send()
         updateCanvasVisibility()
     }
 
     func windowWillExitFullScreen(_ notification: Notification) {
         isFullScreenTransitionInProgress = true
+        LumaViewWindowRegistry.shared.objectWillChange.send()
         updateCanvasVisibility()
     }
 
@@ -950,6 +1003,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
 
     private func finishFullScreenTransition() {
         isFullScreenTransitionInProgress = false
+        LumaViewWindowRegistry.shared.objectWillChange.send()
         MainMenuLocalization.applyToMainMenu(Self.currentLocalization)
         updateCanvasVisibility()
     }
@@ -1387,6 +1441,7 @@ private struct LumaSettingsView: View {
         .preferredColorScheme(appearance.colorScheme)
         .environment(\.locale, language.locale)
         .accessibilityIdentifier("settings.root")
+        .navigationTitle(l.text("settings.title"))
         .alert(l.text("update.check.title"), isPresented: updateNoticeBinding) {
             Button(l.text("button.ok"), role: .cancel) {
                 updateChecker.dismissNotice()
@@ -1443,6 +1498,16 @@ struct LumaViewApp: App {
                 Button(l.text("menu.openImage")) { windowRegistry.perform(.open, localization: l) }
                     .keyboardShortcut("o", modifiers: .command)
                     .disabled(!windowRegistry.canPerform(.open))
+            }
+
+            // Settings is our only SwiftUI scene; the viewer windows belong to
+            // AppKit. Keep this command in SwiftUI so menu rebuilds retain it.
+            CommandGroup(after: .toolbar) {
+                Button(l.text(windowRegistry.isFullScreen ? "system.item.exitFullScreen" : "system.item.enterFullScreen")) {
+                    windowRegistry.perform(.toggleFullScreen, localization: l)
+                }
+                .keyboardShortcut("f", modifiers: [.control, .command])
+                .disabled(!windowRegistry.canPerform(.toggleFullScreen))
             }
 
             CommandMenu(l.text("menu.browse")) {

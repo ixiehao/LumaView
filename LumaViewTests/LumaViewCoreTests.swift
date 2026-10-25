@@ -20,7 +20,7 @@ final class LumaViewCoreTests: XCTestCase {
     }
 
     @MainActor
-    func testFullScreenMenuIsInstalledOnceAndPreservesNativeCommand() throws {
+    func testNativeFullScreenMenuKeepsItsTargetAndShortcutWhenRelocalized() throws {
         let menu = NSMenu()
         for name in ["App", "File", "Edit", "View"] {
             let item = NSMenuItem(title: name, action: nil, keyEquivalent: "")
@@ -29,8 +29,10 @@ final class LumaViewCoreTests: XCTestCase {
         }
         let viewMenu = try XCTUnwrap(menu.items.last?.submenu)
         let action = #selector(NSWindow.toggleFullScreen(_:))
+        let installed = NSMenuItem(title: "Enter Full Screen", action: action, keyEquivalent: "f")
+        installed.keyEquivalentModifierMask = [.control, .command]
+        viewMenu.addItem(installed)
         MainMenuLocalization.apply(L10n(language: .english), to: menu)
-        let installed = try XCTUnwrap(viewMenu.items.first { $0.action == action })
         XCTAssertNil(installed.target, "The native responder chain must choose the current window")
         XCTAssertEqual(installed.keyEquivalent, "f")
         XCTAssertEqual(installed.keyEquivalentModifierMask, [.control, .command])

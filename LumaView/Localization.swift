@@ -17,7 +17,7 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
 
     static let requiredLocalizationKeys = [
         "app.appearance", "app.language", "language.automatic", "appearance.light", "appearance.dark",
-        "settings.interface", "settings.updates", "settings.currentVersion", "settings.updatePrivacy",
+        "settings.title", "settings.interface", "settings.updates", "settings.currentVersion", "settings.updatePrivacy",
         "about.menu", "about.description", "about.developer", "about.project", "about.feedback", "about.privacy", "about.license",
         "update.available", "update.about.available", "update.menu.available", "update.menu.check", "update.check.title", "update.check.upToDate", "update.check.unavailable", "button.downloadUpdate", "button.ok",
         "menu.browse", "menu.image", "menu.more", "menu.openImage", "menu.printImage", "menu.reveal",
