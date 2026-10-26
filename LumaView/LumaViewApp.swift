@@ -1270,16 +1270,27 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         informationPopover = popover
         informationPopoverDocumentURL = documentURL
         resizeInformationPopover()
-        if let anchor, anchor.window === window,
+        var useToolbarAnchor = true
+        #if DEBUG
+        useToolbarAnchor = ProcessInfo.processInfo.environment["LUMAVIEW_TEST_LEGACY_POPOVER"] != "1"
+        #endif
+        if #available(macOS 14.0, *), useToolbarAnchor,
+           let item = window?.toolbar?.items.first(where: { $0.itemIdentifier == LumaViewToolbarIdentifier.information }) {
+            // AppKit handles both the visible item and its overflow affordance.
+            popover.show(relativeTo: item)
+        } else if let anchor, anchor.window === window,
            !anchor.isHiddenOrHasHiddenAncestor, !anchor.visibleRect.isEmpty {
             popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
         } else {
-            // A toolbar item moved into the overflow menu sends an NSMenuItem,
-            // not its original NSButton. Anchor the same popover to the current
-            // window's upper-right content edge so the action stays available.
-            let top = fallbackAnchor.isFlipped ? fallbackAnchor.bounds.minY : fallbackAnchor.bounds.maxY - 1
-            let edge = NSRect(x: fallbackAnchor.bounds.maxX - 28, y: top, width: 1, height: 1)
-            popover.show(relativeTo: edge, of: fallbackAnchor, preferredEdge: .minY)
+            // On Monterey/Ventura, use a point strictly inside the native
+            // window frame's visible area. A clipped hosting-view edge makes
+            // NSPopover.show silently do nothing.
+            let nativeAnchor = fallbackAnchor.superview ?? fallbackAnchor
+            let visible = nativeAnchor.visibleRect.insetBy(dx: 8, dy: 8)
+            guard !visible.isEmpty else { return }
+            let top = nativeAnchor.isFlipped ? visible.minY : visible.maxY - 1
+            let edge = NSRect(x: visible.maxX - 20, y: top, width: 1, height: 1)
+            popover.show(relativeTo: edge, of: nativeAnchor, preferredEdge: .minY)
         }
     }
 

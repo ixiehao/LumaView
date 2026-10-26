@@ -80,13 +80,21 @@ final class LumaViewLaunchTests: XCTestCase {
     }
 
     func testPDFPageControlsShortcutsAndCurrentPageInformation() throws {
+        try assertPDFPageControlsAndInformation(legacyInformationAnchor: false)
+    }
+
+    func testPDFInformationUsesTheMontereyCompatibleAnchor() throws {
+        try assertPDFPageControlsAndInformation(legacyInformationAnchor: true)
+    }
+
+    private func assertPDFPageControlsAndInformation(legacyInformationAnchor: Bool) throws {
         let folder = fixtureDirectory.appendingPathComponent("pdf", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let pdf = folder.appendingPathComponent("01-pages.pdf")
         let image = folder.appendingPathComponent("02-image.png")
         try makePDF(at: pdf, pageSizes: [CGSize(width: 600, height: 400), CGSize(width: 400, height: 600), CGSize(width: 600, height: 400)])
         try makePNG(at: image, width: 800, height: 600)
-        let app = launchApp(opening: pdf)
+        let app = launchApp(opening: pdf, legacyInformationAnchor: legacyInformationAnchor)
         app.typeKey("i", modifierFlags: [.command, .control]) // Pin the HUD for this controls test.
         let rendered = canvas(in: app, named: pdf.lastPathComponent)
         let previous = app.buttons["pdf.previousPage"]
@@ -484,7 +492,8 @@ final class LumaViewLaunchTests: XCTestCase {
     private func launchApp(
         opening file: URL? = nil,
         language: String? = "automatic",
-        appearance: String? = nil
+        appearance: String? = nil,
+        legacyInformationAnchor: Bool = false
     ) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
@@ -496,6 +505,9 @@ final class LumaViewLaunchTests: XCTestCase {
             app.launchArguments += ["-luma.appearance", appearance]
         }
         app.launchEnvironment["LUMAVIEW_DISABLE_UPDATE_CHECK"] = "1"
+        if legacyInformationAnchor {
+            app.launchEnvironment["LUMAVIEW_TEST_LEGACY_POPOVER"] = "1"
+        }
         if let file {
             app.launchEnvironment["LUMAVIEW_UI_TEST_OPEN_FILE"] = file.path
         }
