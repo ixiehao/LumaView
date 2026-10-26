@@ -8,9 +8,13 @@
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <meta name="author" content="ixiehao" />
     <link id="canonical-url" rel="canonical" href="https://ixiehao.github.io/LumaView/" />
-    <link rel="alternate" hreflang="zh-CN" href="https://ixiehao.github.io/LumaView/" />
     <link rel="alternate" hreflang="en" href="https://ixiehao.github.io/LumaView/en/" />
+    <link rel="alternate" hreflang="zh-CN" href="https://ixiehao.github.io/LumaView/" />
+    <link rel="alternate" hreflang="fr" href="https://ixiehao.github.io/LumaView/fr/" />
+    <link rel="alternate" hreflang="ru" href="https://ixiehao.github.io/LumaView/ru/" />
+    <link rel="alternate" hreflang="es" href="https://ixiehao.github.io/LumaView/es/" />
     <link rel="alternate" hreflang="ja" href="https://ixiehao.github.io/LumaView/ja/" />
+    <link rel="alternate" hreflang="ko" href="https://ixiehao.github.io/LumaView/ko/" />
     <link rel="alternate" hreflang="x-default" href="https://ixiehao.github.io/LumaView/" />
     <link rel="icon" type="image/png" sizes="512x512" href="assets/lumaview-app-icon.png" />
     <link rel="apple-touch-icon" sizes="512x512" href="assets/lumaview-app-icon.png" />
@@ -22,7 +26,11 @@
     <meta property="og:site_name" content="LumaView" />
     <meta id="og-locale" property="og:locale" content="zh_CN" />
     <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:locale:alternate" content="fr_FR" />
+    <meta property="og:locale:alternate" content="ru_RU" />
+    <meta property="og:locale:alternate" content="es_ES" />
     <meta property="og:locale:alternate" content="ja_JP" />
+    <meta property="og:locale:alternate" content="ko_KR" />
     <meta property="og:image" content="https://ixiehao.github.io/LumaView/assets/social-preview.jpg?v=20261017-canvas-fill" />
     <meta property="og:image:secure_url" content="https://ixiehao.github.io/LumaView/assets/social-preview.jpg?v=20261017-canvas-fill" />
     <meta property="og:image:type" content="image/jpeg" />
@@ -64,22 +72,36 @@
   "description": "一款极简的Mac原生看图软件。"
 }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20261026-install-dialog" />
+    <link rel="stylesheet" href="styles.css?v=20261026-language-menu" />
   </head>
   <body>
     <header class="nav wrap">
-      <a class="brand" href="#top" aria-label="LumaView Home">
+      <a class="brand" href="#top" aria-label="LumaView 首页" data-i18n-aria="homeLabel">
         <img src="assets/lumaview-app-icon.png" alt="" />
         <span>LumaView</span>
       </a>
-      <nav aria-label="Primary navigation">
+      <nav aria-label="主导航" data-i18n-aria="navigationLabel">
         <a href="#windows" data-i18n="navWindows">多窗口</a>
         <a href="#experience" data-i18n="navExperience">看图功能</a>
         <a href="#download" data-i18n="navDownload">下载</a>
       </nav>
-      <a class="language-switch" href="en/" aria-label="Switch to English">
-        <span aria-hidden="true">文</span><span class="language-label">EN</span>
-      </a>
+      <details class="language-switch" id="language-switch">
+        <summary aria-controls="language-options">
+          <svg class="language-icon" aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261026-language-menu#language"></use></svg>
+          <span class="sr-only" data-i18n="languageLabel">语言</span>
+          <span id="current-language" lang="zh-CN">中文</span>
+          <svg class="language-chevron" aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261026-language-menu#chevron-down"></use></svg>
+        </summary>
+        <ul id="language-options" class="language-options">
+          <li><a href="./en/" data-language="en" lang="en" hreflang="en"><span>English</span><svg aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261026-language-menu#check"></use></svg></a></li>
+          <li><a href="./" data-language="zh" lang="zh-CN" hreflang="zh-CN" aria-current="page"><span>中文</span><svg aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261026-language-menu#check"></use></svg></a></li>
+          <li><a href="./fr/" data-language="fr" lang="fr" hreflang="fr"><span>Français</span><svg aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261026-language-menu#check"></use></svg></a></li>
+          <li><a href="./ru/" data-language="ru" lang="ru" hreflang="ru"><span>Русский</span><svg aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261026-language-menu#check"></use></svg></a></li>
+          <li><a href="./es/" data-language="es" lang="es" hreflang="es"><span>Español</span><svg aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261026-language-menu#check"></use></svg></a></li>
+          <li><a href="./ja/" data-language="ja" lang="ja" hreflang="ja"><span>日本語</span><svg aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261026-language-menu#check"></use></svg></a></li>
+          <li><a href="./ko/" data-language="ko" lang="ko" hreflang="ko"><span>한국어</span><svg aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261026-language-menu#check"></use></svg></a></li>
+        </ul>
+      </details>
     </header>
 
     <main id="top">
@@ -171,6 +193,6 @@
       <p data-i18n="installConfirm">找到 LumaView 的提示，点按<strong>仍要打开</strong>，验证后选择<strong>打开</strong>。未看到按钮时，先再尝试启动一次。</p>
       <p class="install-caution" data-i18n="installCaution">若提示“已损坏”或“会损坏你的电脑”，请重新从发布页下载或反馈问题。</p>
     </dialog>
-    <script src="app.js?v=20261026-install-dialog"></script>
+    <script src="app.js?v=20261026-language-menu"></script>
   </body>
 </html>
