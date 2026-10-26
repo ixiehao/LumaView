@@ -4,6 +4,13 @@ Run `./Scripts/package-dmg.sh` on an Apple-silicon Mac with Xcode and Python
 3.10 or newer. Set `PACKAGING_PYTHON` when the preferred Python executable is
 not on `PATH`.
 
+`OUTPUT_DIR` is resolved relative to the directory where the command is run.
+An existing DMG or matching `.sha256` file is never replaced: use a new version
+or choose a separate QA output directory. The layout builder verifies a staged
+image before atomically publishing it and cleans its temporary artwork on failure.
+Run `python3 Scripts/test-packaging.py` for offline output-safety regressions;
+these use stub build tools and do not replace a real DMG mount/layout check.
+
 LumaView deliberately uses `dmgbuild` 1.6.7 to write Finder metadata directly,
 rather than depending on a manually opened Finder window. The visual design is
 original LumaView artwork: its colour field, title, drag arrow, capability note

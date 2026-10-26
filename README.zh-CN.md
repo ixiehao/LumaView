@@ -4,9 +4,9 @@
 
 打开一张图片，直接浏览同一文件夹。LumaView 将画面留在中心，把日常操作放在顺手的位置。
 
-**[下载 LumaView 1.2.9 · 通用 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.9/LumaView-1.2.9-universal.dmg)** · [官网](https://ixiehao.github.io/LumaView/?lang=zh) · [English](README.md) · [日本語](README.ja.md) · [变更记录](CHANGELOG.md)
+**[下载 LumaView 1.3.0 · 通用 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg)** · [官网](https://ixiehao.github.io/LumaView/) · [English](README.md) · [日本語](README.ja.md) · [变更记录](CHANGELOG.md)
 
-macOS 13+ · Intel + Apple Silicon · 通用版 DMG · 约 2 MB
+macOS 12+ · Intel + Apple Silicon · 通用版 DMG · 约 2.5 MB
 
 ## 软件实机截图
 
@@ -20,11 +20,14 @@ macOS 13+ · Intel + Apple Silicon · 通用版 DMG · 约 2 MB
 - **看清画面** — 支持适合窗口、缩放、平移、旋转和打印；底部会显示真实缩放比例。
 - **按需查看信息** — 工具栏一个按钮即可查看当前图片的文件信息与内嵌 EXIF；不额外扫描整个文件夹，也不建立元数据图库。
 - **打开日常格式** — 支持 JPEG、PNG、HEIC、GIF、TIFF、BMP、ICO、WebP、PDF、多数 macOS 支持的 RAW 和 `.sketch` 预览。
-- **为 Mac 而做** — 原生 SwiftUI，支持简体中文 / English / 日本語、浅色 / 深色 / 跟随系统，以及 Intel 与 Apple Silicon。
+- **为 Mac 而做** — 原生 SwiftUI，支持英语、汉语、法语、俄语、西班牙语、日语和韩语、浅色 / 深色 / 跟随系统，以及 Intel 与 Apple Silicon。
+
+- **阅读 PDF** — 使用 `↑` / `↓` 翻页，保留阅读页码、缩放和旋转。
+- **设置默认应用** — 在设置中选择由 LumaView 默认打开的图片格式。
 
 ## 安装
 
-1. [下载通用版 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.9/LumaView-1.2.9-universal.dmg)。
+1. [下载通用版 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg)。
 2. 打开它，将 **LumaView.app** 拖进“应用程序”。
 3. 从“应用程序”打开 LumaView；也可在访达中右键图片，选择“打开方式” → **LumaView**。
 
@@ -38,7 +41,7 @@ macOS 13+ · Intel + Apple Silicon · 通用版 DMG · 约 2 MB
 
 | 系统版本 | 设置入口 |
 | --- | --- |
-| macOS 12 Monterey（使用 Monterey 测试包） | 苹果菜单 → **系统偏好设置** → **安全性与隐私** → **通用** |
+| macOS 12 Monterey | 苹果菜单 → **系统偏好设置** → **安全性与隐私** → **通用** |
 | macOS 13 Ventura 及更新版本 | 苹果菜单 → **系统设置** → **隐私与安全性**（部分版本称“隐私与安全”）→ 向下找到 **安全性** |
 
 如果没有看到“仍要打开”，先再次尝试打开 LumaView，再返回设置查看。若提示“已损坏”或“会损坏你的电脑”，请停止打开，重新从项目页面下载或反馈问题，不按上述流程放行。
@@ -56,6 +59,9 @@ DMG 只是安装包。删除它不会删除 LumaView 或任何图片；如需卸
 | 操作 | 快捷键 |
 | --- | --- |
 | 打开文件 | `⌘ O` |
+| 在新窗口中打开文件 | `⌘ ⇧ O` |
+| PDF 上一页 / 下一页 | `↑` / `↓` |
+| 始终显示文件信息 | `⌃ ⌘ I` |
 | 上一张 / 下一张 | `←` / `→` |
 | 放大 / 缩小 | `⌘ +` / `⌘ -` |
 | 适合窗口 | `⌘ 0` |

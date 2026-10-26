@@ -7,7 +7,7 @@
 "settings.interface" = "Interface";
 "settings.updates" = "Mises à jour";
 "settings.currentVersion" = "Version actuelle";
-"settings.updatePrivacy" = "Seules les informations publiques sur les versions GitHub sont consultées. Vos images et leurs chemins d’accès restent sur ce Mac.";
+"settings.updatePrivacy" = "Recherche les nouvelles versions sur GitHub.";
 "about.menu" = "À propos de LumaView";
 "about.description" = "Une visionneuse d’images native et minimaliste pour Mac.";
 "about.developer" = "Développeur";
@@ -112,3 +112,44 @@
 "system.item.showTabBar" = "Afficher la barre d’onglets";
 "system.item.hideTabBar" = "Masquer la barre d’onglets";
 "system.item.showAllTabs" = "Afficher tous les onglets";
+
+/* PDF page navigation */
+"pdf.previousPage" = "Page précédente";
+"pdf.nextPage" = "Page suivante";
+"pdf.pagePosition" = "Page %d sur %d";
+"pdf.printPage" = "Imprimer la page actuelle…";
+"metadata.page" = "Page";
+"metadata.pageSize" = "Dimensions de la page";
+"settings.general" = "Général";
+"settings.defaultApplications" = "Applications par défaut";
+"defaults.description" = "Choisissez les formats de fichiers à ouvrir par défaut avec LumaView.";
+"defaults.format" = "Format";
+"defaults.extensions" = "Extensions";
+"defaults.currentApplication" = "Application actuelle";
+"defaults.none" = "Non définie";
+"defaults.selectImages" = "Choisir les images";
+"defaults.clear" = "Effacer la sélection";
+"defaults.apply" = "Définir par défaut";
+"defaults.installFirst" = "Déplacez LumaView dans Applications avant de la définir comme application par défaut.";
+"defaults.applied" = "%d formats de fichiers mis à jour.";
+"defaults.failed" = "Modification impossible : %@. Réessayez ou utilisez Lire les informations dans le Finder.";
+"defaults.cancelled" = "Annulé. Les modifications déjà appliquées sont conservées.";
+"defaults.finderHint" = "Pour modifier tous les fichiers de ce type : Finder → Lire les informations → Ouvrir avec → choisir une autre app → Tout modifier…";
+
+"menu.openNewWindows" = "Ouvrir dans de nouvelles fenêtres…";
+
+"menu.keepStatusVisible" = "Toujours afficher les informations du fichier";
+
+"preview.passwordRequired" = "Ce PDF nécessite un mot de passe. Déverrouillez-le dans Aperçu.";
+
+"preview.fileTooLarge" = "Ce PDF dépasse la limite de prévisualisation de 128 Mo. Ouvrez-le dans Aperçu.";
+
+"preview.unreadable" = "Ce fichier est introuvable ou illisible. Vérifiez son emplacement et ses autorisations.";
+
+"preview.cannotDecode" = "Ce Mac ne peut pas décoder ce fichier, ou celui-ci est endommagé. Essayez de l’ouvrir dans Aperçu.";
+
+"update.checking" = "Vérification…";
+
+"update.later" = "Plus tard";
+
+"defaults.otherCopy" = "%@ (autre copie)";

@@ -7,7 +7,7 @@
 "settings.interface" = "界面";
 "settings.updates" = "更新";
 "settings.currentVersion" = "当前版本";
-"settings.updatePrivacy" = "仅检查 GitHub 的公开发布元数据；图片和文件路径始终留在这台 Mac 上。";
+"settings.updatePrivacy" = "从 GitHub 检查新版本。";
 "about.menu" = "关于 LumaView";
 "about.description" = "一款极简的Mac原生看图软件。";
 "about.developer" = "开发者";
@@ -112,3 +112,44 @@
 "system.item.showTabBar" = "显示标签页栏";
 "system.item.hideTabBar" = "隐藏标签页栏";
 "system.item.showAllTabs" = "显示所有标签页";
+
+/* PDF page navigation */
+"pdf.previousPage" = "上一页";
+"pdf.nextPage" = "下一页";
+"pdf.pagePosition" = "第 %d / %d 页";
+"pdf.printPage" = "打印当前页…";
+"metadata.page" = "页码";
+"metadata.pageSize" = "页面尺寸";
+"settings.general" = "通用";
+"settings.defaultApplications" = "默认应用";
+"defaults.description" = "选择默认使用 LumaView 打开的文件格式。";
+"defaults.format" = "文件格式";
+"defaults.extensions" = "扩展名";
+"defaults.currentApplication" = "当前应用";
+"defaults.none" = "未设置";
+"defaults.selectImages" = "全选图片";
+"defaults.clear" = "清除选择";
+"defaults.apply" = "设为默认";
+"defaults.installFirst" = "请先将 LumaView 移至“应用程序”，再设置默认应用。";
+"defaults.applied" = "已设置 %d 种文件格式。";
+"defaults.failed" = "未能设置：%@。请重试，或在访达的“显示简介”中修改。";
+"defaults.cancelled" = "已取消，已经完成的修改会保留。";
+"defaults.finderHint" = "更改此类文件的默认应用：访达 → 显示简介 → 打开方式 → 选择其他应用 → 全部更改…";
+
+"menu.openNewWindows" = "在新窗口中打开…";
+
+"menu.keepStatusVisible" = "始终显示文件信息";
+
+"preview.passwordRequired" = "此 PDF 需要密码，请使用“预览”解锁。";
+
+"preview.fileTooLarge" = "此 PDF 超过 128 MB 预览上限，请使用“预览”打开。";
+
+"preview.unreadable" = "文件不存在或无法读取，请检查位置和访问权限。";
+
+"preview.cannotDecode" = "此 Mac 无法解码该文件，或文件已损坏。请尝试使用“预览”打开。";
+
+"update.checking" = "正在检查…";
+
+"update.later" = "稍后";
+
+"defaults.otherCopy" = "%@（另一副本）";

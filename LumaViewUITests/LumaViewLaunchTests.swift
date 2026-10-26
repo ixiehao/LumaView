@@ -79,6 +79,108 @@ final class LumaViewLaunchTests: XCTestCase {
         expectCanvasAspect(portraitCanvas, ratio: 9.0 / 16.0)
     }
 
+    func testPDFPageControlsShortcutsAndCurrentPageInformation() throws {
+        let folder = fixtureDirectory.appendingPathComponent("pdf", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let pdf = folder.appendingPathComponent("01-pages.pdf")
+        let image = folder.appendingPathComponent("02-image.png")
+        try makePDF(at: pdf, pageSizes: [CGSize(width: 600, height: 400), CGSize(width: 400, height: 600), CGSize(width: 600, height: 400)])
+        try makePNG(at: image, width: 800, height: 600)
+        let app = launchApp(opening: pdf)
+        app.typeKey("i", modifierFlags: [.command, .control]) // Pin the HUD for this controls test.
+        let rendered = canvas(in: app, named: pdf.lastPathComponent)
+        let previous = app.buttons["pdf.previousPage"]
+        let next = app.buttons["pdf.nextPage"]
+        XCTAssertTrue(next.waitForExistence(timeout: 5))
+        XCTAssertFalse(previous.isEnabled)
+        expect(rendered, accessibilityLabelContaining: "Page 1 of 3")
+        expectCanvasAspect(rendered, ratio: 1.5)
+        next.click()
+        expect(rendered, accessibilityLabelContaining: "Page 2 of 3")
+        expectCanvasAspect(rendered, ratio: 1 / 1.5)
+        XCTAssertTrue(previous.isEnabled)
+
+        // Bare arrows turn pages; Page Up/Down remain aliases. Left/Right
+        // below still navigate files rather than pages.
+        app.typeKey(.downArrow, modifierFlags: [])
+        expect(rendered, accessibilityLabelContaining: "Page 3 of 3")
+        XCTAssertFalse(next.isEnabled)
+        app.typeKey(.upArrow, modifierFlags: [])
+        expect(rendered, accessibilityLabelContaining: "Page 2 of 3")
+        app.typeKey(.pageUp, modifierFlags: [])
+        expect(rendered, accessibilityLabelContaining: "Page 1 of 3")
+        app.typeKey(.pageDown, modifierFlags: [])
+        expect(rendered, accessibilityLabelContaining: "Page 2 of 3")
+        expectCanvasAspect(rendered, ratio: 1 / 1.5)
+        // Portrait pages may move Information into AppKit's overflow menu.
+        if app.buttons["Image information"].exists {
+            app.buttons["Image information"].click()
+        } else {
+            let overflow = app.toolbars.popUpButtons.firstMatch
+            XCTAssertTrue(overflow.exists)
+            overflow.click()
+            app.menuItems["Image information"].click()
+        }
+        let inspector = app.popovers.firstMatch
+        XCTAssertTrue(inspector.waitForExistence(timeout: 5))
+        expectInspector(inspector, toShow: "Page 2 of 3")
+        expectInspector(inspector, toShow: "400 × 600 pt")
+        app.typeKey(.pageDown, modifierFlags: [])
+        expect(rendered, accessibilityLabelContaining: "Page 3 of 3")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"), object: inspector
+        )], timeout: 5), .completed)
+
+        app.typeKey(.rightArrow, modifierFlags: [])
+        XCTAssertTrue(canvas(in: app, named: image.lastPathComponent).waitForExistence(timeout: 5))
+        XCTAssertFalse(next.exists)
+        app.typeKey(.leftArrow, modifierFlags: [])
+        expect(rendered, accessibilityLabelContaining: "Page 3 of 3")
+        XCTAssertTrue(previous.isEnabled)
+        XCTAssertFalse(next.isEnabled)
+        expectCanvasAspect(rendered, ratio: 1.5)
+        let status = app.descendants(matching: .any)["image.status"]
+        let zoomReady = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            (status.value as? String)?.hasSuffix("%") == true
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [zoomReady], timeout: 5), .completed)
+        let fitZoom = try XCTUnwrap(Double((status.value as? String ?? "").replacingOccurrences(of: "%", with: "")))
+        app.buttons["Zoom in"].click()
+        XCTAssertTrue(rendered.waitForExistence(timeout: 5))
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            let value = Double((status.value as? String ?? "").replacingOccurrences(of: "%", with: "")) ?? 0
+            return value > fitZoom
+        }, object: nil)], timeout: 5), .completed)
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Fit image")).firstMatch.click()
+        XCTAssertTrue(rendered.waitForExistence(timeout: 5))
+    }
+
+    func testSinglePagePDFDoesNotAddPageNavigation() throws {
+        let pdf = fixtureDirectory.appendingPathComponent("single.pdf")
+        try makePDF(at: pdf, pageSizes: [CGSize(width: 600, height: 400)])
+        let app = launchApp(opening: pdf)
+        expectCanvasAspect(canvas(in: app, named: pdf.lastPathComponent), ratio: 1.5)
+        XCTAssertFalse(app.buttons["pdf.nextPage"].exists)
+        XCTAssertFalse(app.buttons["pdf.previousPage"].exists)
+        app.menuBars.menuBarItems["File"].click()
+        XCTAssertTrue(app.menuItems["Print Current Page…"].exists)
+        app.typeKey(.escape, modifierFlags: [])
+    }
+
+    private func makePDF(at url: URL, pageSizes: [CGSize]) throws {
+        var box = CGRect(origin: .zero, size: try XCTUnwrap(pageSizes.first))
+        let context = try XCTUnwrap(CGContext(url as CFURL, mediaBox: &box, nil))
+        for (index, size) in pageSizes.enumerated() {
+            var page = CGRect(origin: .zero, size: size)
+            let data = Data(bytes: &page, count: MemoryLayout<CGRect>.size)
+            context.beginPDFPage([kCGPDFContextMediaBox: data] as CFDictionary)
+            context.setFillColor([NSColor.red, .green, .blue][index % 3].cgColor)
+            context.fill(page)
+            context.endPDFPage()
+        }
+        context.closePDF()
+    }
+
     func testToolbarRotationCyclesThroughEveryRightAngle() throws {
         exerciseRotationSequence(verifyPixels: false)
     }
@@ -99,10 +201,12 @@ final class LumaViewLaunchTests: XCTestCase {
 
         // Inspect actual pixels as well as the accessible angle. A label-only
         // assertion used to pass even when 90°/270° left the pixels unrotated.
-        let red = NSColor(srgbRed: 1, green: 0, blue: 0, alpha: 1)
-        let green = NSColor(srgbRed: 0, green: 1, blue: 0, alpha: 1)
-        let blue = NSColor(srgbRed: 0, green: 0, blue: 1, alpha: 1)
-        let yellow = NSColor(srgbRed: 1, green: 1, blue: 0, alpha: 1)
+        // Keep the swatches inside common display gamuts. Fully saturated sRGB
+        // primaries can clip when a real monitor's ICC profile is applied.
+        let red = NSColor(srgbRed: 0.8, green: 0.2, blue: 0.2, alpha: 1)
+        let green = NSColor(srgbRed: 0.2, green: 0.8, blue: 0.2, alpha: 1)
+        let blue = NSColor(srgbRed: 0.2, green: 0.2, blue: 0.8, alpha: 1)
+        let yellow = NSColor(srgbRed: 0.8, green: 0.8, blue: 0.2, alpha: 1)
         func verify(_ colors: [NSColor], ratio: CGFloat) {
             if verifyPixels {
                 expectCanvasPixels(canvas, in: app, colors: colors, ratio: ratio)
@@ -128,10 +232,13 @@ final class LumaViewLaunchTests: XCTestCase {
             verify(turn.colors, ratio: turn.ratio)
         }
 
-        app.typeKey("[", modifierFlags: .command)
+        // Give keyboard events a visible target and explicit focus; the app's
+        // AX frame can be infinite on multi-display hosts. Use ABC (see QA.md).
+        canvas.click()
+        canvas.typeKey("[", modifierFlags: .command)
         expect(canvas, accessibilityLabelContaining: "270°")
         verify([green, yellow, red, blue], ratio: 1 / 1.2)
-        app.typeKey("]", modifierFlags: .command)
+        canvas.typeKey("]", modifierFlags: .command)
         expect(canvas, accessibilityLabelContaining: "0°")
         verify([red, green, blue, yellow], ratio: 1.2)
     }
@@ -192,11 +299,11 @@ final class LumaViewLaunchTests: XCTestCase {
         // frame. Measure both instead of mistaking the missing 52 pt for a
         // failed transition. Hidden menus are not reliable state indicators.
         expectFullScreen(true, in: window)
-        app.typeKey("]", modifierFlags: .command)
+        rendered.typeKey("]", modifierFlags: .command)
         expect(rendered, accessibilityLabelContaining: "90°")
         // Exercise the native menu shortcut without relying on a titlebar that
         // may stay auto-hidden in the CI virtual display.
-        app.typeKey("f", modifierFlags: [.control, .command])
+        rendered.typeKey("f", modifierFlags: [.control, .command])
         expectFullScreen(false, in: window)
         expectCanvasAspect(rendered, ratio: 1 / 1.2)
     }
@@ -226,7 +333,17 @@ final class LumaViewLaunchTests: XCTestCase {
     }
 
     private func expectFullScreen(_ fullScreen: Bool, in window: XCUIElement) {
-        let screenSizes = NSScreen.screens.map { $0.frame.size }
+        // A notched display may reserve its camera safe area even in full
+        // screen. Accept the actual screen bounds or its system-defined safe
+        // bounds; never use visibleFrame, which also excludes the Dock.
+        let screenSizes = NSScreen.screens.flatMap { screen -> [CGSize] in
+            let size = screen.frame.size
+            let insets = screen.safeAreaInsets
+            return [size, CGSize(
+                width: size.width - insets.left - insets.right,
+                height: size.height - insets.top - insets.bottom
+            )]
+        }
         let changed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             let size = self.fullWindowFrame(window).size
             guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0 else { return false }
@@ -290,7 +407,7 @@ final class LumaViewLaunchTests: XCTestCase {
         chooseLanguage("English", in: app)
         defer { chooseLanguage("English", in: app) }
         let status = app.descendants(matching: .any)["image.status"]
-        expectStatus(status, containing: "Unable to preview this image.")
+        expectStatus(status, containing: "This Mac cannot decode the file")
 
         app.typeKey(",", modifierFlags: .command)
         let language = app.popUpButtons["settings.language"]
@@ -301,7 +418,7 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 5), .completed)
         app.typeKey("w", modifierFlags: .command)
 
-        let message = "Impossible d’afficher un aperçu de cette image."
+        let message = "Ce Mac ne peut pas décoder ce fichier"
         expectStatus(status, containing: message)
         XCTAssertFalse((status.label + (status.value as? String ?? "")).contains("Unable to preview"))
         expect(app.descendants(matching: .any)["canvas.unavailable.broken.jpg"], accessibilityLabelContaining: message)
@@ -421,7 +538,7 @@ final class LumaViewLaunchTests: XCTestCase {
             bitsPerPixel: 0
         ))
         let pixels = try XCTUnwrap(bitmap.bitmapData)
-        let quadrants: [[UInt8]] = [[255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255], [255, 255, 0, 255]]
+        let quadrants: [[UInt8]] = [[204, 51, 51, 255], [51, 204, 51, 255], [51, 51, 204, 255], [204, 204, 51, 255]]
         for y in 0..<height {
             for x in 0..<width {
                 let color = quadrants[(y < height / 2 ? 0 : 2) + (x < width / 2 ? 0 : 1)]
@@ -482,10 +599,18 @@ final class LumaViewLaunchTests: XCTestCase {
         app.activate()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 5))
         var captureFailure: String?
+        var capturedBitmap: NSBitmapImageRep?
+        var sampledColors = ""
         let displayed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             let bitmap: NSBitmapImageRep
             do {
-                bitmap = try self.captureCanvas(element, in: app)
+                let captured = try self.captureCanvas(element, in: app)
+                guard let converted = captured.converting(to: .sRGB, renderingIntent: .relativeColorimetric) else {
+                    throw NSError(domain: "LumaViewUICapture", code: 2,
+                                  userInfo: [NSLocalizedDescriptionKey: "Cannot convert the screenshot ICC profile to sRGB"])
+                }
+                bitmap = converted
+                capturedBitmap = bitmap
             } catch {
                 captureFailure = error.localizedDescription
                 return true // Finish polling and report a capture failure, never skip it.
@@ -494,17 +619,29 @@ final class LumaViewLaunchTests: XCTestCase {
             // and status pill. This catches the historic white rails as well as
             // wrong orientation, stale frames, and blank render transitions.
             let points: [(CGFloat, CGFloat)] = [(0.02, 0.2), (0.98, 0.2), (0.02, 0.7), (0.98, 0.7)]
+            sampledColors = ""
             return zip(points, colors).allSatisfy { point, expected in
+                // Convert the bitmap's ICC profile first. colorAt returns
+                // calibrated RGB; converting that NSColor again misinterprets
+                // the original display-profile channel values.
                 guard let color = bitmap.colorAt(
                     x: Int(CGFloat(bitmap.pixelsWide - 1) * point.0),
                     y: Int(CGFloat(bitmap.pixelsHigh - 1) * point.1)
-                )?.usingColorSpace(.sRGB) else { return false }
+                ) else { return false }
+                sampledColors += "\(point): \(color.redComponent),\(color.greenComponent),\(color.blueComponent); "
                 return abs(color.redComponent - expected.redComponent) < 0.15
                     && abs(color.greenComponent - expected.greenComponent) < 0.15
                     && abs(color.blueComponent - expected.blueComponent) < 0.15
             }
         }, object: nil)
         let result = XCTWaiter.wait(for: [displayed], timeout: 5)
+        if let data = capturedBitmap?.representation(using: .png, properties: [:]) {
+            let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.png")
+            attachment.name = "Rotation canvas \(element.label)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+        print("Rotation pixel check: \(element.label), result=\(result.rawValue), samples=\(sampledColors), captureError=\(captureFailure ?? "none")")
         XCTAssertNil(captureFailure, captureFailure ?? "")
         XCTAssertEqual(result, .completed,
                        "Rendered quadrants must rotate and fill the canvas")

@@ -156,7 +156,7 @@ drawText(
     color: color(0.25, 0.30, 0.39, 0.86)
 )
 drawText(
-    "Universal · Intel + Apple Silicon · macOS 13 or later",
+    "Universal · Intel + Apple Silicon · macOS 12 or later",
     in: NSRect(x: 130, y: 94, width: 720, height: 19),
     font: .systemFont(ofSize: 12, weight: .regular),
     color: color(0.40, 0.45, 0.54, 0.70)

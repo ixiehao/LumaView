@@ -372,6 +372,11 @@ final class LumaViewAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+#if DEBUG
+        // Hosted core tests need AppKit, but no document windows or foreground
+        // activation. UI tests launch a separate app without XCTest injected.
+        if NSClassFromString("XCTestCase") != nil { return }
+#endif
         // UI tests exercise the same AppKit document-window route as Finder without
         // driving an NSOpenPanel or depending on a developer's Desktop. This input is
         // intentionally inert unless an XCTest process supplies an existing local file.
@@ -579,9 +584,13 @@ enum ImageWindowSizing {
 /// of mutating an arbitrary background window.
 fileprivate enum ViewerCommand {
     case open
+    case openInNewWindow
+    case toggleStatus
     case toggleFullScreen
     case previous
     case next
+    case previousPage
+    case nextPage
     case zoomOut
     case fit
     case zoomIn
@@ -599,6 +608,13 @@ final class LumaViewWindowRegistry: ObservableObject {
     static let shared = LumaViewWindowRegistry()
 
     let updateChecker = UpdateChecker()
+    private var updatePresenter: UpdateNoticePresenter?
+
+    private var updateObserver: AnyCancellable?
+    private init() {
+        updatePresenter = UpdateNoticePresenter(checker: updateChecker)
+        updateObserver = updateChecker.objectWillChange.sink { [weak self] in self?.objectWillChange.send() }
+    }
     @Published private(set) var activeBrowser: ImageBrowserStore?
 
     private var controllers: [ObjectIdentifier: LumaViewWindowController] = [:]
@@ -683,6 +699,10 @@ final class LumaViewWindowRegistry: ObservableObject {
 
     fileprivate func perform(_ command: ViewerCommand, localization: L10n) {
         guard canPerform(command) else { return }
+        if case .openInNewWindow = command {
+            openDocumentWindows(for: ImageBrowserStore.chooseImageURLs(localization, multiple: true))
+            return
+        }
         if case .open = command, commandDocumentController == nil {
             openWelcomeWindow()
         }
@@ -690,7 +710,10 @@ final class LumaViewWindowRegistry: ObservableObject {
     }
 
     fileprivate func canPerform(_ command: ViewerCommand) -> Bool {
-        if case .open = command { return !hasBlockingModalPresentation }
+        switch command {
+        case .open, .openInNewWindow: return !hasBlockingModalPresentation
+        default: break
+        }
         return commandDocumentController?.canPerform(command) ?? false
     }
 
@@ -750,6 +773,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
 
     private var browserChangeObserver: AnyCancellable?
     private var informationSelectionObserver: AnyCancellable?
+    private var informationGenerationObserver: AnyCancellable?
     private var pixelSizeObserver: AnyCancellable?
     private var quarterTurnObserver: AnyCancellable?
     private var informationPopover: NSPopover?
@@ -761,6 +785,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
     /// to a portrait must reshape the same window before the new canvas draws.
     private var sizedDocumentURL: URL?
     private var sizedDocumentOrientation: Bool?
+    private var sizedDocumentPixelSize: CGSize?
     private var isFullScreenTransitionInProgress = false
     private let authoredMinimumContentSize = NSSize(width: 560, height: 380)
 
@@ -768,7 +793,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         self.documentURL = documentURL
 
         let contentSize = NSSize(width: 700, height: 480)
-        let window = NSWindow(
+        let window = LumaDocumentWindow(
             contentRect: NSRect(origin: .zero, size: contentSize),
             // The image canvas must begin below the unified toolbar. With
             // fullSizeContentView, AppKit counts the titlebar in contentRect
@@ -778,6 +803,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             backing: .buffered,
             defer: false
         )
+        window.browser = browser
         window.isReleasedWhenClosed = false
         window.isRestorable = false
         window.titleVisibility = .hidden
@@ -827,15 +853,23 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             .sink { [weak self] selectedURL in
                 self?.dismissInformationPopover(unlessShowing: selectedURL)
             }
+        // A PDF page change or same-path reopen must also dismiss stale information.
+        informationGenerationObserver = browser.$selectionGeneration.dropFirst()
+            .sink { [weak self] _ in self?.dismissInformationPopover() }
         pixelSizeObserver = browser.$originalPixelSize
             .compactMap { $0 }
             .sink { [weak self] size in
                 guard let self, let selectedURL = self.browser.selectedURL else { return }
-                self.applyDocumentSize(
-                    for: size,
-                    documentURL: selectedURL,
-                    quarterTurn: self.browser.quarterTurn
-                )
+                let generation = self.browser.selectionGeneration
+                // Published emits before storing the new size. Resizing the
+                // NSWindow synchronously can force SwiftUI to render that old
+                // value (and leave the zoom readout empty) during a page change.
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.browser.selectedURL == selectedURL,
+                          self.browser.selectionGeneration == generation,
+                          self.browser.originalPixelSize == size else { return }
+                    self.applyDocumentSize(for: size, documentURL: selectedURL, quarterTurn: self.browser.quarterTurn)
+                }
             }
         quarterTurnObserver = browser.$quarterTurn
             .removeDuplicates()
@@ -902,7 +936,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
     /// receiving actions when several viewers are open.
     fileprivate func canPerform(_ command: ViewerCommand) -> Bool {
         switch command {
-        case .open:
+        case .open, .openInNewWindow:
             return window != nil
         case .toggleFullScreen:
             return window != nil && !isFullScreenTransitionInProgress
@@ -910,8 +944,12 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             return browser.hasPrevious || browser.isScanning
         case .next:
             return browser.hasNext || browser.isScanning
+        case .previousPage:
+            return browser.hasPreviousPage
+        case .nextPage:
+            return browser.hasNextPage
         case .zoomOut, .fit, .zoomIn, .rotateLeft, .rotateRight,
-             .revealInFinder:
+             .revealInFinder, .toggleStatus:
             return browser.selectedURL != nil
         case .print:
             return browser.selectedURL != nil && !browser.isPreparingPrint
@@ -923,12 +961,20 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         switch command {
         case .open:
             browser.chooseImage(localization)
+        case .openInNewWindow:
+            LumaViewWindowRegistry.shared.openDocumentWindows(for: ImageBrowserStore.chooseImageURLs(localization, multiple: true))
+        case .toggleStatus:
+            browser.keepsStatusVisible.toggle()
         case .toggleFullScreen:
             window?.toggleFullScreen(nil)
         case .previous:
             browser.previous()
         case .next:
             browser.next()
+        case .previousPage:
+            browser.previousPage()
+        case .nextPage:
+            browser.nextPage()
         case .zoomOut:
             browser.zoomOut()
         case .fit:
@@ -1198,16 +1244,19 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         guard let selectedURL = browser.selectedURL else { return }
         dismissInformationPopover()
         informationRequestedURL = selectedURL
+        let pageIndex = browser.pdfPageIndex
+        let selectionGeneration = browser.selectionGeneration
         let anchor = sender as? NSView
         let operation = BlockOperation()
         operation.addExecutionBlock { [weak self, weak anchor, weak operation] in
             guard let operation, !operation.isCancelled else { return }
-            let information = autoreleasepool { ImageInformationReader.read(from: selectedURL) }
+            let information = autoreleasepool { ImageInformationReader.read(from: selectedURL, pageIndex: pageIndex) }
             guard !operation.isCancelled else { return }
             DispatchQueue.main.async { [weak self, weak anchor] in
                 guard let self, self.informationOperation === operation,
                       !operation.isCancelled,
                       self.browser.selectedURL == selectedURL,
+                      self.browser.selectionGeneration == selectionGeneration,
                       self.window?.isVisible == true else { return }
                 self.informationOperation = nil
                 self.informationRequestedURL = nil
@@ -1273,7 +1322,8 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         // Without fullSizeContentView, AppKit's content rectangle is the
         // SwiftUI canvas below the toolbar, so one image ratio sizes both.
         let orientation = ImageWindowSizing.orientationKey(for: quarterTurn)
-        guard sizedDocumentURL != documentURL || sizedDocumentOrientation != orientation,
+        guard sizedDocumentURL != documentURL || sizedDocumentOrientation != orientation
+                || sizedDocumentPixelSize != imagePixelSize,
               let window,
               !window.styleMask.contains(.fullScreen),
               let screen = window.screen ?? NSScreen.main,
@@ -1319,6 +1369,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         )
         sizedDocumentURL = documentURL
         sizedDocumentOrientation = orientation
+        sizedDocumentPixelSize = imagePixelSize
         window.setFrame(frame, display: true, animate: false)
     }
 
@@ -1392,100 +1443,6 @@ private final class LumaBrandTitlebarView: NSView {
     }
 }
 
-/// The Settings scene is intentionally small, but it must never be an empty
-/// window. These controls mirror the menu choices while giving macOS users a
-/// familiar persistent place to change them.
-private struct LumaSettingsView: View {
-    @ObservedObject var updateChecker: UpdateChecker
-    @AppStorage("luma.language") private var languageRaw = AppLanguage.automatic.rawValue
-    @AppStorage("luma.appearance") private var appearanceRaw = AppAppearance.system.rawValue
-
-    private var language: AppLanguage { AppLanguage(rawValue: languageRaw) ?? .automatic }
-    private var appearance: AppAppearance { AppAppearance(rawValue: appearanceRaw) ?? .system }
-    private var l: L10n { L10n(language: language) }
-    private var installedVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
-    }
-
-    var body: some View {
-        Form {
-            Section(l.text("settings.interface")) {
-                Picker(l.text("app.appearance"), selection: $appearanceRaw) {
-                    ForEach(AppAppearance.allCases) { option in
-                        Text(l.appearanceName(option)).tag(option.rawValue)
-                    }
-                }
-                .accessibilityIdentifier("settings.appearance")
-
-                Picker(l.text("app.language"), selection: $languageRaw) {
-                    ForEach(AppLanguage.allCases) { option in
-                        Text(l.languageName(option)).tag(option.rawValue)
-                    }
-                }
-                .accessibilityIdentifier("settings.language")
-            }
-
-            Section {
-                LabeledContent(l.text("settings.currentVersion"), value: installedVersion)
-
-                if let update = updateChecker.availableUpdate {
-                    HStack {
-                        Text(l.text("update.available", update.version))
-                        Spacer()
-                        Button(l.text("button.downloadUpdate")) {
-                            updateChecker.openDownloadPage()
-                        }
-                    }
-                }
-
-                Button(l.text("update.menu.check")) {
-                    Task { await updateChecker.checkForUpdate(force: true, announceResult: true) }
-                }
-                .accessibilityIdentifier("settings.checkForUpdates")
-            } header: {
-                Text(l.text("settings.updates"))
-            } footer: {
-                Text(l.text("settings.updatePrivacy"))
-            }
-        }
-        .formStyle(.grouped)
-        .padding(20)
-        .frame(width: 440)
-        .fixedSize(horizontal: false, vertical: true)
-        .preferredColorScheme(appearance.colorScheme)
-        .environment(\.locale, language.locale)
-        .accessibilityIdentifier("settings.root")
-        .navigationTitle(l.text("settings.title"))
-        .alert(l.text("update.check.title"), isPresented: updateNoticeBinding) {
-            Button(l.text("button.ok"), role: .cancel) {
-                updateChecker.dismissNotice()
-            }
-        } message: {
-            Text(updateNoticeMessage)
-        }
-    }
-
-    private var updateNoticeBinding: Binding<Bool> {
-        Binding(
-            get: { updateChecker.notice != nil },
-            set: { isPresented in
-                if !isPresented { updateChecker.dismissNotice() }
-            }
-        )
-    }
-
-    private var updateNoticeMessage: String {
-        switch updateChecker.notice {
-        case .upToDate:
-            l.text("update.check.upToDate")
-        case .unavailable:
-            l.text("update.check.unavailable")
-        case nil:
-            ""
-        }
-    }
-}
-
 @main
 struct LumaViewApp: App {
     @NSApplicationDelegateAdaptor(LumaViewAppDelegate.self) private var appDelegate
@@ -1512,11 +1469,20 @@ struct LumaViewApp: App {
                 Button(l.text("menu.openImage")) { windowRegistry.perform(.open, localization: l) }
                     .keyboardShortcut("o", modifiers: .command)
                     .disabled(!windowRegistry.canPerform(.open))
+                Button(l.text("menu.openNewWindows")) { windowRegistry.perform(.openInNewWindow, localization: l) }
+                    .keyboardShortcut("o", modifiers: [.command, .shift])
+                    .disabled(!windowRegistry.canPerform(.openInNewWindow))
             }
 
             // Settings is our only SwiftUI scene; the viewer windows belong to
             // AppKit. Keep this command in SwiftUI so menu rebuilds retain it.
             CommandGroup(after: .toolbar) {
+                Toggle(l.text("menu.keepStatusVisible"), isOn: Binding(
+                    get: { windowRegistry.activeBrowser?.keepsStatusVisible ?? false },
+                    set: { _ in windowRegistry.perform(.toggleStatus, localization: l) }
+                ))
+                .keyboardShortcut("i", modifiers: [.control, .command])
+                .disabled(!windowRegistry.canPerform(.toggleStatus))
                 Button(l.text(windowRegistry.isFullScreen ? "system.item.exitFullScreen" : "system.item.enterFullScreen")) {
                     windowRegistry.perform(.toggleFullScreen, localization: l)
                 }
@@ -1531,6 +1497,15 @@ struct LumaViewApp: App {
                 Button(l.text("command.next")) { windowRegistry.perform(.next, localization: l) }
                     .keyboardShortcut(.rightArrow, modifiers: [])
                     .disabled(!windowRegistry.canPerform(.next))
+                if windowRegistry.activeBrowser?.hasMultiplePDFPages == true {
+                    Divider()
+                    Button(l.text("pdf.previousPage")) { windowRegistry.perform(.previousPage, localization: l) }
+                        .keyboardShortcut(.pageUp, modifiers: [])
+                        .disabled(!windowRegistry.canPerform(.previousPage))
+                    Button(l.text("pdf.nextPage")) { windowRegistry.perform(.nextPage, localization: l) }
+                        .keyboardShortcut(.pageDown, modifiers: [])
+                        .disabled(!windowRegistry.canPerform(.nextPage))
+                }
                 Divider()
                 Button(l.text("menu.reveal")) { windowRegistry.perform(.revealInFinder, localization: l) }
                     .keyboardShortcut("r", modifiers: [.command, .shift])
@@ -1559,7 +1534,7 @@ struct LumaViewApp: App {
             }
 
             CommandGroup(replacing: .printItem) {
-                Button(l.text("menu.printImage")) { windowRegistry.perform(.print, localization: l) }
+                Button(l.text(windowRegistry.activeBrowser?.isPDF == true ? "pdf.printPage" : "menu.printImage")) { windowRegistry.perform(.print, localization: l) }
                     .keyboardShortcut("p", modifiers: .command)
                     .disabled(!windowRegistry.canPerform(.print))
             }
@@ -1588,7 +1563,7 @@ struct LumaViewApp: App {
             CommandGroup(after: .help) {
                 Button(updateChecker.hasUpdate
                        ? l.text("update.menu.available", updateChecker.availableUpdate?.version ?? "")
-                       : l.text("update.menu.check")) {
+                       : l.text(updateChecker.isChecking ? "update.checking" : "update.menu.check")) {
                     if updateChecker.hasUpdate {
                         updateChecker.openDownloadPage()
                     } else {

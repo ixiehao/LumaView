@@ -7,7 +7,7 @@
 "settings.interface" = "インターフェイス";
 "settings.updates" = "アップデート";
 "settings.currentVersion" = "現在のバージョン";
-"settings.updatePrivacy" = "アップデートの確認では、GitHub の公開リリース情報のみを取得します。画像とファイルパスがこの Mac の外に送信されることはありません。";
+"settings.updatePrivacy" = "GitHub で新しいバージョンを確認します。";
 "about.menu" = "LumaViewについて";
 "about.description" = "ミニマルな Mac ネイティブ画像ビューア。";
 "about.developer" = "開発者";
@@ -112,3 +112,44 @@
 "system.item.showTabBar" = "タブバーを表示";
 "system.item.hideTabBar" = "タブバーを非表示";
 "system.item.showAllTabs" = "すべてのタブを表示";
+
+/* PDF page navigation */
+"pdf.previousPage" = "前のページ";
+"pdf.nextPage" = "次のページ";
+"pdf.pagePosition" = "%d / %d ページ";
+"pdf.printPage" = "現在のページをプリント…";
+"metadata.page" = "ページ";
+"metadata.pageSize" = "ページサイズ";
+"settings.general" = "一般";
+"settings.defaultApplications" = "デフォルトのアプリ";
+"defaults.description" = "LumaView で標準で開くファイル形式を選んでください。";
+"defaults.format" = "ファイル形式";
+"defaults.extensions" = "拡張子";
+"defaults.currentApplication" = "現在のアプリ";
+"defaults.none" = "未設定";
+"defaults.selectImages" = "画像をすべて選択";
+"defaults.clear" = "選択を解除";
+"defaults.apply" = "デフォルトに設定";
+"defaults.installFirst" = "先に LumaView を「アプリケーション」に移動してください。";
+"defaults.applied" = "%d 種類のファイル形式を設定しました。";
+"defaults.failed" = "設定できませんでした：%@。再試行するか、Finder の「情報を見る」で変更してください。";
+"defaults.cancelled" = "キャンセルしました。適用済みの変更は保持されます。";
+"defaults.finderHint" = "同じ種類のすべてのファイルを変更：Finder → 情報を見る → このアプリケーションで開く → 別のアプリを選択 → すべてを変更…";
+
+"menu.openNewWindows" = "新規ウインドウで開く…";
+
+"menu.keepStatusVisible" = "ファイル情報を常に表示";
+
+"preview.passwordRequired" = "この PDF にはパスワードが必要です。「プレビュー」でロックを解除してください。";
+
+"preview.fileTooLarge" = "この PDF はプレビューの上限（128 MB）を超えています。「プレビュー」で開いてください。";
+
+"preview.unreadable" = "ファイルが見つからないか、読み取れません。保存場所とアクセス権を確認してください。";
+
+"preview.cannotDecode" = "この Mac ではデコードできない形式か、ファイルが破損しています。「プレビュー」で開いてみてください。";
+
+"update.checking" = "確認中…";
+
+"update.later" = "後で";
+
+"defaults.otherCopy" = "%@（別のコピー）";

@@ -18,6 +18,9 @@ struct ImageInformation: Equatable, Sendable {
     let aperture: String?
     let iso: String?
     let focalLength: String?
+    var pdfPageNumber: Int? = nil
+    var pdfPageCount: Int? = nil
+    var pdfPageSize: CGSize? = nil
 
     var hasEXIF: Bool {
         [capturedAt, camera, lens, exposure, aperture, iso, focalLength].contains { $0 != nil }
@@ -38,9 +41,9 @@ enum ImageInformationReader {
     /// Image I/O reads the container header and EXIF dictionary without decoding
     /// image pixels. This is the same native metadata path used by the viewer's
     /// dimension probe, but it runs only after an explicit information request.
-    static func read(from url: URL) -> ImageInformation {
+    static func read(from url: URL, pageIndex: Int = 0) -> ImageInformation {
         let fileValues = try? url.resourceValues(forKeys: [.fileSizeKey])
-        let source = CGImageSourceCreateWithURL(url as CFURL, nil)
+        let source = url.pathExtension.lowercased() == "pdf" ? nil : CGImageSourceCreateWithURL(url as CFURL, nil)
         let properties = source.flatMap {
             CGImageSourceCopyPropertiesAtIndex($0, 0, nil) as? [CFString: Any]
         }
@@ -52,7 +55,7 @@ enum ImageInformationReader {
         let model = string(in: tiff, for: kCGImagePropertyTIFFModel)
         let camera = [make, model].compactMap { $0 }.joined(separator: " ")
 
-        return ImageInformation(
+        var information = ImageInformation(
             fileName: url.lastPathComponent,
             fileFormat: displayFormat(for: url),
             fileSize: fileValues?.fileSize,
@@ -66,6 +69,13 @@ enum ImageInformationReader {
             iso: formattedISO(exif?[kCGImagePropertyExifISOSpeedRatings]),
             focalLength: formattedFocalLength(number(in: exif, for: kCGImagePropertyExifFocalLength))
         )
+        if url.pathExtension.lowercased() == "pdf",
+           let metadata = ImageDecoder.documentMetadata(for: url, pageIndex: pageIndex) {
+            information.pdfPageNumber = metadata.pixelSize == nil ? nil : pageIndex + 1
+            information.pdfPageCount = metadata.pageCount
+            information.pdfPageSize = metadata.pixelSize
+        }
+        return information
     }
 
     private static func string(in dictionary: [CFString: Any]?, for key: CFString) -> String? {
@@ -111,8 +121,12 @@ enum ImageInformationReader {
         guard let seconds, seconds.isFinite, seconds > 0 else { return nil }
         if seconds < 1 {
             let reciprocal = (1 / seconds).rounded()
-            guard reciprocal.isFinite else { return "\(String(format: "%.3g", seconds)) s" }
-            return "1/\(formattedDecimal(reciprocal)) s"
+            // Use familiar shutter fractions only when they preserve the exposure.
+            // Rounding every reciprocal turns 0.8 seconds into an incorrect 1/1 s.
+            if reciprocal.isFinite, abs((1 / reciprocal) - seconds) <= seconds * 0.01 {
+                return "1/\(formattedDecimal(reciprocal)) s"
+            }
+            return "\(String(format: "%.3g", seconds)) s"
         }
         return "\(formattedDecimal(seconds)) s"
     }
@@ -169,7 +183,7 @@ struct ImageInformationInspector: View {
                     title: l.text("metadata.exifSection"),
                     rows: exifRows(for: information)
                 )
-            } else {
+            } else if information.fileFormat != "PDF" {
                 Text(l.text("metadata.noExif"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
@@ -187,17 +201,21 @@ struct ImageInformationInspector: View {
         rows: [(String, String)],
         allowsFirstValueWrapping: Bool = false
     ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let labelWidth = ceil(rows.map {
+            ($0.0 as NSString).size(withAttributes: [.font: NSFont.preferredFont(forTextStyle: .callout)]).width
+        }.max() ?? 0)
+        return VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
 
-            Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 14, verticalSpacing: 7) {
+            VStack(alignment: .leading, spacing: 7) {
                 ForEach(rows.indices, id: \.self) { index in
-                    GridRow {
+                    HStack(alignment: .firstTextBaseline, spacing: 14) {
                         Text(rows[index].0)
                             .foregroundStyle(.secondary)
+                            .frame(width: labelWidth, alignment: .leading)
                         Text(rows[index].1)
                             .textSelection(.enabled)
                             .lineLimit(allowsFirstValueWrapping && index == 0 ? nil : 2)
@@ -211,10 +229,18 @@ struct ImageInformationInspector: View {
     }
 
     private func fileRows(for information: ImageInformation) -> [(String, String)] {
-        compactRows([
+        let pagePosition: String? = information.pdfPageNumber.flatMap { page in
+            information.pdfPageCount.map { l.text("pdf.pagePosition", page, $0) }
+        }
+        let pageSize = information.pdfPageSize.map {
+            "\(ImageInformationReader.formattedDecimal($0.width)) × \(ImageInformationReader.formattedDecimal($0.height)) pt"
+        }
+        return compactRows([
             (l.text("metadata.name"), information.fileName),
             (l.text("metadata.format"), information.fileFormat),
             (l.text("metadata.dimensions"), information.dimensions),
+            (l.text("metadata.page"), pagePosition),
+            (l.text("metadata.pageSize"), pageSize),
             (l.text("metadata.fileSize"), information.formattedFileSize)
         ])
     }

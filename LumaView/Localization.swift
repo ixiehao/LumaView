@@ -16,6 +16,11 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     var id: String { rawValue }
 
     static let requiredLocalizationKeys = [
+        "menu.openNewWindows", "menu.keepStatusVisible", "preview.passwordRequired", "preview.fileTooLarge", "preview.unreadable", "preview.cannotDecode", "update.checking", "update.later", "defaults.otherCopy",
+        "settings.general", "settings.defaultApplications", "defaults.description", "defaults.format", "defaults.extensions",
+        "defaults.currentApplication", "defaults.none", "defaults.selectImages", "defaults.clear", "defaults.apply",
+        "defaults.installFirst", "defaults.applied", "defaults.failed", "defaults.cancelled", "defaults.finderHint",
+        "pdf.previousPage", "pdf.nextPage", "pdf.pagePosition", "pdf.printPage", "metadata.page", "metadata.pageSize",
         "app.appearance", "app.language", "language.automatic", "appearance.light", "appearance.dark",
         "settings.title", "settings.interface", "settings.updates", "settings.currentVersion", "settings.updatePrivacy",
         "about.menu", "about.description", "about.developer", "about.project", "about.feedback", "about.privacy", "about.license",

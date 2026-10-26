@@ -2,6 +2,8 @@
 
 ## Tabler Icons Outline
 
+PDF page controls use the unmodified `chevron-up` and `chevron-down` outlines from the same release.
+
 The `Tabler*.imageset` vectors in `LumaView/Assets.xcassets` and the inline icons in `website/index.html` are from [Tabler Icons Outline v3.49.0](https://github.com/tabler/tabler-icons/tree/v3.49.0), used as local assets under the MIT License. They are bundled with the app or published with the website; LumaView never downloads icons at runtime. The website includes a copy of this notice at [`website/THIRD-PARTY-NOTICES.md`](website/THIRD-PARTY-NOTICES.md).
 
 ## LumaView brand assets

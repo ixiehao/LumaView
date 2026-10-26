@@ -62,6 +62,7 @@ struct GitHubRelease: Decodable {
 }
 
 enum UpdateCheckNotice: Equatable {
+    case available
     case upToDate
     case unavailable
 }
@@ -89,7 +90,11 @@ final class UpdateChecker: ObservableObject {
     private let defaults: UserDefaults
     private let lastCheckedDefaultsKey: String
     private let now: () -> Date
-    private var isChecking = false
+    @Published private(set) var isChecking = false
+    @Published private(set) var dismissedUpdateVersion: String?
+    var noticeHandler: ((UpdateCheckNotice) -> Void)?
+    private var shouldAnnounceResult = false
+    private(set) weak var noticeWindow: NSWindow?
     private var lastCheckedAt: Date?
 
     private static let checkInterval: TimeInterval = 12 * 60 * 60
@@ -116,18 +121,37 @@ final class UpdateChecker: ObservableObject {
 
     var hasUpdate: Bool { availableUpdate != nil }
 
+    var showsUpdateBanner: Bool {
+        availableUpdate.map { $0.version != dismissedUpdateVersion } ?? false
+    }
+
+    func dismissBanner() { dismissedUpdateVersion = availableUpdate?.version }
+
     func checkForUpdate(force: Bool = false, announceResult: Bool = false) async {
-        guard !isChecking else { return }
-        if !force,
-           let lastCheckedAt,
-           now().timeIntervalSince(lastCheckedAt) < Self.checkInterval { return }
+        if announceResult, !shouldAnnounceResult { noticeWindow = NSApp.keyWindow }
+        if isChecking {
+            shouldAnnounceResult = shouldAnnounceResult || announceResult
+            return
+        }
+        if !force, let lastCheckedAt {
+            let elapsed = now().timeIntervalSince(lastCheckedAt)
+            if elapsed >= 0, elapsed < Self.checkInterval { return }
+        }
 
         isChecking = true
+        shouldAnnounceResult = announceResult
+        var outcome: UpdateCheckNotice = .unavailable
         defer {
             let completedAt = now()
             lastCheckedAt = completedAt
             defaults.set(completedAt, forKey: lastCheckedDefaultsKey)
             isChecking = false
+            let announce = shouldAnnounceResult
+            shouldAnnounceResult = false
+            if announce {
+                notice = outcome
+                noticeHandler?(outcome)
+            }
         }
 
         var request = URLRequest(url: releaseURL)
@@ -139,7 +163,6 @@ final class UpdateChecker: ObservableObject {
             let (data, response) = try await session.data(for: request)
             guard let response = response as? HTTPURLResponse,
                   (200..<300).contains(response.statusCode) else {
-                if announceResult { notice = .unavailable }
                 return
             }
 
@@ -148,10 +171,10 @@ final class UpdateChecker: ObservableObject {
                 newerThan: currentVersion,
                 expectedRepositoryPath: expectedRepositoryPath
             )
-            if announceResult, availableUpdate == nil { notice = .upToDate }
+            outcome = availableUpdate == nil ? .upToDate : .available
         } catch {
             // Offline and transient API failures never interfere with viewing.
-            if announceResult { notice = .unavailable }
+
         }
     }
 
@@ -175,7 +198,7 @@ struct UpdateAvailableBanner: View {
     let l: L10n
 
     var body: some View {
-        if let update = checker.availableUpdate {
+        if checker.showsUpdateBanner, let update = checker.availableUpdate {
             HStack(spacing: 10) {
                 LumaMark(size: 18)
                 Text(l.text("update.available", update.version))
@@ -187,12 +210,65 @@ struct UpdateAvailableBanner: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
+                Button(l.text("update.later")) { checker.dismissBanner() }
+                    .buttonStyle(.borderless).controlSize(.small)
             }
             .padding(.horizontal, 16)
             .frame(height: 42)
             .background(Color.accentColor.opacity(0.09))
             .overlay(alignment: .bottom) { Divider().opacity(0.55) }
             .accessibilityElement(children: .contain)
+        }
+    }
+}
+
+/// One presenter for the application, including checks made with no document open.
+/// Tests exercise the checker with an injected callback and never display an alert.
+@MainActor
+final class UpdateNoticePresenter {
+    private weak var checker: UpdateChecker?
+    private var presenting = false
+    init(checker: UpdateChecker) {
+        self.checker = checker
+        checker.noticeHandler = { [weak self] notice in self?.present(notice) }
+    }
+    private func present(_ notice: UpdateCheckNotice) {
+        guard let checker, !presenting else { return }
+        presenting = true
+        let window = checker.noticeWindow
+        let update = checker.availableUpdate
+        Task { @MainActor in
+            defer { presenting = false }
+            // A check can finish while an Open dialog is still on screen.
+            while NSApp.modalWindow != nil || window?.attachedSheet != nil {
+                try? await Task.sleep(nanoseconds: 200_000_000)
+            }
+            let language = AppLanguage(rawValue: UserDefaults.standard.string(forKey: "luma.language") ?? "") ?? .automatic
+            let l = L10n(language: language)
+            let alert = NSAlert()
+            alert.messageText = l.text("update.check.title")
+            switch notice {
+            case .available:
+                alert.informativeText = l.text("update.available", update?.version ?? "")
+                alert.addButton(withTitle: l.text("button.downloadUpdate"))
+                alert.addButton(withTitle: l.text("update.later"))
+            case .upToDate:
+                alert.informativeText = l.text("update.check.upToDate")
+                alert.addButton(withTitle: l.text("button.ok"))
+            case .unavailable:
+                alert.informativeText = l.text("update.check.unavailable")
+                alert.addButton(withTitle: l.text("button.ok"))
+            }
+            checker.dismissNotice()
+            let response: NSApplication.ModalResponse
+            if let window, window.isVisible {
+                response = await withCheckedContinuation { continuation in
+                    alert.beginSheetModal(for: window) { continuation.resume(returning: $0) }
+                }
+            } else {
+                response = alert.runModal()
+            }
+            if notice == .available, response == .alertFirstButtonReturn, let update { NSWorkspace.shared.open(update.downloadURL) }
         }
     }
 }

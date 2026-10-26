@@ -128,7 +128,7 @@ private func render(screenshot: NSImage, icon: NSImage) throws -> Data {
         color: color(0.08, 0.46, 0.73)
     )
     drawText(
-        "macOS 13+  ·  Intel + Apple Silicon",
+        "macOS 12+  ·  Intel + Apple Silicon",
         in: NSRect(x: 92, y: 126, width: 370, height: 18),
         size: 13,
         weight: .medium,
