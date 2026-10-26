@@ -119,7 +119,13 @@ final class LumaViewLaunchTests: XCTestCase {
             let overflow = app.toolbars.popUpButtons.firstMatch
             XCTAssertTrue(overflow.exists)
             overflow.click()
-            app.menuItems["Image information"].click()
+            let informationItem = app.menuItems["Image information"]
+            XCTAssertTrue(informationItem.waitForExistence(timeout: 3))
+            XCTAssertTrue(informationItem.isEnabled)
+            // AppKit's overflow uses a private forwarding menu action. Send a
+            // real click within the observed item instead of XCTest's AX menu
+            // selection, which can leave that popup highlighted but uninvoked.
+            informationItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
         }
         let inspector = app.popovers.firstMatch
         XCTAssertTrue(inspector.waitForExistence(timeout: 5))
