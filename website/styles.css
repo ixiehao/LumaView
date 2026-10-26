@@ -200,8 +200,7 @@ h2 {
 .footer div a { color: var(--muted); font-size: 13px; font-weight: 650; }
 .footer div a:hover { color: var(--blue-deep); }
 
-.reveal { opacity: 0; transform: translateY(14px); transition: opacity 520ms ease, transform 520ms ease; }
-.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal { opacity: 1; }
 :focus-visible { outline: 3px solid rgba(24, 119, 242, 0.38); outline-offset: 3px; }
 
 @media (max-width: 900px) {
@@ -239,3 +238,5 @@ h2 {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
   .reveal { opacity: 1; transform: none; }
 }
+
+.install-guide { display: inline-block; color: var(--blue-deep); font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }

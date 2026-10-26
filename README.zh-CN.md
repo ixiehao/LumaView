@@ -26,7 +26,24 @@ macOS 13+ · Intel + Apple Silicon · 通用版 DMG · 约 2 MB
 
 1. [下载通用版 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.9/LumaView-1.2.9-universal.dmg)。
 2. 打开它，将 **LumaView.app** 拖进“应用程序”。
-3. 直接打开 LumaView，或双击图片后，在访达的“打开方式”中选择它。
+3. 从“应用程序”打开 LumaView；也可在访达中右键图片，选择“打开方式” → **LumaView**。
+
+### 首次打开被系统拦截时
+
+不同 macOS 版本的提示可能不同，例如“无法验证开发者”或“Apple 无法检查其是否包含恶意软件”。确认安装包来自本项目的 GitHub Releases 或开发者提供的测试包后，可以按以下步骤打开：
+
+1. 从“应用程序”打开一次 **LumaView**，出现上述提示后关闭提示框。
+2. 按下表进入系统安全设置，找到 **LumaView** 的拦截提示，点按 **“仍要打开”**（Open Anyway）。
+3. 根据系统提示使用密码或触控 ID 确认，再选择 **“打开”**。以后通常可以直接双击启动。
+
+| 系统版本 | 设置入口 |
+| --- | --- |
+| macOS 12 Monterey（使用 Monterey 测试包） | 苹果菜单 → **系统偏好设置** → **安全性与隐私** → **通用** |
+| macOS 13 Ventura 及更新版本 | 苹果菜单 → **系统设置** → **隐私与安全性**（部分版本称“隐私与安全”）→ 向下找到 **安全性** |
+
+如果没有看到“仍要打开”，先再次尝试打开 LumaView，再返回设置查看。若提示“已损坏”或“会损坏你的电脑”，请停止打开，重新从项目页面下载或反馈问题，不按上述流程放行。
+
+参见 Apple 的 [Monterey 打开说明](https://support.apple.com/zh-cn/guide/mac-help/mh40616/12.0/mac/12.0)和[新版 macOS 打开说明](https://support.apple.com/zh-cn/102445)。
 
 ### 设为默认看图软件
 

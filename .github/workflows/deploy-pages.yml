@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - website/**
+      - Scripts/build-website.py
       - .github/workflows/deploy-pages.yml
   workflow_dispatch:
 
@@ -26,6 +27,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v6
+      - name: Verify static language pages
+        run: python3 Scripts/build-website.py --check
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload static site

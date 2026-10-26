@@ -3,26 +3,26 @@
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://ixiehao.github.io/LumaView/</loc>
-    <lastmod>2026-10-16</lastmod>
+    <lastmod>2026-10-26</lastmod>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ixiehao.github.io/LumaView/" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://ixiehao.github.io/LumaView/?lang=en" />
-    <xhtml:link rel="alternate" hreflang="ja" href="https://ixiehao.github.io/LumaView/?lang=ja" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://ixiehao.github.io/LumaView/en/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ixiehao.github.io/LumaView/ja/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://ixiehao.github.io/LumaView/" />
   </url>
   <url>
-    <loc>https://ixiehao.github.io/LumaView/?lang=en</loc>
-    <lastmod>2026-10-16</lastmod>
+    <loc>https://ixiehao.github.io/LumaView/en/</loc>
+    <lastmod>2026-10-26</lastmod>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ixiehao.github.io/LumaView/" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://ixiehao.github.io/LumaView/?lang=en" />
-    <xhtml:link rel="alternate" hreflang="ja" href="https://ixiehao.github.io/LumaView/?lang=ja" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://ixiehao.github.io/LumaView/en/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ixiehao.github.io/LumaView/ja/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://ixiehao.github.io/LumaView/" />
   </url>
   <url>
-    <loc>https://ixiehao.github.io/LumaView/?lang=ja</loc>
-    <lastmod>2026-10-16</lastmod>
+    <loc>https://ixiehao.github.io/LumaView/ja/</loc>
+    <lastmod>2026-10-26</lastmod>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://ixiehao.github.io/LumaView/" />
-    <xhtml:link rel="alternate" hreflang="en" href="https://ixiehao.github.io/LumaView/?lang=en" />
-    <xhtml:link rel="alternate" hreflang="ja" href="https://ixiehao.github.io/LumaView/?lang=ja" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://ixiehao.github.io/LumaView/en/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://ixiehao.github.io/LumaView/ja/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://ixiehao.github.io/LumaView/" />
   </url>
 </urlset>

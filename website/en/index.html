@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f6f8fc" />
+    <meta id="meta-description" name="description" content="A minimal native image viewer for Mac." />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="author" content="ixiehao" />
+    <link id="canonical-url" rel="canonical" href="https://ixiehao.github.io/LumaView/en/" />
+    <link rel="alternate" hreflang="zh-CN" href="https://ixiehao.github.io/LumaView/" />
+    <link rel="alternate" hreflang="en" href="https://ixiehao.github.io/LumaView/en/" />
+    <link rel="alternate" hreflang="ja" href="https://ixiehao.github.io/LumaView/ja/" />
+    <link rel="alternate" hreflang="x-default" href="https://ixiehao.github.io/LumaView/" />
+    <link rel="icon" type="image/png" sizes="512x512" href="../assets/lumaview-app-icon.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="../assets/lumaview-app-icon.png" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <meta id="og-title" property="og:title" content="LumaView · Minimal native image viewer for Mac" />
+    <meta id="og-description" property="og:description" content="Side-by-side multi-window comparison, folder browsing, zoom, rotate, and print." />
+    <meta property="og:type" content="website" />
+    <meta id="og-url" property="og:url" content="https://ixiehao.github.io/LumaView/en/" />
+    <meta property="og:site_name" content="LumaView" />
+    <meta id="og-locale" property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="zh_CN" />
+    <meta property="og:locale:alternate" content="ja_JP" />
+    <meta property="og:image" content="https://ixiehao.github.io/LumaView/assets/social-preview.jpg?v=20261017-canvas-fill" />
+    <meta property="og:image:secure_url" content="https://ixiehao.github.io/LumaView/assets/social-preview.jpg?v=20261017-canvas-fill" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta id="og-image-alt" property="og:image:alt" content="LumaView browsing an image in its native window, with previous, next, zoom, and rotate controls" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta id="twitter-title" name="twitter:title" content="LumaView · Minimal native image viewer for Mac" />
+    <meta id="twitter-description" name="twitter:description" content="Side-by-side multi-window comparison, folder browsing, zoom, rotate, and print." />
+    <meta name="twitter:image" content="https://ixiehao.github.io/LumaView/assets/social-preview.jpg?v=20261017-canvas-fill" />
+    <meta id="twitter-image-alt" name="twitter:image:alt" content="LumaView browsing an image in its native window, with previous, next, zoom, and rotate controls" />
+    <title>LumaView · Minimal native image viewer for Mac</title>
+    <script id="software-schema" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "@id": "https://ixiehao.github.io/LumaView/#software",
+  "name": "LumaView",
+  "applicationCategory": "MultimediaApplication",
+  "applicationSubCategory": "Image Viewer",
+  "operatingSystem": "macOS 13 or later",
+  "softwareVersion": "1.2.9",
+  "url": "https://ixiehao.github.io/LumaView/en/",
+  "downloadUrl": "https://github.com/ixiehao/LumaView/releases/latest",
+  "codeRepository": "https://github.com/ixiehao/LumaView",
+  "license": "https://github.com/ixiehao/LumaView/blob/main/LICENSE",
+  "image": "https://ixiehao.github.io/LumaView/assets/social-preview.jpg?v=20261017-canvas-fill",
+  "screenshot": [
+    "https://ixiehao.github.io/LumaView/assets/lumaview-browse.png?v=20261017-alpha",
+    "https://ixiehao.github.io/LumaView/assets/lumaview-multiwindow.png?v=20261016-windows-9grid"
+  ],
+  "isAccessibleForFree": true,
+  "inLanguage": "en",
+  "author": {
+    "@type": "Person",
+    "name": "ixiehao",
+    "url": "https://github.com/ixiehao"
+  },
+  "description": "A minimal native image viewer for Mac."
+}
+    </script>
+    <link rel="stylesheet" href="../styles.css?v=20261026-static-locales" />
+  </head>
+  <body>
+    <header class="nav wrap">
+      <a class="brand" href="#top" aria-label="LumaView Home">
+        <img src="../assets/lumaview-app-icon.png" alt="" />
+        <span>LumaView</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#windows" data-i18n="navWindows">Multi-window</a>
+        <a href="#experience" data-i18n="navExperience">Features</a>
+        <a href="#download" data-i18n="navDownload">Download</a>
+      </nav>
+      <a class="language-switch" href="../ja/" aria-label="Switch to Japanese">
+        <span aria-hidden="true">文</span><span class="language-label">日本語</span>
+      </a>
+    </header>
+
+    <main id="top">
+      <section class="hero wrap">
+        <div class="hero-copy reveal">
+          <h1 data-i18n="heroTitle">Open an image.<br /><em>Start browsing.</em></h1>
+          <p class="lede" data-i18n="heroLede">A minimal native image viewer for Mac.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">Download v1.2.9</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a>
+            <a class="button button-secondary" href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer"><span data-i18n="sourceButton">View source</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#brand-github"></use></svg></a>
+          </div>
+          <p><a class="install-guide" href="https://github.com/ixiehao/LumaView/blob/main/README.md#if-macos-blocks-the-first-launch" data-i18n="installGuide">Installation and first launch</a></p>
+          <p class="compatibility" data-i18n="compatibility">macOS 13+ · Intel + Apple Silicon</p>
+        </div>
+
+        <figure class="hero-shot reveal">
+          <img src="../assets/lumaview-browse.png?v=20261017-alpha" alt="LumaView browsing an image in its native window, with previous, next, zoom, and rotate controls" data-i18n-alt="heroImageAlt" />
+        </figure>
+      </section>
+
+      <section class="multiwindow wrap section" id="windows">
+        <div class="multiwindow-copy reveal">
+          <div class="section-heading">
+            <p class="eyebrow"><span data-i18n="windowsEyebrow">Side-by-side comparison</span></p>
+            <h2 data-i18n="windowsTitle">More windows.<br /><em>Clearer comparisons.</em></h2>
+          </div>
+          <p class="multiwindow-lede" data-i18n="windowsLede">Each image has its own window, zoom, and browsing position. Arrange windows side by side to compare details at a glance.</p>
+        </div>
+        <figure class="multiwindow-shot reveal">
+          <img src="../assets/lumaview-multiwindow.png?v=20261016-windows-9grid" alt="Nine native LumaView image windows arranged in a grid for side-by-side comparison" data-i18n-alt="windowsImageAlt" loading="lazy" />
+        </figure>
+      </section>
+
+      <section class="experience wrap section" id="experience">
+        <div class="section-heading reveal">
+          <p class="eyebrow"><span data-i18n="experienceEyebrow">Everyday viewing</span></p>
+          <h2 data-i18n="experienceTitle">Useful controls,<br /><em>right where you need them.</em></h2>
+        </div>
+        <div class="experience-layout">
+          <figure class="welcome-shot reveal">
+            <img src="../assets/lumaview-welcome.png?v=20261017-alpha" alt="LumaView native welcome screen with a single Open File action" data-i18n-alt="welcomeImageAlt" loading="lazy" />
+          </figure>
+          <div class="feature-list">
+            <article class="feature reveal">
+              <svg class="feature-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19l2.757 -7.351a1 1 0 0 1 .936 -.649h12.307a1 1 0 0 1 .986 1.164l-.996 5.211a2 2 0 0 1 -1.964 1.625h-14.026a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v2" /></svg>
+              <div><h3 data-i18n="featureOneTitle">Browse a folder</h3><p data-i18n="featureOneBody">Use the toolbar or arrow keys to move between images in the same folder.</p></div>
+            </article>
+            <article class="feature reveal">
+              <svg class="feature-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8v-2a2 2 0 0 1 2 -2h2" /><path d="M4 16v2a2 2 0 0 0 2 2h2" /><path d="M16 4h2a2 2 0 0 1 2 2v2" /><path d="M16 20h2a2 2 0 0 0 2 -2v-2" /></svg>
+              <div><h3 data-i18n="featureTwoTitle">Inspect details</h3><p data-i18n="featureTwoBody">Fit, zoom, pan, and rotate. The status bar shows the current zoom level.</p></div>
+            </article>
+            <article class="feature reveal">
+              <svg class="feature-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 8h.01" /><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12" /><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" /><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" /></svg>
+              <div><h3 data-i18n="featureThreeTitle">Common formats</h3><p data-i18n="featureThreeBody">Supports JPEG, PNG, HEIC, GIF, TIFF, WebP, PDF, RAW, and Sketch previews.</p></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="download wrap section" id="download">
+        <div class="download-card reveal">
+          <img src="../assets/lumaview-app-icon.png" alt="" />
+          <div>
+            <p class="eyebrow"><span data-i18n="readyEyebrow">Start viewing</span></p>
+            <h2 data-i18n="downloadTitle">Download<br /><em>LumaView for free.</em></h2>
+          </div>
+          <div class="download-actions"><a class="button button-light" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">Download v1.2.9</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a><a class="install-guide" href="https://github.com/ixiehao/LumaView/blob/main/README.md#if-macos-blocks-the-first-launch" data-i18n="installGuide">Installation and first launch</a><p data-i18n="downloadNote">macOS 13+ · Universal · About 2 MB</p></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer wrap">
+      <a class="brand" href="#top"><img src="../assets/lumaview-app-icon.png" alt="" /><span>LumaView</span></a>
+      <p data-i18n="footerTagline">A local native image viewer · by ixiehao</p>
+      <div><a href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer">GitHub</a><a href="https://github.com/ixiehao/LumaView/issues" target="_blank" rel="noreferrer" data-i18n="footerIssues">Feedback</a><a href="https://github.com/ixiehao/LumaView/releases" target="_blank" rel="noreferrer" data-i18n="footerReleases">Releases</a></div>
+    </footer>
+    <script src="../app.js?v=20261026-static-locales"></script>
+  </body>
+</html>

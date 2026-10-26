@@ -27,7 +27,24 @@ macOS 13+ · Intel + Apple Silicon · Universal DMG · ~2 MB
 
 1. [Download the Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.9/LumaView-1.2.9-universal.dmg).
 2. Open it and drag **LumaView.app** to **Applications**.
-3. Open LumaView, or double-click an image and choose it from Finder's **Open With** menu.
+3. Open LumaView from Applications. To open an image directly, Control-click it in Finder and choose **Open With → LumaView**.
+
+### If macOS blocks the first launch
+
+Messages vary by macOS version: the developer may be unverified, or Apple may be unable to check the app for malicious software. If you trust the copy downloaded from this project's GitHub Releases or supplied by the developer for testing:
+
+1. Try opening **LumaView** from Applications once, then dismiss that alert.
+2. Follow the settings path below, find the message about **LumaView**, and click **Open Anyway**.
+3. Authenticate if prompted, then confirm **Open**. Subsequent launches normally work by double-clicking.
+
+| macOS version | Settings path |
+| --- | --- |
+| macOS 12 Monterey (Monterey test build) | Apple menu → **System Preferences → Security & Privacy → General** |
+| macOS 13 Ventura or later | Apple menu → **System Settings → Privacy & Security**, then scroll to **Security** |
+
+If **Open Anyway** is missing, try opening LumaView again, then return to settings. A damaged-app or malware warning is different: stop and download a fresh copy from the project or report the issue instead of overriding it.
+
+See [Apple's opening instructions](https://support.apple.com/en-us/102445).
 
 ### Make LumaView the default image viewer
 

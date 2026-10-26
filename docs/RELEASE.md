@@ -1,6 +1,6 @@
 # LumaView release procedure
 
-LumaView supports **Intel and Apple Silicon Macs** on macOS 13+. Every release script requires both `arm64` and `x86_64` slices.
+The next LumaView build targets **Intel and Apple Silicon Macs** on macOS 12+. The published v1.2.9 installer still requires macOS 13+. Every release script requires both `arm64` and `x86_64` slices. Complete the Monterey hardware check before describing the new minimum as verified.
 
 There are two deliberately distinct paths:
 
@@ -44,11 +44,15 @@ the matching GitHub Release:
 
 The release title and English, Simplified Chinese, and Japanese notes must state all of the following:
 
-1. macOS 13+ on both **Intel and Apple Silicon** Macs; the package contains `x86_64` and `arm64` slices.
+1. macOS 12+ on both **Intel and Apple Silicon** Macs; the package contains `x86_64` and `arm64` slices. Confirm the current DMG background, website/README compatibility text and social-preview generator match the version being released; do not advertise the new minimum for an older installer.
 2. The DMG is ad-hoc signed and **not Apple-notarized**.
-3. If macOS cannot verify the developer: copy the app to Applications,
-   Control-click it, select **Open**, then select **Open** once more. Never
-   ask users to disable system-wide security.
+3. If macOS cannot verify the developer: copy the app to Applications and try
+   opening it once. On macOS 12, use **System Preferences → Security & Privacy
+   → General → Open Anyway**; on macOS 13+, use **System Settings → Privacy &
+   Security → Open Anyway**. Authenticate and confirm **Open** as prompted.
+   Keep the localized README opening instructions in sync; message wording
+   varies by OS, and damaged-app or malware alerts need separate investigation.
+   Never ask users to disable system-wide security.
 4. The SHA-256 file is attached and matches the DMG. The source commit and
    annotated `vX.Y.Z` tag identify the build.
 
@@ -106,5 +110,6 @@ across app launches. Before the first public release, create the repository at t
 slug or update `LumaViewProjectLinks.repositorySlug` in
 `LumaView/UpdateChecker.swift`. The expected release link is strictly limited
 to that repository's HTTPS `/releases/` path, and draft or prerelease tags are
-ignored. The release tag must be `vX.Y.Z` and newer than
-`MARKETING_VERSION`; do not publish a tag that violates this relation.
+ignored. The release tag must be `vX.Y.Z`, with `X.Y.Z` equal to the packaged app’s
+`MARKETING_VERSION`. Both must be newer than the previous public release;
+incrementing only the build number does not trigger an update notification.
