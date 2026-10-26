@@ -1238,6 +1238,8 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
                     self.presentInformationPopover(information, for: selectedURL, anchor: anchor)
                 }
             }
+            // Scheduling a block does not wake an otherwise idle run loop.
+            CFRunLoopWakeUp(CFRunLoopGetMain())
         }
         informationOperation = operation
         // Share the bounded header-reading queue rather than creating an
