@@ -5,12 +5,14 @@ import SwiftUI
 /// language across the toolbar, canvas, and contextual actions.
 enum LumaIconKind: Equatable {
     case previous, next, zoomOut, zoomIn, fit, rotateLeft, rotateRight, more, information
-    case folder, image, imagePlus, reveal, print
+    case folder, image, imagePlus, reveal, print, previousPage, nextPage
 
     var tablerAssetName: String {
         switch self {
         case .previous: return "TablerChevronLeft"
         case .next: return "TablerChevronRight"
+        case .previousPage: return "TablerChevronUp"
+        case .nextPage: return "TablerChevronDown"
         case .zoomOut: return "TablerZoomOut"
         case .zoomIn: return "TablerZoomIn"
         case .fit: return "TablerMaximize"

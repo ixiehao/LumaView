@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import ImageIO
 import SwiftUI
+import UniformTypeIdentifiers
 import XCTest
 @testable import LumaView
 
@@ -54,6 +55,176 @@ final class LumaViewCoreTests: XCTestCase {
 
         XCTAssertEqual(files.map(\.name), ["photo-1.heic", "photo-2.png", "photo-10.jpg"])
         XCTAssertFalse(ImageFile.canOpen(directory.appendingPathComponent("missing.jpg")))
+    }
+
+    @MainActor
+    func testPDFArrowKeysReachTheOwningNativeWindowWithoutSwiftUIShortcuts() async throws {
+        let pdf = directory.appendingPathComponent("keyboard.pdf")
+        try makePDF(at: pdf)
+        let store = ImageBrowserStore()
+        store.open(file: pdf)
+        try await waitForPageSize(store, CGSize(width: 600, height: 400))
+        let window = PDFKeyboardTestWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.browser = store
+        defer { window.close() }
+        XCTAssertFalse(window.isVisible, "The test must not take over the desktop")
+
+        func key(_ code: UInt16, flags: NSEvent.ModifierFlags = [], repeatKey: Bool = false, number: Int? = nil) throws -> NSEvent {
+            try XCTUnwrap(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags,
+                timestamp: 0, windowNumber: number ?? window.windowNumber, context: nil,
+                characters: code == 126 || code == 116 ? "\u{F700}" : "\u{F701}",
+                charactersIgnoringModifiers: code == 126 || code == 116 ? "\u{F700}" : "\u{F701}",
+                isARepeat: repeatKey, keyCode: code))
+        }
+
+        window.sendEvent(try key(125))
+        XCTAssertEqual(store.pdfPageIndex, 1)
+        window.sendEvent(try key(125, flags: [.numericPad, .function], repeatKey: true))
+        XCTAssertEqual(store.pdfPageIndex, 2)
+        XCTAssertTrue(window.handlePDFNavigation(try key(125)))
+        XCTAssertEqual(store.pdfPageIndex, 2, "Do not scroll or move to another file at the final page")
+        window.sendEvent(try key(116, flags: .function))
+        XCTAssertEqual(store.pdfPageIndex, 1)
+        window.sendEvent(try key(126))
+        XCTAssertEqual(store.pdfPageIndex, 0)
+        XCTAssertTrue(window.handlePDFNavigation(try key(126)))
+        window.sendEvent(try key(121, flags: .function))
+        XCTAssertEqual(store.pdfPageIndex, 1)
+        for modifier: NSEvent.ModifierFlags in [.command, .option, .control, .shift] {
+            XCTAssertFalse(window.handlePDFNavigation(try key(125, flags: modifier)))
+        }
+        XCTAssertFalse(window.handlePDFNavigation(try key(124)), "Right arrow must remain file navigation")
+        XCTAssertFalse(window.handlePDFNavigation(try key(125, number: window.windowNumber + 100)))
+        window.receivesTestKeys = false
+        XCTAssertFalse(window.handlePDFNavigation(try key(125)), "Background documents must not handle keys")
+        window.receivesTestKeys = true
+        let editor = NSTextView(frame: NSRect(x: 0, y: 0, width: 100, height: 40))
+        window.contentView = editor
+        XCTAssertTrue(window.makeFirstResponder(editor))
+        XCTAssertFalse(window.handlePDFNavigation(try key(125)), "Leave text editing to its responder")
+        XCTAssertEqual(store.pdfPageIndex, 1)
+    }
+
+    @MainActor
+    func testDefaultApplicationChangesAreExplicitScopedAndVerified() async throws {
+        let handler = TestDefaultApplicationHandler()
+        let model = DefaultApplicationsModel(applicationURL: URL(fileURLWithPath: "/Applications/LumaView.app"), handler: handler)
+        let jpeg = DefaultImageFormat.common[0], png = DefaultImageFormat.common[1]
+        model.refresh()
+        XCTAssertTrue(handler.requests.isEmpty)
+        await model.apply()
+        XCTAssertTrue(handler.requests.isEmpty)
+        model.select(jpeg, enabled: true)
+        model.select(png, enabled: true)
+        model.select(png, enabled: false)
+        await model.apply()
+        XCTAssertEqual(handler.requests, [jpeg.id])
+        XCTAssertTrue(model.isDefault(jpeg))
+        XCTAssertFalse(model.isDefault(png))
+        XCTAssertEqual(model.result?.appliedCount, 1)
+        XCTAssertTrue(model.selected.isEmpty)
+        model.selectAllImages()
+        XCTAssertFalse(model.selected.contains(UTType.pdf.identifier), "Selecting images must not claim PDFs")
+        XCTAssertFalse(model.selected.contains(jpeg.id), "Do not reapply unchanged defaults")
+        model.clearSelection()
+        XCTAssertTrue(model.selected.isEmpty)
+    }
+
+    @MainActor
+    func testDefaultApplicationReportsFailureAndStopsWhenConsentIsCancelled() async throws {
+        let formats = DefaultImageFormat.common
+        let handler = TestDefaultApplicationHandler()
+        let model = DefaultApplicationsModel(applicationURL: URL(fileURLWithPath: "/Applications/LumaView.app"), handler: handler)
+        handler.errors[formats[0].id] = NSError(domain: NSCocoaErrorDomain, code: NSFileWriteNoPermissionError)
+        // A callback without an actual default change must not report success.
+        handler.ignored.insert(formats[1].id)
+        for format in formats.prefix(3) { model.select(format, enabled: true) }
+        await model.apply()
+        XCTAssertEqual(model.result?.appliedCount, 1)
+        XCTAssertEqual(model.result?.failedFormats, [formats[0].name, formats[1].name])
+        XCTAssertEqual(model.selected, Set([formats[0].id, formats[1].id]))
+        handler.requests.removeAll()
+        handler.errors[formats[0].id] = NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError)
+        await model.apply()
+        XCTAssertEqual(handler.requests, [formats[0].id], "Do not keep prompting after the user cancels")
+        XCTAssertEqual(model.result?.cancelled, true)
+        XCTAssertFalse(model.isApplying)
+    }
+
+    @MainActor
+    func testDefaultApplicationRejectsTemporaryCopiesAndRefreshesExternalChanges() async throws {
+        let handler = TestDefaultApplicationHandler()
+        let format = DefaultImageFormat.common[0]
+        for path in ["/Volumes/LumaView/LumaView.app", "/tmp/LumaView.app", "/Applications-copy/LumaView.app"] {
+            let model = DefaultApplicationsModel(applicationURL: URL(fileURLWithPath: path), handler: handler)
+            model.select(format, enabled: true)
+            await model.apply()
+            XCTAssertFalse(model.isInstalled)
+            XCTAssertTrue(handler.requests.isEmpty)
+        }
+        let url = URL(fileURLWithPath: "/Applications/LumaView.app")
+        let model = DefaultApplicationsModel(applicationURL: url, handler: handler)
+        model.select(format, enabled: true)
+        handler.applications[format.id] = url
+        model.refresh()
+        XCTAssertTrue(model.isDefault(format))
+        XCTAssertTrue(model.selected.isEmpty)
+        handler.applications[format.id] = URL(fileURLWithPath: "/System/Applications/Preview.app")
+        model.refresh()
+        XCTAssertFalse(model.isDefault(format))
+        XCTAssertEqual(model.applicationName(for: format), (FileManager.default.displayName(atPath: "/System/Applications/Preview.app") as NSString).deletingPathExtension)
+        XCTAssertTrue(DefaultApplicationsModel.isInstalledApplication(
+            FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Applications/LumaView.app")))
+    }
+
+    @MainActor
+    func testSettingsPanesRenderOffscreenInShortAndLongLocalizations() async throws {
+        let suite = "LumaViewSettingsRender-\(UUID().uuidString)"
+        let preferences = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { preferences.removePersistentDomain(forName: suite) }
+        let handler = TestDefaultApplicationHandler()
+        for format in DefaultImageFormat.common {
+            handler.applications[format.id] = URL(fileURLWithPath: "/System/Applications/Preview.app")
+        }
+        for language in [AppLanguage.english, .chinese, .russian] {
+            preferences.set(language.rawValue, forKey: "luma.language")
+            for appearance in [AppAppearance.light, .dark] {
+                preferences.set(appearance.rawValue, forKey: "luma.appearance")
+                for tab in 0...1 {
+                    let model = DefaultApplicationsModel(applicationURL: URL(fileURLWithPath: "/Applications/LumaView.app"), handler: handler)
+                    model.refresh()
+                    model.select(DefaultImageFormat.common[0], enabled: true)
+                    model.select(DefaultImageFormat.common[1], enabled: true)
+                    let size = CGSize(width: 560, height: tab == 0 ? 280 : 510)
+                    let root = LumaSettingsView(updateChecker: UpdateChecker(defaults: preferences), defaultApplications: model, initialTab: tab)
+                        .defaultAppStorage(preferences)
+                    let host = NSHostingView(rootView: root)
+                    let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
+                    window.isReleasedWhenClosed = false
+                    window.appearance = NSAppearance(named: appearance == .light ? .aqua : .darkAqua)
+                    window.title = L10n(language: language).text("settings.title")
+                    window.contentView = host
+                    window.setContentSize(size)
+                    // Capture the whole local window view, including its titlebar.
+                    // This is an offscreen render; it never records the desktop.
+                    try await Task.sleep(nanoseconds: 120_000_000)
+                    host.layoutSubtreeIfNeeded()
+                    XCTAssertFalse(window.isVisible)
+                    XCTAssertNil(window.toolbar, "Text navigation must not create an empty icon toolbar")
+                    let frameView = try XCTUnwrap(host.superview)
+                    let bitmap = try XCTUnwrap(frameView.bitmapImageRepForCachingDisplay(in: frameView.bounds))
+                    frameView.cacheDisplay(in: frameView.bounds, to: bitmap)
+                    let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+                    let attachment = XCTAttachment(data: png, uniformTypeIdentifier: "public.png")
+                    attachment.name = "settings-\(tab)-\(language.rawValue)-\(appearance.rawValue)"
+                    attachment.lifetime = .keepAlways
+                    add(attachment)
+                    window.close()
+                }
+            }
+        }
+        XCTAssertTrue(handler.requests.isEmpty, "Rendering settings must not change system defaults")
     }
 
     func testMissingFolderReportsFailureInsteadOfAnEmptyIndex() async throws {
@@ -498,6 +669,475 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertLessThanOrEqual(navigationPreview?.representations.first?.pixelsWide ?? .max, 96)
     }
 
+    func testPDFPageBoundsDriveWindowGeometryAndBoundedPreview() throws {
+        let url = directory.appendingPathComponent("landscape.pdf")
+        var page = CGRect(x: 0, y: 0, width: 720, height: 300)
+        let context = try XCTUnwrap(CGContext(url as CFURL, mediaBox: &page, nil))
+        context.beginPDFPage(nil)
+        context.setFillColor(NSColor.systemBlue.cgColor)
+        context.fill(page)
+        context.endPDFPage()
+        context.closePDF()
+
+        // Vector representations have no inherent pixels. Their page bounds
+        // must still provide an aspect ratio before the first window layout.
+        let dimensions = try XCTUnwrap(ImageDecoder.pixelSize(for: url))
+        XCTAssertEqual(dimensions, page.size)
+        let preview = try XCTUnwrap(ImageDecoder.navigationPreview(for: url, maxPixelSize: 360))
+        let previewSize = try XCTUnwrap(ViewerGeometry.decodedSize(for: preview))
+        XCTAssertLessThanOrEqual(max(previewSize.width, previewSize.height), 360)
+        XCTAssertEqual(previewSize.width / previewSize.height, 2.4, accuracy: 0.01)
+        XCTAssertEqual(ViewerGeometry.displayedSize(for: dimensions, rotation: .clockwise),
+                       CGSize(width: 300, height: 720))
+    }
+
+    func testPDFPagesRenderDistinctPixelsAndUsePageAwareCache() throws {
+        let url = directory.appendingPathComponent("pages.pdf")
+        try makePDF(at: url)
+        let first = try XCTUnwrap(ImageDecoder.renderedImage(for: ImageRenderRequest(url: url, maxPixelSize: 1_024)))
+        let secondRequest = ImageRenderRequest(url: url, maxPixelSize: 1_024, pageIndex: 1)
+        let second = try XCTUnwrap(ImageDecoder.renderedImage(for: secondRequest))
+        let last = try XCTUnwrap(ImageDecoder.renderedImage(for: ImageRenderRequest(url: url, maxPixelSize: 1_024, pageIndex: 2)))
+        XCTAssertFalse(first === second)
+        XCTAssertTrue(second === ImageDecoder.renderedImage(for: secondRequest))
+        XCTAssertTrue(second === ImageDecoder.renderedImage(for: ImageRenderRequest(
+            url: url, maxPixelSize: 1_024, selectionGeneration: 42, pageIndex: 1
+        )), "Window identity must not duplicate the shared page cache")
+        for (image, color, ratio) in [(first, NSColor.red, 1.5), (second, NSColor.green, 1 / 1.5), (last, NSColor.blue, 1.5)] {
+            let size = try XCTUnwrap(ViewerGeometry.decodedSize(for: image))
+            XCTAssertEqual(size.width / size.height, ratio, accuracy: 0.002)
+            XCTAssertLessThanOrEqual(max(size.width, size.height), 1_024)
+            try assertPDFColor(image, expected: color)
+        }
+        XCTAssertEqual(ImageDecoder.documentMetadata(for: url, pageIndex: 1)?.pageCount, 3)
+        XCTAssertEqual(ImageMetadataCache.shared.metadata(for: url, pageIndex: 1)?.pixelSize, CGSize(width: 400, height: 600))
+        XCTAssertEqual(ImageMetadataCache.shared.metadata(for: url)?.pixelSize, CGSize(width: 600, height: 400))
+        let printPage = try XCTUnwrap(ImageDecoder.printBitmap(for: url, maxPixelSize: 2_048, pageIndex: 1))
+        try assertPDFColor(NSImage(cgImage: printPage, size: .zero), expected: .green)
+    }
+
+    func testPDFCropOriginAndIntrinsicQuarterTurnsMatchRenderedPage() throws {
+        // A nonzero crop origin and /Rotate must affect both the bitmap and geometry.
+        for rotation in [0, 90, 180, 270] {
+            let url = directory.appendingPathComponent("crop-\(rotation).pdf")
+            try makeCroppedPDF(at: url, rotation: rotation)
+            let expected = rotation % 180 == 0 ? CGSize(width: 200, height: 100) : CGSize(width: 100, height: 200)
+            XCTAssertEqual(ImageDecoder.documentMetadata(for: url)?.pixelSize, expected)
+            let image = try XCTUnwrap(ImageDecoder.renderedImage(for: ImageRenderRequest(url: url, maxPixelSize: 1_024)))
+            let size = try XCTUnwrap(ViewerGeometry.decodedSize(for: image))
+            XCTAssertEqual(size.width / size.height, expected.width / expected.height, accuracy: 0.001)
+            // The red media box outside the green crop must never leak into any edge.
+            try assertPDFColor(image, expected: .green)
+        }
+    }
+
+    func testPDFIntrinsicRotationMovesTheActualCornerPixels() throws {
+        for rotation in [0, 90, 180, 270] {
+            let url = directory.appendingPathComponent("corner-\(rotation).pdf")
+            try makeCroppedPDF(at: url, rotation: rotation, markCorner: true)
+            let image = try XCTUnwrap(ImageDecoder.renderedImage(for: ImageRenderRequest(url: url, maxPixelSize: 1_024)))
+            let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(image.cgImage(forProposedRect: nil, context: nil, hints: nil)))
+            // Clockwise positions: top-left, top-right, bottom-right, bottom-left.
+            for (index, point) in [(0.25, 0.25), (0.75, 0.25), (0.75, 0.75), (0.25, 0.75)].enumerated() {
+                let color = try XCTUnwrap(bitmap.colorAt(
+                    x: Int(Double(bitmap.pixelsWide) * point.0),
+                    y: Int(Double(bitmap.pixelsHigh) * point.1)
+                )?.usingColorSpace(.deviceRGB))
+                XCTAssertEqual(color.blueComponent, index == rotation / 90 ? 1 : 0, accuracy: 0.03)
+                XCTAssertEqual(color.greenComponent, index == rotation / 90 ? 0 : 1, accuracy: 0.03)
+            }
+        }
+    }
+
+    func testPrintedPDFRespectsAllUserRotations() throws {
+        let url = directory.appendingPathComponent("print-corners.pdf")
+        try makeCroppedPDF(at: url, rotation: 0, markCorner: true)
+        for degrees in [0, 90, 180, 270] {
+            let turn = QuarterTurn.zero.rotated(by: Double(degrees))
+            let cg = try XCTUnwrap(ImageDecoder.printBitmap(for: url, maxPixelSize: 400, rotation: turn))
+            XCTAssertEqual(cg.width > cg.height, degrees % 180 == 0)
+            let bitmap = NSBitmapImageRep(cgImage: cg)
+            for (index, point) in [(0.25, 0.25), (0.75, 0.25), (0.75, 0.75), (0.25, 0.75)].enumerated() {
+                let color = try XCTUnwrap(bitmap.colorAt(x: Int(Double(cg.width) * point.0), y: Int(Double(cg.height) * point.1))?.usingColorSpace(.deviceRGB))
+                XCTAssertEqual(color.blueComponent, index == degrees / 90 ? 1 : 0, accuracy: 0.03)
+                XCTAssertEqual(color.greenComponent, index == degrees / 90 ? 0 : 1, accuracy: 0.03)
+            }
+            XCTAssertNil(ImageDecoder.rotatedPrintBitmap(cg, rotation: turn, isCancelled: { true }))
+        }
+    }
+
+    @MainActor
+    func testPreviewFailuresExplainCauseAndClearOnNavigation() throws {
+        let locked = directory.appendingPathComponent("locked.pdf")
+        try makePDF(at: locked, locked: true)
+        XCTAssertEqual(ImageDecoder.previewFailure(for: locked), .passwordRequired)
+        XCTAssertEqual(ImageDecoder.previewFailure(for: directory.appendingPathComponent("missing.png")), .unreadable)
+        let broken = directory.appendingPathComponent("broken.png")
+        try Data("not an image".utf8).write(to: broken)
+        XCTAssertEqual(ImageDecoder.previewFailure(for: broken), .cannotDecode)
+        let large = directory.appendingPathComponent("large.pdf")
+        FileManager.default.createFile(atPath: large.path, contents: nil)
+        let handle = try FileHandle(forWritingTo: large)
+        try handle.truncate(atOffset: UInt64(ImageDecoder.maximumFallbackSourceBytes + 1))
+        try handle.close()
+        XCTAssertEqual(ImageDecoder.previewFailure(for: large), .fileTooLarge)
+        let browser = ImageBrowserStore()
+        browser.reportImageLoadResult(isAvailable: false, failure: .passwordRequired)
+        XCTAssertEqual(browser.previewFailure, .passwordRequired)
+        browser.open(file: broken)
+        XCTAssertNil(browser.previewFailure)
+        browser.reportImageLoadResult(isAvailable: true)
+        XCTAssertFalse(browser.imageLoadFailed)
+        browser.suspendCanvasRendering()
+    }
+
+    @MainActor
+    func testPDFStatusFadesWithoutCoveringPageAndCanBePinned() async throws {
+        try XCTSkipIf(NSWorkspace.shared.isVoiceOverEnabled, "VoiceOver intentionally keeps controls visible")
+        let url = directory.appendingPathComponent("hud.pdf")
+        try makePDF(at: url)
+        let browser = ImageBrowserStore()
+        browser.open(file: url)
+        try await waitForScan(browser)
+        let host = NSHostingView(rootView: ImageCanvasView(browser: browser, l: L10n(language: .english)))
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 600, height: 400), styleMask: [], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        defer { window.close(); browser.suspendCanvasRendering() }
+        var uncoveredPageColor: NSColor?
+        func sample(_ name: String) throws -> NSColor {
+            host.layoutSubtreeIfNeeded()
+            let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            let data = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+            let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.png")
+            attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
+            uncoveredPageColor = bitmap.colorAt(x: bitmap.pixelsWide / 2, y: bitmap.pixelsHigh / 2)?.usingColorSpace(.deviceRGB)
+            return try XCTUnwrap(bitmap.colorAt(x: bitmap.pixelsWide / 2, y: bitmap.pixelsHigh - 45)?.usingColorSpace(.deviceRGB))
+        }
+        try await Task.sleep(nanoseconds: 700_000_000)
+        let initial = try sample("PDF-status-visible")
+        try await Task.sleep(nanoseconds: 2_400_000_000)
+        let hidden = try sample("PDF-status-hidden")
+        XCTAssertGreaterThan(initial.greenComponent, hidden.greenComponent + 0.05)
+        let page = try XCTUnwrap(uncoveredPageColor)
+        XCTAssertEqual(hidden.redComponent, page.redComponent, accuracy: 0.01)
+        XCTAssertEqual(hidden.greenComponent, page.greenComponent, accuracy: 0.01)
+        XCTAssertEqual(hidden.blueComponent, page.blueComponent, accuracy: 0.01)
+        browser.keepsStatusVisible = true
+        try await Task.sleep(nanoseconds: 400_000_000)
+        let pinned = try sample("PDF-status-pinned")
+        XCTAssertGreaterThan(pinned.greenComponent, hidden.greenComponent + 0.05)
+        XCTAssertFalse(window.isVisible, "This test must never capture or control the desktop")
+    }
+
+    @MainActor
+    func testDropCollectsEveryFileInOrderWithoutDuplicates() async throws {
+        let first = directory.appendingPathComponent("one.png")
+        let second = directory.appendingPathComponent("two.png")
+        let urls = await DocumentDrop.fileURLs(from: [
+            NSItemProvider(item: first as NSURL, typeIdentifier: UTType.fileURL.identifier),
+            NSItemProvider(item: second.dataRepresentation as NSData, typeIdentifier: UTType.fileURL.identifier),
+            NSItemProvider(item: first as NSURL, typeIdentifier: UTType.fileURL.identifier),
+            NSItemProvider(object: "ignored" as NSString)
+        ])
+        XCTAssertEqual(urls, [first, second].map { $0.standardizedFileURL.resolvingSymlinksInPath() })
+    }
+
+    @MainActor
+    func testDefaultApplicationsIdentifiesOtherCopyAndShowsVersionAndPath() throws {
+        func app(_ name: String, id: String, version: String) throws -> URL {
+            let url = directory.appendingPathComponent(name + ".app")
+            try FileManager.default.createDirectory(at: url.appendingPathComponent("Contents"), withIntermediateDirectories: true)
+            let plist = ["CFBundleIdentifier": id, "CFBundleShortVersionString": version, "CFBundleName": "LumaView", "CFBundlePackageType": "APPL"]
+            try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0).write(to: url.appendingPathComponent("Contents/Info.plist"))
+            return url
+        }
+        let current = try app("current", id: "test.luma", version: "2.0")
+        let old = try app("old", id: "test.luma", version: "1.0")
+        let handler = TestDefaultApplicationHandler()
+        let format = DefaultImageFormat.common[0]
+        handler.applications[format.id] = old
+        let model = DefaultApplicationsModel(applicationURL: current, handler: handler)
+        model.refresh()
+        XCTAssertTrue(model.isAnotherCopy(format))
+        XCTAssertFalse(model.isDefault(format))
+        XCTAssertTrue(model.applicationDetails(for: format)?.contains(old.path) == true)
+        XCTAssertTrue(model.applicationDetails(for: format)?.contains("1.0") == true)
+        handler.applications[format.id] = current
+        model.refresh()
+        XCTAssertFalse(model.isAnotherCopy(format))
+        XCTAssertTrue(model.isDefault(format))
+    }
+
+    func testPDFRejectsInvalidPagesCancellationAndLockedDocuments() throws {
+        let url = directory.appendingPathComponent("pages.pdf")
+        try makePDF(at: url)
+        for page in [-1, 3, Int.max] {
+            XCTAssertNil(ImageDecoder.renderedImage(for: ImageRenderRequest(url: url, maxPixelSize: 1_024, pageIndex: page)))
+            XCTAssertNil(ImageDecoder.printBitmap(for: url, maxPixelSize: 2_048, pageIndex: page))
+        }
+        XCTAssertNil(ImageDecoder.documentMetadata(for: url, isCancelled: { true }))
+        XCTAssertNil(ImageDecoder.renderedImage(for: ImageRenderRequest(url: url, maxPixelSize: 1_024), isCancelled: { true }))
+        let broken = directory.appendingPathComponent("broken.pdf")
+        try Data("not a PDF".utf8).write(to: broken)
+        XCTAssertNil(ImageDecoder.documentMetadata(for: broken))
+        XCTAssertNil(ImageDecoder.renderedImage(for: ImageRenderRequest(url: broken, maxPixelSize: 1_024)))
+        let locked = directory.appendingPathComponent("locked.pdf")
+        try makePDF(at: locked, locked: true)
+        XCTAssertFalse(try XCTUnwrap(CGPDFDocument(locked as CFURL)).isUnlocked)
+        XCTAssertNil(ImageDecoder.documentMetadata(for: locked))
+        XCTAssertNil(ImageDecoder.renderedImage(for: ImageRenderRequest(url: locked, maxPixelSize: 1_024)))
+    }
+
+    func testPDFInformationUsesSelectedPageAndPointDimensions() throws {
+        let url = directory.appendingPathComponent("pages.pdf")
+        try makePDF(at: url)
+        let info = ImageInformationReader.read(from: url, pageIndex: 1)
+        XCTAssertEqual(info.fileFormat, "PDF")
+        XCTAssertEqual(info.pdfPageNumber, 2)
+        XCTAssertEqual(info.pdfPageCount, 3)
+        XCTAssertEqual(info.pdfPageSize, CGSize(width: 400, height: 600))
+        XCTAssertNil(info.dimensions, "PDF page points must not be labelled as image pixels")
+        XCTAssertFalse(info.hasEXIF)
+    }
+
+    @MainActor
+    func testPDFNavigationPreservesViewportAndKeepsWindowsIndependent() async throws {
+        let url = directory.appendingPathComponent("01-pages.pdf")
+        let next = directory.appendingPathComponent("02-next.png")
+        try makePDF(at: url)
+        try makePNG(at: next, width: 120, height: 80)
+        let first = ImageBrowserStore(), second = ImageBrowserStore()
+        first.open(url: url)
+        second.open(url: url)
+        try await waitForScan(first)
+        try await waitForScan(second)
+        try await waitForPageSize(first, CGSize(width: 600, height: 400))
+        try await waitForPageSize(second, CGSize(width: 600, height: 400))
+        XCTAssertEqual(first.pdfPageCount, 3)
+        XCTAssertFalse(first.hasPreviousPage)
+        first.previousPage()
+        first.selectPDFPage(3)
+        XCTAssertEqual(first.pdfPageIndex, 0)
+        first.zoomIn()
+        first.rotate(by: 90)
+        let zoom = first.zoom
+        let rotation = first.quarterTurn
+        let generation = first.selectionGeneration
+        first.nextPage()
+        XCTAssertGreaterThan(first.selectionGeneration, generation)
+        XCTAssertEqual(first.zoom, zoom)
+        XCTAssertEqual(first.quarterTurn, rotation)
+        try await waitForPageSize(first, CGSize(width: 400, height: 600))
+        XCTAssertEqual(second.pdfPageIndex, 0)
+        first.nextPage()
+        first.nextPage()
+        XCTAssertEqual(first.pdfPageIndex, 2)
+        XCTAssertFalse(first.hasNextPage)
+        // Burst page changes then file navigation must discard all stale page metadata.
+        first.previousPage()
+        first.previousPage()
+        first.nextPage()
+        first.next()
+        try await waitForPageSize(first, CGSize(width: 120, height: 80))
+        XCTAssertEqual(first.selectedURL, next)
+        XCTAssertEqual(first.zoom, 1)
+        XCTAssertEqual(first.quarterTurn, .zero)
+        XCTAssertEqual(first.pdfPageIndex, 0)
+        XCTAssertEqual(first.pdfPageCount, 0)
+        XCTAssertFalse(first.hasMultiplePDFPages)
+        first.previous()
+        try await waitForPageSize(first, CGSize(width: 400, height: 600))
+        XCTAssertEqual(first.pdfPageIndex, 1)
+        XCTAssertEqual(first.pdfPageCount, 3)
+        XCTAssertEqual(second.pdfPageIndex, 0)
+    }
+
+    @MainActor
+    func testPDFResumesPage37AfterImmediateFileRoundTrip() async throws {
+        let url = directory.appendingPathComponent("01-manual.pdf")
+        let image = directory.appendingPathComponent("02-image.png")
+        try makePDF(at: url, pageCount: 225)
+        try makePNG(at: image, width: 120, height: 80)
+        let store = ImageBrowserStore()
+        store.open(file: url)
+        try await waitForScan(store)
+        try await waitForPageSize(store, CGSize(width: 600, height: 400))
+        XCTAssertEqual(store.pdfPageCount, 225)
+        store.selectPDFPage(36)
+        store.zoomIn()
+        store.rotate(by: 90)
+        // No wait: a cancelled metadata read must not discard the bookmark.
+        store.next()
+        XCTAssertEqual(store.selectedURL, image)
+        store.previous()
+        XCTAssertEqual(store.selectedURL, url)
+        XCTAssertEqual(store.pdfPageIndex, 36)
+        XCTAssertEqual(store.zoom, 1)
+        XCTAssertEqual(store.quarterTurn, .zero)
+        try await waitForPageSize(store, CGSize(width: 600, height: 400))
+        XCTAssertEqual(store.pdfPageCount, 225)
+        let decoded = try XCTUnwrap(ImageDecoder.renderedImage(for: ImageRenderRequest(
+            url: store.selectedURL, maxPixelSize: 1_024, pageIndex: store.pdfPageIndex
+        )))
+        try assertPDFColor(decoded, expected: .red)
+        XCTAssertEqual(ImageInformationReader.read(from: url, pageIndex: store.pdfPageIndex).pdfPageNumber, 37)
+    }
+
+    @MainActor
+    func testPDFReadingPositionsUseFullPathsAndStayWindowLocal() async throws {
+        let a = directory.appendingPathComponent("manual.pdf")
+        let otherFolder = directory.appendingPathComponent("other", isDirectory: true)
+        try FileManager.default.createDirectory(at: otherFolder, withIntermediateDirectories: true)
+        let b = otherFolder.appendingPathComponent("manual.pdf")
+        try makePDF(at: a)
+        try makePDF(at: b)
+        let store = ImageBrowserStore()
+        store.open(file: a)
+        try await waitForPageSize(store, CGSize(width: 600, height: 400))
+        store.selectPDFPage(1)
+        store.open(file: b)
+        try await waitForPageSize(store, CGSize(width: 600, height: 400))
+        XCTAssertEqual(store.pdfPageIndex, 0)
+        store.selectPDFPage(2)
+        store.open(file: a)
+        try await waitForPageSize(store, CGSize(width: 400, height: 600))
+        XCTAssertEqual(store.pdfPageIndex, 1)
+        store.open(file: b)
+        try await waitForPageSize(store, CGSize(width: 600, height: 400))
+        XCTAssertEqual(store.pdfPageIndex, 2)
+        let otherWindow = ImageBrowserStore()
+        otherWindow.open(file: b)
+        try await waitForPageSize(otherWindow, CGSize(width: 600, height: 400))
+        XCTAssertEqual(otherWindow.pdfPageIndex, 0)
+        // Intentionally returning to the first page replaces the old bookmark.
+        store.selectPDFPage(0)
+        store.open(file: a)
+        store.open(file: b)
+        try await waitForPageSize(store, CGSize(width: 600, height: 400))
+        XCTAssertEqual(store.pdfPageIndex, 0)
+    }
+
+    @MainActor
+    func testPDFReadingPositionClampsWhenPagesAreRemoved() async throws {
+        let url = directory.appendingPathComponent("01-edited.pdf")
+        let image = directory.appendingPathComponent("02-image.png")
+        try makePDF(at: url)
+        try makePNG(at: image, width: 120, height: 80)
+        let store = ImageBrowserStore()
+        store.open(file: url)
+        try await waitForScan(store)
+        try await waitForPageSize(store, CGSize(width: 600, height: 400))
+        store.selectPDFPage(2)
+        store.next()
+        try makeCroppedPDF(at: url, rotation: 90)
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(2)], ofItemAtPath: url.path)
+        store.previous()
+        try await waitForPageSize(store, CGSize(width: 100, height: 200))
+        XCTAssertEqual(store.pdfPageCount, 1)
+        XCTAssertEqual(store.pdfPageIndex, 0)
+        XCTAssertFalse(store.hasMultiplePDFPages)
+        XCTAssertFalse(store.imageLoadFailed)
+        store.next()
+        try makePDF(at: url)
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(4)], ofItemAtPath: url.path)
+        store.previous()
+        try await waitForPageSize(store, CGSize(width: 600, height: 400))
+        XCTAssertEqual(store.pdfPageIndex, 0, "Restoring pages must not revive the obsolete bookmark")
+        XCTAssertEqual(store.pdfPageCount, 3)
+    }
+
+    func testPDFReadingHistoryIsBoundedAndKeepsRecentlyUsedPositions() {
+        var history = PDFReadingHistory()
+        let urls = (0...PDFReadingHistory.capacity).map {
+            directory.appendingPathComponent("\($0).pdf")
+        }
+        for url in urls.dropLast() { history.remember(pageIndex: 36, for: url) }
+        XCTAssertEqual(history.pageIndex(for: urls[0]), 36)
+        history.remember(pageIndex: 9, for: urls.last!)
+        XCTAssertEqual(history.pageIndex(for: urls[1]), 0, "Evict the least recently read document")
+        XCTAssertEqual(history.pageIndex(for: urls[0]), 36)
+        XCTAssertEqual(history.pageIndex(for: urls.last!), 9)
+        history.remember(pageIndex: 0, for: urls[0])
+        XCTAssertEqual(history.pageIndex(for: urls[0]), 0)
+    }
+
+    func testPDFReplacingFileInvalidatesEveryPageCache() throws {
+        let url = directory.appendingPathComponent("updated.pdf")
+        try makePDF(at: url)
+        let request = ImageRenderRequest(url: url, maxPixelSize: 1_024, pageIndex: 1)
+        let before = try XCTUnwrap(ImageDecoder.renderedImage(for: request))
+        XCTAssertEqual(ImageMetadataCache.shared.metadata(for: url, pageIndex: 1)?.pageCount, 3)
+        try makeCroppedPDF(at: url, rotation: 90)
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(2)], ofItemAtPath: url.path)
+        XCTAssertNil(ImageDecoder.renderedImage(for: request), "The removed second page must not survive in cache")
+        XCTAssertEqual(ImageMetadataCache.shared.metadata(for: url)?.pageCount, 1)
+        let after = try XCTUnwrap(ImageDecoder.renderedImage(for: ImageRenderRequest(url: url, maxPixelSize: 1_024)))
+        XCTAssertFalse(before === after)
+        XCTAssertEqual(ImageMetadataCache.shared.metadata(for: url)?.pixelSize, CGSize(width: 100, height: 200))
+    }
+
+    private func makePDF(at url: URL, locked: Bool = false, pageCount: Int = 3) throws {
+        var box = CGRect(x: 0, y: 0, width: 600, height: 400)
+        let options: [CFString: Any] = locked ? [kCGPDFContextUserPassword: "fixture", kCGPDFContextOwnerPassword: "owner"] : [:]
+        let context = try XCTUnwrap(CGContext(url as CFURL, mediaBox: &box, options as CFDictionary))
+        let pages = [(CGSize(width: 600, height: 400), NSColor.red), (CGSize(width: 400, height: 600), NSColor.green), (CGSize(width: 600, height: 400), NSColor.blue)]
+        for index in 0..<pageCount {
+            let (size, color) = pages[index % pages.count]
+            var page = CGRect(origin: .zero, size: size)
+            let boxData = Data(bytes: &page, count: MemoryLayout<CGRect>.size)
+            context.beginPDFPage([kCGPDFContextMediaBox: boxData] as CFDictionary)
+            context.setFillColor(color.cgColor)
+            context.fill(page)
+            context.endPDFPage()
+        }
+        context.closePDF()
+    }
+
+    private func makeCroppedPDF(at url: URL, rotation: Int, markCorner: Bool = false) throws {
+        let content = "1 0 0 rg 0 0 300 200 re f\n0 1 0 rg 50 30 200 100 re f\n"
+            + (markCorner ? "0 0 1 rg 50 80 100 50 re f\n" : "")
+        let objects = [
+            "<< /Type /Catalog /Pages 2 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /CropBox [50 30 250 130] /Rotate \(rotation) /Resources << >> /Contents 4 0 R >>",
+            "<< /Length \(content.utf8.count) >>\nstream\n\(content)endstream"
+        ]
+        var text = "%PDF-1.4\n"
+        var offsets = [0]
+        for (index, object) in objects.enumerated() {
+            offsets.append(text.utf8.count)
+            text += "\(index + 1) 0 obj\n\(object)\nendobj\n"
+        }
+        let xref = text.utf8.count
+        text += "xref\n0 \(offsets.count)\n0000000000 65535 f \n"
+        for offset in offsets.dropFirst() { text += String(format: "%010d 00000 n \n", offset) }
+        text += "trailer\n<< /Size \(offsets.count) /Root 1 0 R >>\nstartxref\n\(xref)\n%%EOF\n"
+        try Data(text.utf8).write(to: url)
+    }
+
+    private func assertPDFColor(_ image: NSImage, expected: NSColor, file: StaticString = #filePath, line: UInt = #line) throws {
+        let cg = try XCTUnwrap(image.cgImage(forProposedRect: nil, context: nil, hints: nil))
+        let bitmap = NSBitmapImageRep(cgImage: cg)
+        let expected = try XCTUnwrap(expected.usingColorSpace(.deviceRGB))
+        for point in [(1, 1), (bitmap.pixelsWide - 2, bitmap.pixelsHigh - 2), (bitmap.pixelsWide / 2, bitmap.pixelsHigh / 2)] {
+            let color = try XCTUnwrap(bitmap.colorAt(x: point.0, y: point.1)?.usingColorSpace(.deviceRGB))
+            XCTAssertEqual(color.redComponent, expected.redComponent, accuracy: 0.03, file: file, line: line)
+            XCTAssertEqual(color.greenComponent, expected.greenComponent, accuracy: 0.03, file: file, line: line)
+            XCTAssertEqual(color.blueComponent, expected.blueComponent, accuracy: 0.03, file: file, line: line)
+        }
+    }
+
+    @MainActor
+    private func waitForPageSize(_ store: ImageBrowserStore, _ size: CGSize) async throws {
+        for _ in 0..<200 {
+            if store.originalPixelSize == size { return }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTFail("Expected page size \(size), got \(String(describing: store.originalPixelSize))")
+    }
+
     func testImageInformationReadsEXIFOnDemand() throws {
         let url = directory.appendingPathComponent("camera.jpg")
         try makeJPEGWithEXIF(at: url)
@@ -552,6 +1192,9 @@ final class LumaViewCoreTests: XCTestCase {
             XCTAssertNil(ImageInformationReader.formattedExposure(seconds))
         }
         XCTAssertEqual(ImageInformationReader.formattedExposure(1.0 / 125), "1/125 s")
+        XCTAssertEqual(ImageInformationReader.formattedExposure(0.8), "0.8 s")
+        XCTAssertEqual(ImageInformationReader.formattedExposure(0.3), "0.3 s")
+        XCTAssertEqual(ImageInformationReader.formattedExposure(1.0 / 3), "1/3 s")
         XCTAssertEqual(ImageInformationReader.formattedDecimal(50), "50")
         XCTAssertEqual(ImageInformationReader.formattedDecimal(2.8), "2.8")
     }
@@ -891,8 +1534,8 @@ final class LumaViewCoreTests: XCTestCase {
         store.reportImageLoadResult(isAvailable: false)
         for language in AppLanguage.allCases where language != .automatic {
             let l = L10n(language: language)
-            XCTAssertEqual(store.displayStatusMessage(l), l.text("canvas.noPreview"))
-            XCTAssertTrue(store.statusAccessibilityLabel(l).contains(l.text("canvas.noPreview")))
+            XCTAssertEqual(store.displayStatusMessage(l), l.text("preview.cannotDecode"))
+            XCTAssertTrue(store.statusAccessibilityLabel(l).contains(l.text("preview.cannotDecode")))
             XCTAssertEqual(store.selectedURL, file)
         }
         store.reportImageLoadResult(isAvailable: true)
@@ -982,6 +1625,109 @@ final class LumaViewCoreTests: XCTestCase {
         )
         await due.checkForUpdate()
         XCTAssertEqual(UpdateCheckURLProtocol.requestCount, 2)
+    }
+
+    @MainActor
+    func testManualUpdateJoinsAutomaticCheckAndDismissesBanner() async throws {
+        let suite = "LumaViewTests.updates.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        UpdateCheckURLProtocol.reset()
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [UpdateCheckURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let checker = UpdateChecker(currentVersion: ReleaseVersion(tag: "1.0.0"), session: session, defaults: defaults)
+        var notices: [UpdateCheckNotice] = []
+        checker.noticeHandler = { notices.append($0) }
+        let automatic = Task { await checker.checkForUpdate() }
+        for _ in 0..<100 where !checker.isChecking { await Task.yield() }
+        XCTAssertTrue(checker.isChecking)
+        await checker.checkForUpdate(force: true, announceResult: true)
+        await automatic.value
+        XCTAssertFalse(checker.isChecking)
+        XCTAssertEqual(UpdateCheckURLProtocol.requestCount, 1)
+        XCTAssertEqual(notices, [.available])
+        XCTAssertTrue(checker.showsUpdateBanner)
+        checker.dismissBanner()
+        XCTAssertFalse(checker.showsUpdateBanner)
+        XCTAssertTrue(checker.hasUpdate, "Dismissal must not remove the settings/help download action")
+        await checker.checkForUpdate(force: true)
+        XCTAssertFalse(checker.showsUpdateBanner, "The same version must stay dismissed")
+        let current = UpdateChecker(currentVersion: ReleaseVersion(tag: "1.2.1"), session: session, defaults: defaults)
+        await current.checkForUpdate(force: true, announceResult: true)
+        XCTAssertEqual(current.notice, .upToDate)
+        let failure = UpdateChecker(session: session, releaseURL: URL(string: "https://example.invalid/fail")!, defaults: defaults)
+        await failure.checkForUpdate(force: true, announceResult: true)
+        XCTAssertEqual(failure.notice, .unavailable)
+        XCTAssertFalse(failure.isChecking)
+    }
+
+    @MainActor
+    func testUpdateCheckRecoversWhenTheSystemClockMovesBackwards() async throws {
+        let suiteName = "LumaViewTests.update-clock.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let referenceDate = Date(timeIntervalSinceReferenceDate: 123_456)
+        let key = "last-checked"
+        defaults.set(referenceDate.addingTimeInterval(24 * 60 * 60), forKey: key)
+
+        UpdateCheckURLProtocol.reset()
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [UpdateCheckURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let checker = UpdateChecker(
+            currentVersion: ReleaseVersion(tag: "1.2.1"),
+            session: session,
+            defaults: defaults,
+            lastCheckedDefaultsKey: key,
+            now: { referenceDate }
+        )
+
+        await checker.checkForUpdate()
+        XCTAssertEqual(UpdateCheckURLProtocol.requestCount, 1,
+                       "A future persisted timestamp must not suppress update checks")
+        XCTAssertEqual(defaults.object(forKey: key) as? Date, referenceDate)
+        await checker.checkForUpdate()
+        XCTAssertEqual(UpdateCheckURLProtocol.requestCount, 1,
+                       "A successful check must restore the normal throttle")
+    }
+
+    @MainActor
+    func testReopeningChangedFileRefreshesDimensionsAndRenderRequest() async throws {
+        let url = directory.appendingPathComponent("edited.png")
+        try makePNG(at: url, width: 240, height: 120)
+        let browser = ImageBrowserStore()
+        browser.open(url: url)
+        for _ in 0..<200 {
+            if browser.originalPixelSize != nil { break }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTAssertEqual(browser.originalPixelSize, CGSize(width: 240, height: 120))
+        let firstRequest = ImageRenderRequest(
+            url: browser.selectedURL, maxPixelSize: 1_024, selectionGeneration: browser.selectionGeneration
+        )
+        let firstImage = try XCTUnwrap(ImageDecoder.renderedImage(for: firstRequest))
+        XCTAssertEqual(ViewerGeometry.decodedSize(for: firstImage), CGSize(width: 240, height: 120))
+
+        try makePNG(at: url, width: 120, height: 240)
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(2)], ofItemAtPath: url.path)
+        browser.open(url: url)
+        let reopenedRequest = ImageRenderRequest(
+            url: browser.selectedURL, maxPixelSize: 1_024, selectionGeneration: browser.selectionGeneration
+        )
+        XCTAssertNotEqual(firstRequest, reopenedRequest, "A same-path reopen must restart the canvas task")
+        for _ in 0..<200 {
+            if browser.originalPixelSize != nil { break }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTAssertEqual(browser.originalPixelSize, CGSize(width: 120, height: 240))
+        let reopenedImage = try XCTUnwrap(ImageDecoder.renderedImage(for: reopenedRequest))
+        XCTAssertEqual(ViewerGeometry.decodedSize(for: reopenedImage), CGSize(width: 120, height: 240))
+        // Selection identity must not fragment the shared file-fingerprint cache.
+        let anotherWindowRequest = ImageRenderRequest(url: url, maxPixelSize: 1_024)
+        XCTAssertTrue(reopenedImage === ImageDecoder.renderedImage(for: anotherWindowRequest))
     }
 
     func testStoreNavigationZoomAndRotationStayBounded() async throws {
@@ -1261,14 +2007,40 @@ private final class UpdateCheckURLProtocol: URLProtocol {
         let body = Data(#"{"tag_name":"v1.2.1","html_url":"https://github.com/ixiehao/LumaView/releases/tag/v1.2.1","draft":false,"prerelease":false}"#.utf8)
         let response = HTTPURLResponse(
             url: request.url!,
-            statusCode: 200,
+            statusCode: request.url?.path == "/fail" ? 503 : 200,
             httpVersion: "HTTP/1.1",
             headerFields: ["Content-Type": "application/json"]
         )!
-        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: body)
-        client?.urlProtocolDidFinishLoading(self)
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) { [self] in
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: body)
+            client?.urlProtocolDidFinishLoading(self)
+        }
     }
 
     override func stopLoading() {}
+}
+
+/// These windows are never ordered on screen. Only the receiver under test
+/// considers itself key; no macOS event is posted and system focus is unchanged.
+@MainActor
+private final class PDFKeyboardTestWindow: LumaDocumentWindow {
+    var receivesTestKeys = true
+    override var isKeyWindow: Bool { receivesTestKeys }
+}
+
+@MainActor
+private final class TestDefaultApplicationHandler: DefaultApplicationHandling {
+    var applications: [String: URL] = [:]
+    var requests: [String] = []
+    var errors: [String: Error] = [:]
+    var ignored: Set<String> = []
+
+    func applicationURL(for type: UTType) -> URL? { applications[type.identifier] }
+    func setApplication(at url: URL, for type: UTType) async throws {
+        requests.append(type.identifier)
+        await Task.yield()
+        if let error = errors[type.identifier] { throw error }
+        if !ignored.contains(type.identifier) { applications[type.identifier] = url }
+    }
 }

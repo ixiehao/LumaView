@@ -4,9 +4,9 @@
 
 画像を 1 枚開けば、同じフォルダ内を続けて閲覧できます。LumaView は画像を中心に据え、日常的な操作をすぐ手の届く場所に置きます。
 
-**[LumaView 1.2.9 ユニバーサル DMG をダウンロード](https://github.com/ixiehao/LumaView/releases/download/v1.2.9/LumaView-1.2.9-universal.dmg)** · [公式サイト](https://ixiehao.github.io/LumaView/?lang=ja) · [English](README.md) · [简体中文](README.zh-CN.md) · [変更履歴](CHANGELOG.md)
+**[LumaView 1.3.0 ユニバーサル DMG をダウンロード](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg)** · [公式サイト](https://ixiehao.github.io/LumaView/ja/) · [English](README.md) · [简体中文](README.zh-CN.md) · [変更履歴](CHANGELOG.md)
 
-macOS 13 以降 · Intel + Apple Silicon · ユニバーサル DMG · 約 2 MB
+macOS 12 以降 · Intel + Apple Silicon · ユニバーサル DMG · 約 2.5 MB
 
 ## 実際の画面
 
@@ -20,11 +20,14 @@ macOS 13 以降 · Intel + Apple Silicon · ユニバーサル DMG · 約 2 MB
 - **画像を見やすく** — ウインドウに合わせる、拡大・縮小、パン、回転、プリントに対応。ステータスバーには実際の拡大率を表示します。
 - **必要なときだけ情報を見る** — ツールバーのボタンひとつで、現在の画像のファイル情報と埋め込み EXIF を確認できます。フォルダ全体を改めて走査したり、メタデータライブラリを作成したりしません。
 - **日常的な形式に対応** — JPEG、PNG、HEIC、GIF、TIFF、BMP、ICO、WebP、PDF、多くの macOS 対応 RAW ファイル、`.sketch` のプレビューを開けます。
-- **Mac のために** — ネイティブ SwiftUI、English・简体中文・日本語、ライト・ダーク・システムの外観、Intel と Apple Silicon に対応します。
+- **Mac のために** — ネイティブ SwiftUI、英語・中国語・フランス語・ロシア語・スペイン語・日本語・韓国語、ライト・ダーク・システムの外観、Intel と Apple Silicon に対応します。
+
+- **PDF を読む** — `↑` / `↓` でページ移動。ページ位置、拡大率、回転を保持します。
+- **標準アプリを選ぶ** — 設定で、LumaView で開くファイル形式を選べます。
 
 ## インストール
 
-1. [ユニバーサル DMG をダウンロード](https://github.com/ixiehao/LumaView/releases/download/v1.2.9/LumaView-1.2.9-universal.dmg)します。
+1. [ユニバーサル DMG をダウンロード](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg)します。
 2. 開いた DMG から **LumaView.app** を **アプリケーション** フォルダへドラッグします。
 3. 「アプリケーション」から LumaView を開きます。画像を直接開く場合は、Finder で画像を右クリックし、「このアプリケーションで開く」→ **LumaView** を選びます。
 
@@ -38,7 +41,7 @@ macOS のバージョンにより、開発元を確認できない、または�
 
 | macOS のバージョン | 設定の場所 |
 | --- | --- |
-| macOS 12 Monterey（Monterey テスト版） | Apple メニュー → **システム環境設定 → セキュリティとプライバシー → 一般** |
+| macOS 12 Monterey | Apple メニュー → **システム環境設定 → セキュリティとプライバシー → 一般** |
 | macOS 13 Ventura 以降 | Apple メニュー → **システム設定 → プライバシーとセキュリティ** → 下にスクロールして **セキュリティ** |
 
 「このまま開く」が表示されない場合は、もう一度 LumaView を開いてから設定を確認してください。アプリの破損やコンピュータへの損害を知らせる警告には、この手順を使わず、起動を中止してプロジェクトから再ダウンロードするか、問題をご報告ください。
@@ -56,6 +59,9 @@ DMG はインストーラです。DMG を取り出しても LumaView や画像�
 | 操作 | ショートカット |
 | --- | --- |
 | ファイルを開く | `⌘ O` |
+| 新規ウインドウで開く | `⌘ ⇧ O` |
+| PDF の前 / 次のページ | `↑` / `↓` |
+| ファイル情報を常に表示 | `⌃ ⌘ I` |
 | 前の画像 / 次の画像 | `←` / `→` |
 | 拡大 / 縮小 | `⌘ +` / `⌘ -` |
 | 画像をウインドウに合わせる | `⌘ 0` |

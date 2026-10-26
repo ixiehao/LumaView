@@ -7,7 +7,7 @@
 "settings.interface" = "Interface";
 "settings.updates" = "Updates";
 "settings.currentVersion" = "Current version";
-"settings.updatePrivacy" = "Checks only public GitHub release metadata. Your images and file paths stay on this Mac.";
+"settings.updatePrivacy" = "Checks GitHub for new versions.";
 "about.menu" = "About LumaView";
 "about.description" = "A minimal native image viewer for Mac.";
 "about.developer" = "Developer";
@@ -112,3 +112,44 @@
 "system.item.showTabBar" = "Show Tab Bar";
 "system.item.hideTabBar" = "Hide Tab Bar";
 "system.item.showAllTabs" = "Show All Tabs";
+
+/* PDF page navigation */
+"pdf.previousPage" = "Previous page";
+"pdf.nextPage" = "Next page";
+"pdf.pagePosition" = "Page %d of %d";
+"pdf.printPage" = "Print Current Page…";
+"metadata.page" = "Page";
+"metadata.pageSize" = "Page size";
+"settings.general" = "General";
+"settings.defaultApplications" = "Default Applications";
+"defaults.description" = "Choose which file formats LumaView opens by default.";
+"defaults.format" = "Format";
+"defaults.extensions" = "Extensions";
+"defaults.currentApplication" = "Current app";
+"defaults.none" = "Not set";
+"defaults.selectImages" = "Select images";
+"defaults.clear" = "Clear selection";
+"defaults.apply" = "Set as default";
+"defaults.installFirst" = "Move LumaView to Applications before setting it as the default app.";
+"defaults.applied" = "Updated %d file formats.";
+"defaults.failed" = "Could not change: %@. Try again or use Finder’s Get Info.";
+"defaults.cancelled" = "Cancelled. Changes already applied have been kept.";
+"defaults.finderHint" = "To change all files of this type: Finder → Get Info → Open with → choose another app → Change All…";
+
+"menu.openNewWindows" = "Open in New Windows…";
+
+"menu.keepStatusVisible" = "Keep File Information Visible";
+
+"preview.passwordRequired" = "This PDF requires a password. Open it in Preview to unlock it.";
+
+"preview.fileTooLarge" = "This PDF exceeds the 128 MB preview limit. Open it in Preview.";
+
+"preview.unreadable" = "This file is missing or cannot be read. Check its location and permissions.";
+
+"preview.cannotDecode" = "This Mac cannot decode the file, or the file is damaged. Try opening it in Preview.";
+
+"update.checking" = "Checking…";
+
+"update.later" = "Later";
+
+"defaults.otherCopy" = "%@ (another copy)";

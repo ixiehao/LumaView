@@ -1,10 +1,10 @@
 # LumaView release procedure
 
-The next LumaView build targets **Intel and Apple Silicon Macs** on macOS 12+. The published v1.2.9 installer still requires macOS 13+. Every release script requires both `arm64` and `x86_64` slices. Complete the Monterey hardware check before describing the new minimum as verified.
+LumaView 1.3.0 targets **Intel and Apple Silicon Macs** on macOS 12+. The older v1.2.9 installer requires macOS 13+. Every release script requires both `arm64` and `x86_64` slices. Complete the Monterey hardware check before describing the new minimum as verified.
 
 There are two deliberately distinct paths:
 
-- **Transparent public preview (current v1.2.9):** an
+- **Transparent public preview (current distribution path):** an
   ad-hoc-signed DMG plus its SHA-256 file, with the Release and README clearly
   saying that it is not Apple-notarized and explaining the one-time Gatekeeper
   recovery action. This is useful for early open-source testing, but must never
@@ -42,7 +42,7 @@ the matching GitHub Release:
 - `LumaView-<version>-universal.dmg`
 - `LumaView-<version>-universal.dmg.sha256`
 
-The release title and English, Simplified Chinese, and Japanese notes must state all of the following:
+Keep public release notes concise, in English, Simplified Chinese and Japanese: describe the main features and fixes. Keep installation and distribution details in the linked README and this guide; do not duplicate a signing-status section in release notes. Verify the following before publication:
 
 1. macOS 12+ on both **Intel and Apple Silicon** Macs; the package contains `x86_64` and `arm64` slices. Confirm the current DMG background, website/README compatibility text and social-preview generator match the version being released; do not advertise the new minimum for an older installer.
 2. The DMG is ad-hoc signed and **not Apple-notarized**.

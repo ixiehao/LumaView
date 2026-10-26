@@ -232,7 +232,7 @@ final class ImageMetadataCache {
     static let shared = ImageMetadataCache()
 
     private struct Entry {
-        let size: CGSize
+        let metadata: ImageDocumentMetadata
         var lastAccess: UInt64
     }
 
@@ -255,31 +255,34 @@ final class ImageMetadataCache {
     }
 
     func pixelSize(for url: URL, isCancelled: @escaping @Sendable () -> Bool = { false }) -> CGSize? {
-        let key = ImageMemoryCache.cacheKey(for: url)
-        let stringKey = key as String
+        metadata(for: url, isCancelled: isCancelled)?.pixelSize
+    }
+
+    func metadata(for url: URL, pageIndex: Int = 0, isCancelled: @escaping @Sendable () -> Bool = { false }) -> ImageDocumentMetadata? {
+        let stringKey = "\(ImageMemoryCache.cacheKey(for: url))#page:\(pageIndex)"
         lock.lock()
         if var cached = entries[stringKey] {
             accessCounter &+= 1
             cached.lastAccess = accessCounter
             entries[stringKey] = cached
             lock.unlock()
-            return cached.size
+            return cached.metadata
         }
         lock.unlock()
 
-        guard !isCancelled(), let size = ImageDecoder.pixelSize(for: url, isCancelled: isCancelled), !isCancelled() else {
+        guard !isCancelled(), let metadata = ImageDecoder.documentMetadata(for: url, pageIndex: pageIndex, isCancelled: isCancelled), !isCancelled() else {
             return nil
         }
 
         lock.lock()
         accessCounter &+= 1
-        entries[stringKey] = Entry(size: size, lastAccess: accessCounter)
+        entries[stringKey] = Entry(metadata: metadata, lastAccess: accessCounter)
         while entries.count > countLimit,
               let oldest = entries.min(by: { $0.value.lastAccess < $1.value.lastAccess }) {
             entries.removeValue(forKey: oldest.key)
         }
         lock.unlock()
-        return size
+        return metadata
     }
 }
 
@@ -294,13 +297,50 @@ enum ImageBrowserStatus: String, CaseIterable, Sendable {
     case previewUnavailable = "canvas.noPreview"
 }
 
+/// Window-local reading positions, not rendered pages. Only nonzero positions
+/// need storage; the least recently visited document is evicted at the limit.
+struct PDFReadingHistory {
+    static let capacity = 128
+    private var positions: [URL: Int] = [:]
+    private var recentURLs: [URL] = []
+
+    mutating func pageIndex(for url: URL) -> Int {
+        guard let index = positions[url] else { return 0 }
+        touch(url)
+        return index
+    }
+
+    mutating func remember(pageIndex: Int, for url: URL) {
+        guard pageIndex > 0 else {
+            positions.removeValue(forKey: url)
+            recentURLs.removeAll { $0 == url }
+            return
+        }
+        positions[url] = pageIndex
+        touch(url)
+        if recentURLs.count > Self.capacity {
+            positions.removeValue(forKey: recentURLs.removeFirst())
+        }
+    }
+
+    private mutating func touch(_ url: URL) {
+        recentURLs.removeAll { $0 == url }
+        recentURLs.append(url)
+    }
+}
+
 @MainActor
 final class ImageBrowserStore: ObservableObject {
     @Published private(set) var folderURL: URL?
     @Published private(set) var files: [ImageFile] = []
     @Published private(set) var selectedIndex: Int?
     @Published private(set) var originalPixelSize: CGSize?
+    /// Reopening an edited file is a new selection even when its URL is unchanged.
+    @Published private(set) var selectionGeneration = 0
+    @Published private(set) var pdfPageIndex = 0
+    @Published private(set) var pdfPageCount = 0
     @Published var zoom: CGFloat = 1
+    @Published var keepsStatusVisible = false
     @Published private(set) var quarterTurn: QuarterTurn = .zero
     /// A post-mutation invalidation token for the canvas. `Published` sends
     /// `objectWillChange` before it stores a new value; that is suitable for
@@ -312,13 +352,13 @@ final class ImageBrowserStore: ObservableObject {
     @Published var status: ImageBrowserStatus?
     @Published private(set) var folderScanErrorMessage: String?
     @Published private(set) var imageLoadFailed = false
+    @Published private(set) var previewFailure: ImagePreviewFailure?
     @Published private(set) var isScanning = false
     @Published private(set) var isPreparingPrint = false
     /// A minimised or occluded AppKit window should not pin a full-resolution
     /// SwiftUI canvas. Its selected file and navigation state stay available.
     @Published private(set) var isCanvasRenderingSuspended = false
     private var scanGeneration = 0
-    private var selectionGeneration = 0
     // The current file is rendered before its containing directory has been
     // indexed. Keep a navigation request made during that short interval so a
     // user can press ←/→ immediately after choosing a file; it is applied as
@@ -330,6 +370,7 @@ final class ImageBrowserStore: ObservableObject {
     private var navigationPrefetchTask: Task<Void, Never>?
     private var navigationPrefetchOperations: [Operation] = []
     private var printPreparationOperation: Operation?
+    private var pdfReadingHistory = PDFReadingHistory()
 
     deinit {
         folderScanTask?.cancel()
@@ -346,6 +387,10 @@ final class ImageBrowserStore: ObservableObject {
     }
 
     var selectedURL: URL? { selectedFile?.url }
+    var isPDF: Bool { selectedURL?.pathExtension.lowercased() == "pdf" }
+    var hasMultiplePDFPages: Bool { isPDF && pdfPageCount > 1 }
+    var hasPreviousPage: Bool { isPDF && pdfPageIndex > 0 }
+    var hasNextPage: Bool { isPDF && pdfPageIndex + 1 < pdfPageCount }
     var hasPrevious: Bool { (selectedIndex ?? 0) > 0 }
     var hasNext: Bool {
         guard let selectedIndex else { return false }
@@ -362,29 +407,37 @@ final class ImageBrowserStore: ObservableObject {
     // Rendering, folder discovery and printing finish independently. A successful
     // decode must not erase an unreadable-folder warning or print progress.
     func displayStatusMessage(_ l: L10n) -> String? {
-        if let status = status ?? (imageLoadFailed ? .previewUnavailable : nil) {
+        if let status {
             return l.text(status.rawValue)
         }
+        if let previewFailure { return l.text(previewFailure.rawValue) }
+        if imageLoadFailed { return l.text("canvas.noPreview") }
         // File-system diagnostics are supplied by macOS in its system language.
         return folderScanErrorMessage
     }
 
     func statusAccessibilityLabel(_ l: L10n) -> String {
-        let parts = [selectedFile?.name, selectedFile == nil ? nil : positionText, displayStatusMessage(l)]
+        let position = hasMultiplePDFPages ? l.text("pdf.pagePosition", pdfPageIndex + 1, pdfPageCount) : positionText
+        let parts = [selectedFile?.name, selectedFile == nil ? nil : position, displayStatusMessage(l)]
             .compactMap { $0 }
         return parts.isEmpty ? "LumaView" : parts.joined(separator: ", ")
     }
 
-    func reportImageLoadResult(isAvailable: Bool) {
+    func reportImageLoadResult(isAvailable: Bool, failure: ImagePreviewFailure? = nil) {
+        previewFailure = isAvailable ? nil : (failure ?? .cannotDecode)
         imageLoadFailed = !isAvailable
     }
 
     func chooseImage(_ l: L10n) {
+        if let url = Self.chooseImageURLs(l, multiple: false).first { open(file: url) }
+    }
+
+    static func chooseImageURLs(_ l: L10n, multiple: Bool) -> [URL] {
         let panel = NSOpenPanel()
         panel.title = l.text("dialog.openImage.title")
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
+        panel.allowsMultipleSelection = multiple
         var supportedTypes: [UTType] = [
             .image,
             .pdf,
@@ -398,9 +451,7 @@ final class ImageBrowserStore: ObservableObject {
         panel.allowedContentTypes = supportedTypes
         panel.allowsOtherFileTypes = false
         panel.prompt = l.text("dialog.openImage.action")
-        if panel.runModal() == .OK, let url = panel.url {
-            open(file: url)
-        }
+        return panel.runModal() == .OK ? panel.urls : []
     }
 
     func open(file url: URL) {
@@ -441,6 +492,7 @@ final class ImageBrowserStore: ObservableObject {
         status = nil
         folderScanErrorMessage = nil
         imageLoadFailed = false
+        previewFailure = nil
         folderScanTask?.cancel()
         cancelNavigationPrefetches()
         scanGeneration += 1
@@ -464,6 +516,8 @@ final class ImageBrowserStore: ObservableObject {
             files = []
             selectedIndex = nil
             originalPixelSize = nil
+            pdfPageIndex = 0
+            pdfPageCount = 0
             resetViewport()
         }
 
@@ -603,21 +657,42 @@ final class ImageBrowserStore: ObservableObject {
 
     func select(index: Int) {
         guard files.indices.contains(index) else { return }
+        selectedIndex = index
+        pdfPageIndex = isPDF ? pdfReadingHistory.pageIndex(for: files[index].url) : 0
+        pdfPageCount = 0
+        prefetchNavigationNeighbours(around: index)
+        loadSelectedPage()
+    }
+
+    func previousPage() { if hasPreviousPage { selectPDFPage(pdfPageIndex - 1) } }
+    func nextPage() { if hasNextPage { selectPDFPage(pdfPageIndex + 1) } }
+
+    func selectPDFPage(_ index: Int) {
+        guard isPDF, (0..<pdfPageCount).contains(index), index != pdfPageIndex else { return }
+        pdfPageIndex = index
+        // Record synchronously: switching files before metadata finishes must
+        // still restore the most recently requested page.
+        if let url = selectedURL {
+            pdfReadingHistory.remember(pageIndex: index, for: url)
+        }
+        loadSelectedPage(preserveViewport: true)
+    }
+
+    private func loadSelectedPage(preserveViewport: Bool = false) {
+        guard let url = selectedURL else { return }
         // A print decode belongs to the selected document. Switching images must not
         // later present a print panel for the image the user has already left.
         printPreparationOperation?.cancel()
         printPreparationOperation = nil
         isPreparingPrint = false
-        selectedIndex = index
         originalPixelSize = nil
-        resetViewport()
+        if !preserveViewport { resetViewport() }
         status = nil
         imageLoadFailed = false
+        previewFailure = nil
         selectionGeneration += 1
         let generation = selectionGeneration
-        let url = files[index].url
-
-        prefetchNavigationNeighbours(around: index)
+        let pageIndex = pdfPageIndex
 
         // Replace, rather than merely ignore, stale header reads. This keeps a
         // held arrow key from enqueuing thousands of user-initiated ImageIO or
@@ -636,7 +711,7 @@ final class ImageBrowserStore: ObservableObject {
             let cancellation = ImageOperationCancellation(operation)
             operation.addExecutionBlock { [weak self, weak operation] in
                 guard let operation, operation.isCancelled == false else { return }
-                let pixelSize = ImageMetadataCache.shared.pixelSize(for: url, isCancelled: {
+                let metadata = ImageMetadataCache.shared.metadata(for: url, pageIndex: pageIndex, isCancelled: {
                     cancellation.isCancelled
                 })
                 guard operation.isCancelled == false else { return }
@@ -646,7 +721,16 @@ final class ImageBrowserStore: ObservableObject {
                           generation == self.selectionGeneration,
                           self.selectedURL == url else { return }
                     self.metadataOperation = nil
-                    self.originalPixelSize = pixelSize
+                    self.pdfPageCount = self.isPDF ? (metadata?.pageCount ?? self.pdfPageCount) : 0
+                    // A document may have lost pages since it was last read.
+                    // Restart the normal selection pipeline so rendering, size,
+                    // inspector and print all receive the corrected generation.
+                    if self.isPDF, let metadata, metadata.pageCount > 0,
+                       self.pdfPageIndex >= metadata.pageCount {
+                        self.selectPDFPage(metadata.pageCount - 1)
+                        return
+                    }
+                    self.originalPixelSize = metadata?.pixelSize
                 }
             }
             self.metadataOperation = operation
@@ -840,6 +924,9 @@ final class ImageBrowserStore: ObservableObject {
 
         isPreparingPrint = true
         status = .preparingPrint
+        let pageIndex = pdfPageIndex
+        let rotation = quarterTurn
+        let generation = selectionGeneration
         let paperSize = NSPrintInfo.shared.paperSize
         let printPixelLimit = min(
             5_120,
@@ -856,6 +943,8 @@ final class ImageBrowserStore: ObservableObject {
                 return ImageDecoder.printBitmap(
                     for: url,
                     maxPixelSize: printPixelLimit,
+                    pageIndex: pageIndex,
+                    rotation: rotation,
                     isCancelled: { cancellation.isCancelled }
                 )
             }
@@ -864,7 +953,8 @@ final class ImageBrowserStore: ObservableObject {
                 guard let self, self.printPreparationOperation === preparation else { return }
                 self.printPreparationOperation = nil
                 self.isPreparingPrint = false
-                guard preparation.isCancelled == false, self.selectedURL == url else { return }
+                guard preparation.isCancelled == false, self.selectedURL == url,
+                      self.selectionGeneration == generation else { return }
                 guard let bitmap else {
                     self.status = .printPreparationFailed
                     return

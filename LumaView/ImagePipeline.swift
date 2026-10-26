@@ -469,21 +469,73 @@ enum ImageDecodeQueue {
 struct ImageRenderRequest: Hashable {
     let url: URL?
     let maxPixelSize: Int
+    let selectionGeneration: Int
+    let pageIndex: Int
 
-    init(url: URL?, maxPixelSize: Int) {
+    init(url: URL?, maxPixelSize: Int, selectionGeneration: Int = 0, pageIndex: Int = 0) {
         self.url = url
+        self.selectionGeneration = selectionGeneration
+        self.pageIndex = pageIndex
         // Bucket sizes prevent tiny resize/zoom changes from decoding a fresh image.
         let size = max(1_024, min(maxPixelSize, 5_120))
         self.maxPixelSize = ((size + 511) / 512) * 512
     }
 }
 
+struct ImageDocumentMetadata {
+    let pixelSize: CGSize?
+    let pageCount: Int
+}
+
+enum ImagePreviewFailure: String, CaseIterable, Sendable {
+    case passwordRequired = "preview.passwordRequired"
+    case fileTooLarge = "preview.fileTooLarge"
+    case unreadable = "preview.unreadable"
+    case cannotDecode = "preview.cannotDecode"
+}
+
 enum ImageDecoder {
+    /// Only diagnose after a failed decode, on the render worker.
+    static func previewFailure(for url: URL) -> ImagePreviewFailure {
+        guard FileManager.default.isReadableFile(atPath: url.path) else { return .unreadable }
+        if url.pathExtension.lowercased() == "pdf" {
+            let bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+            if bytes > maximumFallbackSourceBytes { return .fileTooLarge }
+            if let document = CGPDFDocument(url as CFURL), !document.isUnlocked { return .passwordRequired }
+        }
+        return .cannotDecode
+    }
+
     // Formats that cannot provide an ImageIO thumbnail fall back to AppKit. AppKit
     // may instantiate the original representation before our bounded bitmap exists,
     // so reject implausibly large source files/pages before taking that path.
     static let maximumFallbackSourceBytes = 128 * 1024 * 1024
     static let maximumFallbackSourcePixels = 48_000_000
+
+    /// PDF documents are opened only inside a bounded worker operation. Never
+    /// retain all pages or decoded page images in a window's model.
+    static func documentMetadata(
+        for url: URL, pageIndex: Int = 0,
+        isCancelled: @escaping ImageCancellationProbe = { false }
+    ) -> ImageDocumentMetadata? {
+        if url.pathExtension.lowercased() == "pdf" {
+            guard !isCancelled(), fallbackSourceIsWithinBudget(url),
+                  let document = CGPDFDocument(url as CFURL), document.isUnlocked,
+                  document.numberOfPages > 0, !isCancelled() else { return nil }
+            let page = (0..<document.numberOfPages).contains(pageIndex) ? document.page(at: pageIndex + 1) : nil
+            return ImageDocumentMetadata(pixelSize: page.flatMap(pdfPageSize), pageCount: document.numberOfPages)
+        }
+        guard let size = pixelSize(for: url, isCancelled: isCancelled) else { return nil }
+        return ImageDocumentMetadata(pixelSize: size, pageCount: 1)
+    }
+
+    private static func pdfPageSize(_ page: CGPDFPage) -> CGSize? {
+        let size = page.getBoxRect(.cropBox).size
+        guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0,
+              size.width * size.height <= CGFloat(maximumFallbackSourcePixels) else { return nil }
+        return abs(page.rotationAngle % 180) == 90
+            ? CGSize(width: size.height, height: size.width) : size
+    }
 
     /// Reads source dimensions from metadata only. This avoids decoding every pixel merely
     /// to report the viewer's absolute scale relative to the original image.
@@ -492,6 +544,9 @@ enum ImageDecoder {
         isCancelled: @escaping ImageCancellationProbe = { false }
     ) -> CGSize? {
         guard !isCancelled() else { return nil }
+        if url.pathExtension.lowercased() == "pdf" {
+            return documentMetadata(for: url, isCancelled: isCancelled)?.pixelSize
+        }
         if let source = imageSource(for: url, isCancelled: isCancelled),
            let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
            let size = orientedPixelSize(from: properties), !isCancelled() {
@@ -501,8 +556,12 @@ enum ImageDecoder {
         guard url.pathExtension.lowercased() != "sketch",
               !isCancelled(), fallbackSourceIsWithinBudget(url),
               let image = sourceImage(for: url, isCancelled: isCancelled), !isCancelled() else { return nil }
-        let width = image.representations.map { CGFloat($0.pixelsWide) }.max() ?? image.size.width
-        let height = image.representations.map { CGFloat($0.pixelsHigh) }.max() ?? image.size.height
+        // Vector representations (including PDF pages) report zero pixel counts;
+        // their logical page bounds still define the viewer's aspect ratio.
+        let pixelWidth = image.representations.map { CGFloat($0.pixelsWide) }.max() ?? 0
+        let pixelHeight = image.representations.map { CGFloat($0.pixelsHigh) }.max() ?? 0
+        let width = pixelWidth > 0 ? pixelWidth : image.size.width
+        let height = pixelHeight > 0 ? pixelHeight : image.size.height
         guard width > 0, height > 0, width.isFinite, height.isFinite else { return nil }
         return CGSize(width: width, height: height)
     }
@@ -540,9 +599,9 @@ enum ImageDecoder {
     ) -> NSImage? {
         guard !isCancelled() else { return nil }
         guard let url = request.url else { return nil }
-        let key = "\(ImageMemoryCache.cacheKey(for: url))#\(request.maxPixelSize)" as NSString
+        let key = "\(ImageMemoryCache.cacheKey(for: url))#\(request.maxPixelSize)#page:\(request.pageIndex)" as NSString
         if let cached = ImageMemoryCache.shared.renderedImage(for: key) { return cached }
-        guard let image = decode(url: url, maxPixelSize: request.maxPixelSize, isCancelled: isCancelled), !isCancelled() else { return nil }
+        guard let image = decode(url: url, maxPixelSize: request.maxPixelSize, pageIndex: request.pageIndex, isCancelled: isCancelled), !isCancelled() else { return nil }
         ImageMemoryCache.shared.storeRenderedImage(image, for: key, pixelSize: request.maxPixelSize)
         return image
     }
@@ -553,14 +612,34 @@ enum ImageDecoder {
     static func printBitmap(
         for url: URL,
         maxPixelSize: Int,
+        pageIndex: Int = 0,
+        rotation: QuarterTurn = .zero,
         isCancelled: @escaping ImageCancellationProbe = { false }
     ) -> CGImage? {
         guard let image = decode(
             url: url,
             maxPixelSize: max(2_048, min(maxPixelSize, 5_120)),
+            pageIndex: pageIndex,
             isCancelled: isCancelled
-        ), !isCancelled() else { return nil }
-        return image.cgImage(forProposedRect: nil, context: nil, hints: nil)
+        ), !isCancelled(), let bitmap = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        return rotatedPrintBitmap(bitmap, rotation: rotation, isCancelled: isCancelled)
+    }
+
+    static func rotatedPrintBitmap(_ bitmap: CGImage, rotation: QuarterTurn,
+                                   isCancelled: ImageCancellationProbe = { false }) -> CGImage? {
+        guard !isCancelled() else { return nil }
+        guard rotation != .zero else { return bitmap }
+        let width = rotation.swapsAxes ? bitmap.height : bitmap.width
+        let height = rotation.swapsAxes ? bitmap.width : bitmap.height
+        let colorSpace = bitmap.colorSpace?.model == .rgb ? bitmap.colorSpace! : CGColorSpaceCreateDeviceRGB()
+        guard let context = CGContext(data: nil, width: width, height: height,
+            bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.translateBy(x: CGFloat(width) / 2, y: CGFloat(height) / 2)
+        context.rotate(by: -rotation.degrees * .pi / 180)
+        context.draw(bitmap, in: CGRect(x: -CGFloat(bitmap.width) / 2, y: -CGFloat(bitmap.height) / 2,
+                                       width: CGFloat(bitmap.width), height: CGFloat(bitmap.height)))
+        return isCancelled() ? nil : context.makeImage()
     }
 
     /// The image used for printing. Sketch documents print their exported page preview;
@@ -581,9 +660,13 @@ enum ImageDecoder {
     private static func decode(
         url: URL,
         maxPixelSize: Int,
+        pageIndex: Int = 0,
         isCancelled: @escaping ImageCancellationProbe
     ) -> NSImage? {
         guard !isCancelled() else { return nil }
+        if url.pathExtension.lowercased() == "pdf" {
+            return decodePDF(url: url, pageIndex: pageIndex, maxPixelSize: maxPixelSize, isCancelled: isCancelled)
+        }
         guard let source = imageSource(for: url, isCancelled: isCancelled) else {
             guard url.pathExtension.lowercased() != "sketch" else { return nil }
             return fallbackDecode(url: url, maxPixelSize: maxPixelSize, isCancelled: isCancelled)
@@ -598,6 +681,39 @@ enum ImageDecoder {
             return fallbackDecode(url: url, maxPixelSize: maxPixelSize, isCancelled: isCancelled)
         }
         return NSImage(cgImage: cgImage, size: .zero)
+    }
+
+    private static func decodePDF(
+        url: URL, pageIndex: Int, maxPixelSize: Int,
+        isCancelled: ImageCancellationProbe
+    ) -> NSImage? {
+        guard !isCancelled(), fallbackSourceIsWithinBudget(url),
+              let document = CGPDFDocument(url as CFURL), document.isUnlocked,
+              (0..<document.numberOfPages).contains(pageIndex),
+              let page = document.page(at: pageIndex + 1), let size = pdfPageSize(page),
+              !isCancelled() else { return nil }
+        let scale = CGFloat(max(1, min(maxPixelSize, 5_120))) / max(size.width, size.height)
+        let width = max(1, Int((size.width * scale).rounded()))
+        let height = max(1, Int((size.height * scale).rounded()))
+        guard let context = CGContext(
+            data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+        let rect = CGRect(x: 0, y: 0, width: width, height: height)
+        context.setFillColor(CGColor(gray: 1, alpha: 1))
+        context.fill(rect)
+        // getDrawingTransform centres small pages without enlarging them.
+        // First map crop/rotation into page points, then explicitly scale those
+        // points to the bitmap; otherwise Retina/zoom renders acquire white rails.
+        context.scaleBy(x: CGFloat(width) / size.width, y: CGFloat(height) / size.height)
+        context.concatenate(page.getDrawingTransform(
+            .cropBox, rect: CGRect(origin: .zero, size: size), rotate: 0, preserveAspectRatio: true
+        ))
+        guard !isCancelled() else { return nil }
+        context.drawPDFPage(page)
+        guard !isCancelled(), let bitmap = context.makeImage() else { return nil }
+        return NSImage(cgImage: bitmap, size: .zero)
     }
 
     private static func imageSource(for url: URL, isCancelled: @escaping ImageCancellationProbe) -> CGImageSource? {

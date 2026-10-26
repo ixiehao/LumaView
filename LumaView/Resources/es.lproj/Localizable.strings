@@ -7,7 +7,7 @@
 "settings.interface" = "Interfaz";
 "settings.updates" = "Actualizaciones";
 "settings.currentVersion" = "Versión actual";
-"settings.updatePrivacy" = "Solo se consulta la información pública de las versiones de GitHub. Tus imágenes y sus rutas de archivo permanecen en este Mac.";
+"settings.updatePrivacy" = "Busca nuevas versiones en GitHub.";
 "about.menu" = "Acerca de LumaView";
 "about.description" = "Un visor de imágenes nativo y minimalista para Mac.";
 "about.developer" = "Desarrollador";
@@ -112,3 +112,44 @@
 "system.item.showTabBar" = "Mostrar barra de pestañas";
 "system.item.hideTabBar" = "Ocultar barra de pestañas";
 "system.item.showAllTabs" = "Mostrar todas las pestañas";
+
+/* PDF page navigation */
+"pdf.previousPage" = "Página anterior";
+"pdf.nextPage" = "Página siguiente";
+"pdf.pagePosition" = "Página %d de %d";
+"pdf.printPage" = "Imprimir página actual…";
+"metadata.page" = "Página";
+"metadata.pageSize" = "Tamaño de página";
+"settings.general" = "General";
+"settings.defaultApplications" = "Aplicaciones por omisión";
+"defaults.description" = "Elige los formatos de archivo que LumaView abrirá por omisión.";
+"defaults.format" = "Formato";
+"defaults.extensions" = "Extensiones";
+"defaults.currentApplication" = "Aplicación actual";
+"defaults.none" = "Sin configurar";
+"defaults.selectImages" = "Elegir imágenes";
+"defaults.clear" = "Borrar selección";
+"defaults.apply" = "Usar por omisión";
+"defaults.installFirst" = "Mueve LumaView a Aplicaciones antes de configurarla como aplicación por omisión.";
+"defaults.applied" = "Se han actualizado %d formatos.";
+"defaults.failed" = "No se pudo cambiar: %@. Inténtalo de nuevo o usa Obtener información en Finder.";
+"defaults.cancelled" = "Cancelado. Se conservan los cambios ya realizados.";
+"defaults.finderHint" = "Para cambiar todos los archivos de este tipo: Finder → Obtener información → Abrir con → elige otra app → Cambiar todo…";
+
+"menu.openNewWindows" = "Abrir en ventanas nuevas…";
+
+"menu.keepStatusVisible" = "Mostrar siempre la información del archivo";
+
+"preview.passwordRequired" = "Este PDF requiere una contraseña. Desbloquéalo en Vista Previa.";
+
+"preview.fileTooLarge" = "Este PDF supera el límite de vista previa de 128 MB. Ábrelo en Vista Previa.";
+
+"preview.unreadable" = "No se encuentra el archivo o no se puede leer. Comprueba su ubicación y sus permisos.";
+
+"preview.cannotDecode" = "Este Mac no puede decodificar el archivo, o el archivo está dañado. Prueba a abrirlo en Vista Previa.";
+
+"update.checking" = "Buscando…";
+
+"update.later" = "Más tarde";
+
+"defaults.otherCopy" = "%@ (otra copia)";

@@ -7,7 +7,7 @@
 "settings.interface" = "Интерфейс";
 "settings.updates" = "Обновления";
 "settings.currentVersion" = "Текущая версия";
-"settings.updatePrivacy" = "Проверяются только общедоступные данные о выпусках на GitHub. Изображения и пути к файлам остаются на этом Mac.";
+"settings.updatePrivacy" = "Проверка новых версий на GitHub.";
 "about.menu" = "О программе LumaView";
 "about.description" = "Минималистичный нативный просмотрщик изображений для Mac.";
 "about.developer" = "Разработчик";
@@ -112,3 +112,44 @@
 "system.item.showTabBar" = "Показать панель вкладок";
 "system.item.hideTabBar" = "Скрыть панель вкладок";
 "system.item.showAllTabs" = "Показать все вкладки";
+
+/* PDF page navigation */
+"pdf.previousPage" = "Предыдущая страница";
+"pdf.nextPage" = "Следующая страница";
+"pdf.pagePosition" = "Страница %d из %d";
+"pdf.printPage" = "Напечатать текущую страницу…";
+"metadata.page" = "Страница";
+"metadata.pageSize" = "Размер страницы";
+"settings.general" = "Основные";
+"settings.defaultApplications" = "Приложения по умолчанию";
+"defaults.description" = "Выберите форматы файлов, которые LumaView будет открывать по умолчанию.";
+"defaults.format" = "Формат";
+"defaults.extensions" = "Расширения";
+"defaults.currentApplication" = "Текущее приложение";
+"defaults.none" = "Не задано";
+"defaults.selectImages" = "Выбрать изображения";
+"defaults.clear" = "Снять выбор";
+"defaults.apply" = "Назначить по умолчанию";
+"defaults.installFirst" = "Сначала переместите LumaView в папку «Программы».";
+"defaults.applied" = "Обновлено форматов: %d.";
+"defaults.failed" = "Не удалось изменить: %@. Повторите попытку или откройте «Свойства» в Finder.";
+"defaults.cancelled" = "Отменено. Уже внесённые изменения сохранены.";
+"defaults.finderHint" = "Для всех файлов этого типа: Finder → Свойства → Открывать в приложении → выберите другое приложение → Настроить…";
+
+"menu.openNewWindows" = "Открыть в новых окнах…";
+
+"menu.keepStatusVisible" = "Всегда показывать информацию о файле";
+
+"preview.passwordRequired" = "Для этого PDF нужен пароль. Разблокируйте его в приложении «Просмотр».";
+
+"preview.fileTooLarge" = "Этот PDF превышает лимит предпросмотра 128 МБ. Откройте его в приложении «Просмотр».";
+
+"preview.unreadable" = "Файл не найден или недоступен для чтения. Проверьте его расположение и права доступа.";
+
+"preview.cannotDecode" = "Этот Mac не может декодировать файл, либо файл повреждён. Попробуйте открыть его в приложении «Просмотр».";
+
+"update.checking" = "Проверка…";
+
+"update.later" = "Позже";
+
+"defaults.otherCopy" = "%@ (другая копия)";

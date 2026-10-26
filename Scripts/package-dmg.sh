@@ -5,6 +5,7 @@ set -euo pipefail
 # must run release-notarized-dmg.sh with a Developer ID identity and notary profile.
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 OUTPUT_DIR="${OUTPUT_DIR:-$PROJECT_DIR/dist}"
+OUTPUT_DIR="${OUTPUT_DIR:a}"
 STAGE_DIR="$(mktemp -d /tmp/lumaview-dmg.XXXXXX)"
 DERIVED_DATA="$STAGE_DIR/DerivedData"
 APP_PATH="$STAGE_DIR/LumaView.app"
@@ -32,6 +33,10 @@ xcodebuild \
 ditto "$DERIVED_DATA/Build/Products/Release/LumaView.app" "$APP_PATH"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Contents/Info.plist")"
 DMG_PATH="$OUTPUT_DIR/LumaView-$VERSION-universal.dmg"
+[[ ! -e "$DMG_PATH" && ! -L "$DMG_PATH" && ! -e "$DMG_PATH.sha256" && ! -L "$DMG_PATH.sha256" ]] || {
+  print -u2 "Refusing to replace an existing installer or checksum: $DMG_PATH"
+  exit 73
+}
 
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 ARCHITECTURES="$(lipo -archs "$APP_PATH/Contents/MacOS/LumaView")"
@@ -63,6 +68,7 @@ hdiutil detach "$VALIDATION_DEVICE" -quiet
 VALIDATION_DEVICE=""
 (
   cd "$OUTPUT_DIR"
+  setopt NO_CLOBBER
   shasum -a 256 "$(basename "$DMG_PATH")" > "$(basename "$DMG_PATH").sha256"
 )
 print "Created internal QA package: $DMG_PATH"

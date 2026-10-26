@@ -4,28 +4,61 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
-## Unreleased
+## 1.3.0 — 2026-10-26
 
 ### English
 
+- Keep zoom and rotation when turning PDF pages; automatically fade the information overlay while reading.
+- Print images and PDF pages in their displayed rotation, and open multiple dropped files in separate windows.
+- Clarify preview failures and default-app copies, and show progress and results for manual update checks.
+
+- Lower the minimum system version to macOS 12 Monterey, with a universal build for Intel and Apple Silicon.
+- Browse multi-page PDFs with page controls, ↑ / ↓ or Page Up / Page Down. The window follows each page's proportions; Image Information and printing use the current page.
+- Return to the last-read PDF page after switching files in the same window.
+- Redesign Settings with native General and Default Applications tabs. Choose common image formats or PDF to open with LumaView by default.
+- Fix PDF Up / Down navigation on Monterey by handling page keys in the document window.
 - Add French, Russian, Spanish, and Korean. English appears first in both language selectors; existing language preferences are preserved.
 - Replace both rotation icons with clearer directional arrows from Tabler Icons.
 - Keep native menu translations and the full-screen shortcut working after menu updates.
 - Update existing error messages when the language changes, and avoid showing a preview failure while a window is paused in the background.
+- Refit the window when reopening an edited image at the same path, and size PDF previews to their page proportions.
+- Correct fractional-second exposure values in Image Information and resume automatic update checks after a system clock rollback.
 
 ### 中文
 
+- PDF 翻页保留缩放和旋转；阅读时底部信息自动淡出，也可保持显示。
+- 打印采用当前旋转方向，批量拖入图片可分别打开窗口。
+- 明确预览失败原因和默认应用副本，手动检查更新增加进度与结果反馈。
+
+- 最低系统降至 macOS 12 Monterey，继续提供 Intel 与 Apple Silicon 通用版。
+- 支持多页 PDF，通过页码控件、↑ / ↓ 或 Page Up / Page Down 翻页。窗口适应各页比例，信息面板显示当前页信息，并可打印当前页。
+- 在同一窗口切换文件后返回 PDF，继续阅读上次的页码。
+- 设置窗口改为原生“通用”和“默认应用”分页，可按常见图片格式或 PDF 设置默认打开方式。
+- 修复 Monterey 上 PDF 上下键翻页不生效的问题，由文档窗口直接处理页面按键。
 - 新增法语、俄语、西班牙语和韩语；菜单与设置中的 English 均置于首位，保留已有语言偏好。
 - 更换一对方向更清晰的 Tabler 旋转图标。
 - 修复菜单刷新后原生菜单译文丢失、全屏快捷键失效的问题。
 - 切换语言时同步更新已有错误提示；后台暂停画布时不再误显示预览失败。
+- 同路径图片编辑后重新打开时，窗口适配新尺寸；PDF 预览按页面比例显示。
+- 修正图片信息中的小数秒曝光值，以及系统时间回拨后自动更新检查不运行的问题。
 
 ### 日本語
 
+- PDF のページを切り替えても拡大率と回転を保持します。閲覧中は情報表示が自動的に消え、常時表示も選べます。
+- 表示中の向きでプリントでき、複数のファイルをドロップすると個別のウインドウで開きます。
+- プレビューできない理由や別のアプリのコピーを明示し、アップデート確認の進行状況と結果を表示します。
+
+- 対応する最小 OS を macOS 12 Monterey に変更しました。Intel と Apple Silicon に対応するユニバーサルビルドを提供します。
+- 複数ページの PDF に対応しました。ページ操作ボタン、↑ / ↓、Page Up / Page Down で移動でき、ウインドウは各ページの縦横比に合わせて調整されます。情報表示とプリントも現在のページに対応します。
+- 同じウインドウで別のファイルに切り替えてから PDF に戻ると、最後に開いていたページから読み続けられます。
+- 設定をネイティブの「一般」と「デフォルトのアプリ」タブに整理しました。一般的な画像形式や PDF を LumaView で開くよう設定できます。
+- Monterey で PDF の上下矢印キーが効かない問題を修正し、書類ウインドウでページ操作キーを直接処理するようにしました。
 - フランス語、ロシア語、スペイン語、韓国語を追加。言語メニューと設定では English を先頭に表示し、選択済みの言語は維持します。
 - 回転方向が分かりやすい Tabler Icons のアイコンに変更しました。
 - メニュー更新後に翻訳が元に戻る問題と、フルスクリーンのショートカットが使えなくなる問題を修正しました。
 - 言語を変更すると表示中のエラーメッセージも切り替わります。バックグラウンドで画像表示を一時停止している間に、プレビュー失敗と表示される問題を修正しました。
+- 同じパスの画像を編集後に開き直すと、新しいサイズに合わせてウインドウを調整します。PDF プレビューもページの縦横比に合わせて表示します。
+- 画像情報の小数秒の露光時間を正しく表示し、システム時刻を戻した後も自動更新チェックが再開するよう修正しました。
 
 ## 1.2.9 — 2026-10-25
 

@@ -5,7 +5,7 @@ Start with the [product README](../README.md) and [contributing guide](../CONTRI
 | Stage | Guide |
 | --- | --- |
 | Develop | [Development and repository layout](DEVELOPMENT.md) |
-| Verify | [QA checklist](QA.md) · [2026-10-25 quality review](QUALITY-REVIEW-20261025.md) · [Performance baseline](PERFORMANCE_BASELINE.md) |
+| Verify | [QA checklist](QA.md) · [Product fixes](PRODUCT-FIXES-20261026.md) · [PDF / Monterey verification](PDF-MONTEREY-20261026.md) · [2026-10-26 engineering review](ENGINEERING-REVIEW-20261026.md) · [2026-10-25 quality review](QUALITY-REVIEW-20261025.md) · [Performance baseline](PERFORMANCE_BASELINE.md) |
 | Package and release | [Release procedure](RELEASE.md) · [Installer build](INSTALLER-BUILD.md) · [Changelog](../CHANGELOG.md) |
 | Maintain the website | [Website guide](WEBSITE.md) |
 | Protect users and respect rights | [Privacy](../PRIVACY.md) · [Security](../SECURITY.md) · [License](../LICENSE) · [Third-party notices](../THIRD-PARTY-NOTICES.md) · [Demo assets](assets/README_DEMO_ASSETS.md) |

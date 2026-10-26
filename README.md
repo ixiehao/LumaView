@@ -5,9 +5,9 @@
 Open an image and browse the rest of its folder. LumaView keeps the picture in
 focus, with the everyday controls close at hand.
 
-**[Download LumaView 1.2.9 · Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.9/LumaView-1.2.9-universal.dmg)** · [Website](https://ixiehao.github.io/LumaView/?lang=en) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Changelog](CHANGELOG.md)
+**[Download LumaView 1.3.0 · Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg)** · [Website](https://ixiehao.github.io/LumaView/en/) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Changelog](CHANGELOG.md)
 
-macOS 13+ · Intel + Apple Silicon · Universal DMG · ~2 MB
+macOS 12+ · Intel + Apple Silicon · Universal DMG · ~2.5 MB
 
 ## LumaView in use
 
@@ -21,11 +21,14 @@ macOS 13+ · Intel + Apple Silicon · Universal DMG · ~2 MB
 - **See the image clearly** — fit, zoom, pan, rotate, and print; the status bar shows the actual zoom level.
 - **Inspect only when needed** — one toolbar button reveals file facts and the EXIF data embedded in the current image, without a separate folder-wide metadata scan or library.
 - **Open the formats you meet every day** — JPEG, PNG, HEIC, GIF, TIFF, BMP, ICO, WebP, PDF, many macOS-supported RAW files, and `.sketch` previews.
-- **Built for the Mac** — native SwiftUI, English, Simplified Chinese, and Japanese; Light / Dark / System appearance; Intel and Apple Silicon support.
+- **Built for the Mac** — native SwiftUI, English, Chinese, French, Russian, Spanish, Japanese, and Korean; Light / Dark / System appearance; Intel and Apple Silicon support.
+
+- **Read PDFs** — turn pages with `↑` / `↓`; keep your page, zoom and rotation while reading.
+- **Choose default formats** — set LumaView as the default viewer from Settings.
 
 ## Install
 
-1. [Download the Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.2.9/LumaView-1.2.9-universal.dmg).
+1. [Download the Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg).
 2. Open it and drag **LumaView.app** to **Applications**.
 3. Open LumaView from Applications. To open an image directly, Control-click it in Finder and choose **Open With → LumaView**.
 
@@ -39,7 +42,7 @@ Messages vary by macOS version: the developer may be unverified, or Apple may be
 
 | macOS version | Settings path |
 | --- | --- |
-| macOS 12 Monterey (Monterey test build) | Apple menu → **System Preferences → Security & Privacy → General** |
+| macOS 12 Monterey | Apple menu → **System Preferences → Security & Privacy → General** |
 | macOS 13 Ventura or later | Apple menu → **System Settings → Privacy & Security**, then scroll to **Security** |
 
 If **Open Anyway** is missing, try opening LumaView again, then return to settings. A damaged-app or malware warning is different: stop and download a fresh copy from the project or report the issue instead of overriding it.
@@ -57,6 +60,9 @@ The DMG is only the installer. Removing it never removes LumaView or your images
 | Action | Shortcut |
 | --- | --- |
 | Open file | `⌘ O` |
+| Open files in new windows | `⌘ ⇧ O` |
+| Previous / next PDF page | `↑` / `↓` |
+| Keep file information visible | `⌃ ⌘ I` |
 | Previous / next image | `←` / `→` |
 | Zoom in / out | `⌘ +` / `⌘ -` |
 | Fit image | `⌘ 0` |

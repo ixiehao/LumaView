@@ -24,6 +24,7 @@ fi
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 OUTPUT_DIR="${OUTPUT_DIR:-$PROJECT_DIR/dist}"
+OUTPUT_DIR="${OUTPUT_DIR:a}"
 STAGE_DIR="$(mktemp -d /tmp/lumaview-release.XXXXXX)"
 DERIVED_DATA="$STAGE_DIR/DerivedData"
 APP_PATH="$STAGE_DIR/LumaView.app"
@@ -51,6 +52,10 @@ xcodebuild \
 ditto "$DERIVED_DATA/Build/Products/Release/LumaView.app" "$APP_PATH"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Contents/Info.plist")"
 DMG_PATH="$OUTPUT_DIR/LumaView-$VERSION-universal-notarized.dmg"
+[[ ! -e "$DMG_PATH" && ! -L "$DMG_PATH" && ! -e "$DMG_PATH.sha256" && ! -L "$DMG_PATH.sha256" ]] || {
+  print -u2 "Refusing to replace an existing installer or checksum: $DMG_PATH"
+  exit 73
+}
 
 # Sign the final, immutable app bundle with hardened runtime and a secure timestamp.
 codesign --force --sign "$DEVELOPER_ID_APPLICATION" --options runtime --timestamp "$APP_PATH"
@@ -84,5 +89,9 @@ MOUNTED_ARCHITECTURES="$(lipo -archs "$MOUNT_DIR/LumaView.app/Contents/MacOS/Lum
 spctl --assess --type execute --verbose=4 "$MOUNT_DIR/LumaView.app"
 hdiutil detach "$VALIDATION_DEVICE" -quiet
 VALIDATION_DEVICE=""
-shasum -a 256 "$DMG_PATH" > "$DMG_PATH.sha256"
+(
+  cd "$OUTPUT_DIR"
+  setopt NO_CLOBBER
+  shasum -a 256 "$(basename "$DMG_PATH")" > "$(basename "$DMG_PATH").sha256"
+)
 print "Created notarized public release: $DMG_PATH"

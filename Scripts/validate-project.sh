@@ -26,6 +26,9 @@ trap cleanup EXIT
 
 cd "$PROJECT_DIR"
 
+# Fast offline regression checks for installer output safety.
+python3 Scripts/test-packaging.py
+
 # Run core and UI tests in one locally signed XCTest session. Splitting macOS UI
 # automation into a second `xcodebuild` process can leave the accessibility service
 # claimed by the first runner, producing a false timeout before UI tests even start.
@@ -50,11 +53,23 @@ xcodebuild \
   build
 
 RELEASE_BINARY="$DERIVED_DATA/Build/Products/Release/LumaView.app/Contents/MacOS/LumaView"
+RELEASE_PLIST="$DERIVED_DATA/Build/Products/Release/LumaView.app/Contents/Info.plist"
+[[ "$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$RELEASE_PLIST")" == "12.0" ]] || {
+  print -u2 "Release app must support macOS 12.0."
+  exit 1
+}
 RELEASE_ARCHITECTURES="$(lipo -archs "$RELEASE_BINARY")"
 [[ " $RELEASE_ARCHITECTURES " == *" arm64 "* && " $RELEASE_ARCHITECTURES " == *" x86_64 "* ]] || {
   print -u2 "Release build must contain both arm64 and x86_64 slices; found: $RELEASE_ARCHITECTURES"
   exit 1
 }
+for architecture in arm64 x86_64; do
+  minimum_os="$(xcrun vtool -arch "$architecture" -show-build "$RELEASE_BINARY" | awk '/minos/ {print $2}')"
+  [[ "$minimum_os" == "12.0" ]] || {
+    print -u2 "Release $architecture slice requires macOS $minimum_os, expected 12.0."
+    exit 1
+  }
+done
 
 if [[ "${LUMAVIEW_RUN_STRESS_TEST:-0}" == "1" ]]; then
   STRESS_BINARY="$STAGE_DIR/lumaview-stress"

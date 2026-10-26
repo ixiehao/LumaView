@@ -12,10 +12,20 @@ struct ImageCanvasView: View {
     @Environment(\.displayScale) private var displayScale
     @State private var image: NSImage?
     @State private var displayedURL: URL?
+    @State private var displayedGeneration: Int?
     @State private var decodedURL: URL?
     @State private var isLoading = false
     @State private var activeRequest: ImageRenderRequest?
+    @State private var previewSuppressedGeneration: Int?
     @State private var renderOperation: Operation?
+    @State private var statusIsRecent = true
+    @State private var statusIsHovered = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var showsStatus: Bool {
+        statusIsRecent || statusIsHovered || browser.keepsStatusVisible
+            || NSWorkspace.shared.isVoiceOverEnabled || browser.displayStatusMessage(l) != nil
+    }
     @GestureState private var gestureScale: CGFloat = 1
 
     var body: some View {
@@ -32,6 +42,7 @@ struct ImageCanvasView: View {
                 isSuspended: browser.isCanvasRenderingSuspended
             )
             let isCurrentImage = displayedURL == browser.selectedURL
+                && displayedGeneration == browser.selectionGeneration
             // Keep the local value distinct from the helper method. Swift 5.10
             // otherwise resolves the name to itself inside `flatMap`, which
             // breaks a documented Xcode 15 source build.
@@ -64,7 +75,23 @@ struct ImageCanvasView: View {
                 VStack {
                     Spacer()
                     statusLine(absoluteZoomPercent: renderedZoomPercent)
+                        .opacity(showsStatus ? 1 : 0)
+                        .allowsHitTesting(showsStatus)
+                        .accessibilityHidden(!showsStatus)
                 }
+                VStack {
+                    Spacer()
+                    StatusHoverRegion { statusIsHovered = $0 }
+                        .frame(height: browser.hasMultiplePDFPages ? 90 : 60)
+                }
+                .accessibilityHidden(true)
+            }
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: showsStatus)
+            .task(id: "\(browser.selectionGeneration)-\(browser.zoom)-\(browser.quarterTurn.rawValue)") {
+                statusIsRecent = true
+                do { try await Task.sleep(nanoseconds: 2_500_000_000) }
+                catch { return }
+                statusIsRecent = false
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .task(id: renderTask) {
@@ -104,7 +131,7 @@ struct ImageCanvasView: View {
 
         return Group {
             if let layout {
-                ScrollView([.horizontal, .vertical]) {
+                ScrollView([.horizontal, .vertical], showsIndicators: false) {
                     Image(nsImage: image)
                         .resizable()
                         .interpolation(.high)
@@ -132,7 +159,6 @@ struct ImageCanvasView: View {
                         )
                         .onTapGesture(count: 2) { browser.fitImage() }
                 }
-                .scrollIndicators(.hidden)
             } else {
                 emptyCanvas
             }
@@ -141,7 +167,7 @@ struct ImageCanvasView: View {
         // Scroll views do not reliably expose an AXValue on every macOS release.
         // Put the rotation in the accessible name as well, so VoiceOver and UI
         // regression tests can both observe the state change after a toolbar action.
-        .accessibilityLabel("\(browser.selectedFile?.name ?? "LumaView"), \(Int(rotation.degrees))°")
+        .accessibilityLabel("\(browser.selectedFile?.name ?? "LumaView"), \(Int(rotation.degrees))°" + (browser.hasMultiplePDFPages ? ", " + l.text("pdf.pagePosition", browser.pdfPageIndex + 1, browser.pdfPageCount) : ""))
         .accessibilityValue("\(absoluteZoomPercent ?? Int((browser.zoom * 100).rounded()))%, \(Int(rotation.degrees))°")
         .accessibilityIdentifier("image.rendered.\(browser.selectedFile?.name ?? "unknown")")
     }
@@ -203,24 +229,60 @@ struct ImageCanvasView: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .frame(maxWidth: 320)
-            Button(l.text("button.openImage")) { browser.chooseImage(l) }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+            Text(l.text((browser.previewFailure ?? .cannotDecode).rawValue))
+                .font(.callout).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center).frame(maxWidth: 360)
+            HStack {
+                Button(l.text("menu.reveal")) { browser.revealInFinder() }
+                Button(l.text("button.openImage")) { browser.chooseImage(l) }
+            }
+            .buttonStyle(.bordered).controlSize(.small)
         }
         .padding(30)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(l.text("canvas.noPreview")) \(selected.name)")
+        .accessibilityLabel("\(l.text("canvas.noPreview")) \(selected.name). \(l.text((browser.previewFailure ?? .cannotDecode).rawValue))")
         .accessibilityIdentifier("canvas.unavailable.\(selected.name)")
     }
 
     private func statusLine(absoluteZoomPercent: Int?) -> some View {
+        VStack(spacing: 2) {
+            if browser.hasMultiplePDFPages {
+                HStack(spacing: 8) {
+                    LumaIconButton(kind: .previousPage, label: l.text("pdf.previousPage")) { browser.previousPage() }
+                        .disabled(!browser.hasPreviousPage)
+                        .help(l.text("pdf.previousPage") + " (↑ / Fn + ↑)")
+                        .accessibilityIdentifier("pdf.previousPage")
+                    Text(l.text("pdf.pagePosition", browser.pdfPageIndex + 1, browser.pdfPageCount))
+                        .font(.system(size: 12, weight: .medium))
+                        .monospacedDigit()
+                        .accessibilityIdentifier("pdf.pagePosition")
+                    LumaIconButton(kind: .nextPage, label: l.text("pdf.nextPage")) { browser.nextPage() }
+                        .disabled(!browser.hasNextPage)
+                        .help(l.text("pdf.nextPage") + " (↓ / Fn + ↓)")
+                        .accessibilityIdentifier("pdf.nextPage")
+                }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("pdf.navigation")
+            }
+            fileStatusLine(absoluteZoomPercent: absoluteZoomPercent)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+        .padding(14)
+        .opacity(browser.selectedFile == nil && browser.displayStatusMessage(l) == nil ? 0 : 1)
+    }
+
+    private func fileStatusLine(absoluteZoomPercent: Int?) -> some View {
         HStack(spacing: 8) {
             if let selected = browser.selectedFile {
                 Text(selected.name)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                statusDot
-                Text(browser.positionText).monospacedDigit()
+                if !browser.hasMultiplePDFPages {
+                    statusDot
+                    Text(browser.positionText).monospacedDigit()
+                }
                 statusDot
                 Text(absoluteZoomPercent.map { "\($0)%" } ?? "—")
                     .monospacedDigit()
@@ -235,17 +297,13 @@ struct ImageCanvasView: View {
         }
         .font(.system(size: 10.5, weight: .medium, design: .rounded))
         .foregroundStyle(.secondary)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.ultraThinMaterial, in: Capsule())
-        .padding(14)
-        .opacity(browser.selectedFile == nil && browser.displayStatusMessage(l) == nil ? 0 : 1)
         // A combined status line gives VoiceOver one concise announcement and
         // gives the multi-window UI gate a stable way to wait for folder
         // indexing before it sends a navigation command.
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("image.status")
         .accessibilityLabel(browser.statusAccessibilityLabel(l))
+        .accessibilityValue(absoluteZoomPercent.map { "\($0)%" } ?? "")
     }
 
     private var statusDot: some View {
@@ -272,8 +330,8 @@ struct ImageCanvasView: View {
         let displayed = CGSize(
             // SwiftUI layout uses points; the source dimensions are physical
             // pixels. Include the display backing scale for an absolute value.
-            width: fitted.width * displayScale,
-            height: fitted.height * displayScale
+            width: fitted.width * (browser.isPDF ? 1 : displayScale),
+            height: fitted.height * (browser.isPDF ? 1 : displayScale)
         )
         let scale = min(displayed.width / original.width, displayed.height / original.height)
         guard scale.isFinite, scale >= 0 else { return nil }
@@ -290,16 +348,29 @@ struct ImageCanvasView: View {
         let zoomDemand = min(max(browser.zoom, 1), 4)
         let longestCanvasEdge = max(container.width, container.height)
         let calculatedTarget = Int(longestCanvasEdge * displayScale * zoomDemand * 1.25)
-        return ImageRenderRequest(url: browser.selectedURL, maxPixelSize: calculatedTarget)
+        return ImageRenderRequest(
+            url: browser.selectedURL,
+            maxPixelSize: calculatedTarget,
+            selectionGeneration: browser.selectionGeneration,
+            pageIndex: browser.pdfPageIndex
+        )
     }
 
     private func prepareImageLoad(for request: ImageRenderRequest) {
         guard activeRequest != request else { return }
         renderOperation?.cancel()
+        if activeRequest?.url == request.url,
+           activeRequest?.selectionGeneration != request.selectionGeneration {
+            // A same-path reopen may follow an external edit. Do not stamp an
+            // optimistic old preview with the new selection's identity. Keep
+            // this decision through the metadata-driven window resize too.
+            previewSuppressedGeneration = request.selectionGeneration
+        }
         activeRequest = request
         guard let url = request.url else {
             image = nil
             displayedURL = nil
+            displayedGeneration = nil
             decodedURL = nil
             isLoading = false
             return
@@ -308,11 +379,13 @@ struct ImageCanvasView: View {
         // A resize/zoom can request a sharper decode of the same image. Keep
         // its current pixels until that decode completes, avoiding a flash or
         // a downgrade to the navigation preview. Never keep a different file.
-        if displayedURL != url || image == nil {
+        if displayedURL != url || displayedGeneration != request.selectionGeneration || image == nil {
             decodedURL = nil
-            let preview = ImageMemoryCache.shared.hotNavigationPreview(for: url)
+            let preview = previewSuppressedGeneration == request.selectionGeneration || request.pageIndex != 0
+                ? nil : ImageMemoryCache.shared.hotNavigationPreview(for: url)
             image = preview
             displayedURL = preview == nil ? nil : url
+            displayedGeneration = preview == nil ? nil : request.selectionGeneration
         }
         isLoading = true
     }
@@ -323,6 +396,7 @@ struct ImageCanvasView: View {
         activeRequest = nil
         image = nil
         displayedURL = nil
+        displayedGeneration = nil
         decodedURL = nil
         isLoading = false
     }
@@ -343,25 +417,53 @@ struct ImageCanvasView: View {
                 })
             }
             guard operation?.isCancelled == false else { return }
+            let failure = decoded == nil ? request.url.map(ImageDecoder.previewFailure) : nil
             DispatchQueue.main.async {
-                guard renderOperation === operation, activeRequest == request, operation?.isCancelled == false else { return }
+                guard renderOperation === operation, activeRequest == request,
+                      browser.selectionGeneration == request.selectionGeneration,
+                      browser.selectedURL == request.url,
+                      operation?.isCancelled == false else { return }
                 // A failed resolution upgrade should not erase an already
                 // usable image. A new URL still reports its normal decode error.
                 if let decoded {
                     image = decoded
                     displayedURL = request.url
+                    displayedGeneration = request.selectionGeneration
                     decodedURL = request.url
                 } else if decodedURL != request.url {
                     // A navigation preview is only a bridge, not proof that
                     // this file still decodes successfully.
                     image = nil
                     displayedURL = nil
+                    displayedGeneration = nil
                 }
                 isLoading = false
-                browser.reportImageLoadResult(isAvailable: image != nil)
+                browser.reportImageLoadResult(isAvailable: image != nil, failure: failure)
             }
         }
         renderOperation = operation
         ImageDecodeQueue.renders.addOperation(operation)
+    }
+}
+
+/// Track the bottom edge without intercepting image clicks, scrolling or keys.
+/// NSTrackingArea is available on Monterey; no application-wide monitor is needed.
+private struct StatusHoverRegion: NSViewRepresentable {
+    var onHover: (Bool) -> Void
+    func makeNSView(context: Context) -> TrackingView { TrackingView(onHover: onHover) }
+    func updateNSView(_ view: TrackingView, context: Context) { view.onHover = onHover }
+
+    final class TrackingView: NSView {
+        var onHover: (Bool) -> Void
+        init(onHover: @escaping (Bool) -> Void) { self.onHover = onHover; super.init(frame: .zero) }
+        required init?(coder: NSCoder) { nil }
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+        override func updateTrackingAreas() {
+            super.updateTrackingAreas()
+            trackingAreas.forEach(removeTrackingArea)
+            addTrackingArea(NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self))
+        }
+        override func mouseEntered(with event: NSEvent) { onHover(true) }
+        override func mouseExited(with event: NSEvent) { onHover(false) }
     }
 }

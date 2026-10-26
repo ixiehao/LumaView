@@ -48,44 +48,20 @@ struct ContentView: View {
                     .padding(20)
             }
         }
-        .alert(l.text("update.check.title"), isPresented: updateNoticeBinding) {
-            Button(l.text("button.ok"), role: .cancel) {
-                updateChecker.dismissNotice()
-            }
-        } message: {
-            Text(updateNoticeMessage)
-        }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(windowAccessibilityIdentifier.map { "window.document.\($0)" } ?? "window.welcome")
     }
 
-    private var updateNoticeBinding: Binding<Bool> {
-        Binding(
-            get: { updateChecker.notice != nil },
-            set: { isPresented in
-                if !isPresented { updateChecker.dismissNotice() }
-            }
-        )
-    }
-
-    private var updateNoticeMessage: String {
-        switch updateChecker.notice {
-        case .upToDate:
-            l.text("update.check.upToDate")
-        case .unavailable:
-            l.text("update.check.unavailable")
-        case nil:
-            ""
-        }
-    }
-
     private func receiveDrop(providers: [NSItemProvider]) -> Bool {
-        guard let provider = providers.first else { return false }
-        provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
-            guard let data = item as? Data,
-                  let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
-            DispatchQueue.main.async {
+        guard providers.contains(where: { $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) }) else { return false }
+        Task { @MainActor in
+            let urls = await DocumentDrop.fileURLs(from: providers)
+            if urls.count == 1, let url = urls.first {
                 browser.open(url: url)
+            } else {
+                let images = urls.filter(ImageFile.canOpen)
+                if images.isEmpty, let url = urls.first { browser.open(url: url) }
+                else { LumaViewWindowRegistry.shared.openDocumentWindows(for: images) }
             }
         }
         return true
@@ -123,5 +99,28 @@ struct LumaWordmark: View {
         .fixedSize()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("LumaView")
+    }
+}
+
+/// Resolve every dropped file in its original order. No window/UI work happens
+/// in item-provider callbacks, and duplicate aliases are opened only once.
+@MainActor
+enum DocumentDrop {
+    static func fileURLs(from providers: [NSItemProvider]) async -> [URL] {
+        var urls: [URL] = []
+        var seen = Set<URL>()
+        for provider in providers where provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+            let url: URL? = await withCheckedContinuation { continuation in
+                provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
+                    let url = (item as? URL) ?? (item as? Data).flatMap { URL(dataRepresentation: $0, relativeTo: nil) }
+                    continuation.resume(returning: url)
+                }
+            }
+            if let url, url.isFileURL {
+                let canonical = url.standardizedFileURL.resolvingSymlinksInPath()
+                if seen.insert(canonical).inserted { urls.append(canonical) }
+            }
+        }
+        return urls
     }
 }
