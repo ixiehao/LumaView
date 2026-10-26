@@ -1182,6 +1182,9 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         item.paletteLabel = label
         item.toolTip = label
         item.view = button
+        // AppKit forwards overflow selections through the toolbar item itself.
+        item.target = self
+        item.action = #selector(informationToolbarAction)
         let overflowItem = NSMenuItem(title: label, action: #selector(informationToolbarAction), keyEquivalent: "")
         overflowItem.target = self
         overflowItem.image = button.image
@@ -1252,15 +1255,19 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             guard let operation, !operation.isCancelled else { return }
             let information = autoreleasepool { ImageInformationReader.read(from: selectedURL, pageIndex: pageIndex) }
             guard !operation.isCancelled else { return }
-            DispatchQueue.main.async { [weak self, weak anchor] in
-                guard let self, self.informationOperation === operation,
-                      !operation.isCancelled,
-                      self.browser.selectedURL == selectedURL,
-                      self.browser.selectionGeneration == selectionGeneration,
-                      self.window?.isVisible == true else { return }
-                self.informationOperation = nil
-                self.informationRequestedURL = nil
-                self.presentInformationPopover(information, for: selectedURL, anchor: anchor)
+            // Menu actions may complete while AppKit is still tracking the
+            // overflow menu. Present only after that tracking loop has ended.
+            RunLoop.main.perform(inModes: [.default]) { [weak self, weak anchor] in
+                DispatchQueue.main.async { [weak self, weak anchor] in
+                    guard let self, self.informationOperation === operation,
+                          !operation.isCancelled,
+                          self.browser.selectedURL == selectedURL,
+                          self.browser.selectionGeneration == selectionGeneration,
+                          self.window?.isVisible == true else { return }
+                    self.informationOperation = nil
+                    self.informationRequestedURL = nil
+                    self.presentInformationPopover(information, for: selectedURL, anchor: anchor)
+                }
             }
         }
         informationOperation = operation
@@ -1292,7 +1299,8 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         informationPopover = popover
         informationPopoverDocumentURL = documentURL
         resizeInformationPopover()
-        if let anchor {
+        if let anchor, anchor.window === window,
+           !anchor.isHiddenOrHasHiddenAncestor, !anchor.visibleRect.isEmpty {
             popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
         } else {
             // A toolbar item moved into the overflow menu sends an NSMenuItem,

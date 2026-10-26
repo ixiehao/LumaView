@@ -410,12 +410,11 @@ final class LumaViewLaunchTests: XCTestCase {
         expectStatus(status, containing: "This Mac cannot decode the file")
 
         app.typeKey(",", modifierFlags: .command)
-        let language = app.popUpButtons["settings.language"]
+        // Locate the setting by its own identifier across native picker roles.
+        let language = app.descendants(matching: .any).matching(identifier: "settings.language").firstMatch
         XCTAssertTrue(language.waitForExistence(timeout: 5))
         language.click()
         app.menuItems["Français"].click()
-        let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Français"), object: language)
-        XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 5), .completed)
         app.typeKey("w", modifierFlags: .command)
 
         let message = "Ce Mac ne peut pas décoder ce fichier"

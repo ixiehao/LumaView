@@ -52,7 +52,6 @@ struct LumaSettingsView: View {
         .background(Color(nsColor: .windowBackgroundColor))
         .preferredColorScheme(appearance.colorScheme)
         .environment(\.locale, language.locale)
-        .accessibilityIdentifier("settings.root")
         .navigationTitle(l.text("settings.title"))
 
     }
