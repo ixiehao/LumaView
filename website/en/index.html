@@ -64,7 +64,7 @@
   "description": "A minimal native image viewer for Mac."
 }
     </script>
-    <link rel="stylesheet" href="../styles.css?v=20261026-static-locales" />
+    <link rel="stylesheet" href="../styles.css?v=20261026-install-dialog" />
   </head>
   <body>
     <header class="nav wrap">
@@ -91,7 +91,7 @@
             <a class="button button-primary" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">Download v1.3.0</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a>
             <a class="button button-secondary" href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer"><span data-i18n="sourceButton">View source</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#brand-github"></use></svg></a>
           </div>
-          <p><a class="install-guide" href="https://github.com/ixiehao/LumaView/blob/main/README.md#if-macos-blocks-the-first-launch" data-i18n="installGuide">Installation and first launch</a></p>
+          <div class="install-help"><button class="install-guide" type="button" data-install-guide aria-haspopup="dialog" aria-controls="install-dialog"><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261026-install#info-circle"></use></svg><span data-i18n="installGuide">Installation and first launch</span></button></div>
           <p class="compatibility" data-i18n="compatibility">macOS 12+ · Intel + Apple Silicon</p>
         </div>
 
@@ -146,7 +146,7 @@
             <p class="eyebrow"><span data-i18n="readyEyebrow">Start viewing</span></p>
             <h2 data-i18n="downloadTitle">Download<br /><em>LumaView for free.</em></h2>
           </div>
-          <div class="download-actions"><a class="button button-light" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">Download v1.3.0</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a><a class="install-guide" href="https://github.com/ixiehao/LumaView/blob/main/README.md#if-macos-blocks-the-first-launch" data-i18n="installGuide">Installation and first launch</a><p data-i18n="downloadNote">macOS 12+ · Universal · About 2.5 MB</p></div>
+          <div class="download-actions"><a class="button button-light" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">Download v1.3.0</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a><button class="install-guide" type="button" data-install-guide aria-haspopup="dialog" aria-controls="install-dialog"><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261026-install#info-circle"></use></svg><span data-i18n="installGuide">Installation and first launch</span></button><p data-i18n="downloadNote">macOS 12+ · Universal · About 2.5 MB</p></div>
         </div>
       </section>
     </main>
@@ -156,6 +156,21 @@
       <p data-i18n="footerTagline">A local native image viewer · by ixiehao</p>
       <div><a href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer">GitHub</a><a href="https://github.com/ixiehao/LumaView/issues" target="_blank" rel="noreferrer" data-i18n="footerIssues">Feedback</a><a href="https://github.com/ixiehao/LumaView/releases" target="_blank" rel="noreferrer" data-i18n="footerReleases">Releases</a></div>
     </footer>
-    <script src="../app.js?v=20261026-static-locales"></script>
+    <dialog id="install-dialog" class="install-dialog" aria-labelledby="install-title">
+      <div class="install-heading">
+        <h2 id="install-title" data-i18n="installTitle">Install and open LumaView</h2>
+        <button class="dialog-close" type="button" data-close-dialog autofocus data-i18n="installClose">Close</button>
+      </div>
+      <p data-i18n="installStep">Open the downloaded DMG, drag <strong>LumaView.app</strong> into <strong>Applications</strong>, then open it from Applications.</p>
+      <h3 data-i18n="installSecurityTitle">If macOS cannot verify the developer</h3>
+      <p data-i18n="installSecurityIntro">Make sure the installer came from LumaView’s GitHub Releases. Try opening the app once, then go to security settings:</p>
+      <dl class="security-paths">
+        <div><dt>macOS 12 Monterey</dt><dd data-i18n="installMonterey">System Preferences → Security & Privacy → General</dd></div>
+        <div><dt data-i18n="installNewerLabel">macOS 13 or later</dt><dd data-i18n="installNewer">System Settings → Privacy & Security → Security</dd></div>
+      </dl>
+      <p data-i18n="installConfirm">Find the LumaView message and click <strong>Open Anyway</strong>. Authenticate, then choose <strong>Open</strong>. If the button is missing, try launching the app again first.</p>
+      <p class="install-caution" data-i18n="installCaution">If macOS says the app is damaged or will damage your computer, download it again from Releases or report the issue.</p>
+    </dialog>
+    <script src="../app.js?v=20261026-install-dialog"></script>
   </body>
 </html>

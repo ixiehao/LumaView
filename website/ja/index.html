@@ -64,7 +64,7 @@
   "description": "ミニマルな Mac ネイティブ画像ビューア。"
 }
     </script>
-    <link rel="stylesheet" href="../styles.css?v=20261026-static-locales" />
+    <link rel="stylesheet" href="../styles.css?v=20261026-install-dialog" />
   </head>
   <body>
     <header class="nav wrap">
@@ -91,7 +91,7 @@
             <a class="button button-primary" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">v1.3.0 を入手</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a>
             <a class="button button-secondary" href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer"><span data-i18n="sourceButton">ソースを見る</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#brand-github"></use></svg></a>
           </div>
-          <p><a class="install-guide" href="https://github.com/ixiehao/LumaView/blob/main/README.ja.md#初回起動がブロックされる場合" data-i18n="installGuide">インストールと初回起動</a></p>
+          <div class="install-help"><button class="install-guide" type="button" data-install-guide aria-haspopup="dialog" aria-controls="install-dialog"><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261026-install#info-circle"></use></svg><span data-i18n="installGuide">インストールと初回起動</span></button></div>
           <p class="compatibility" data-i18n="compatibility">macOS 12以降 · Intel + Apple Silicon</p>
         </div>
 
@@ -146,7 +146,7 @@
             <p class="eyebrow"><span data-i18n="readyEyebrow">すぐに画像を見る</span></p>
             <h2 data-i18n="downloadTitle">LumaView を<br /><em>無料でダウンロード。</em></h2>
           </div>
-          <div class="download-actions"><a class="button button-light" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">v1.3.0 を入手</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a><a class="install-guide" href="https://github.com/ixiehao/LumaView/blob/main/README.ja.md#初回起動がブロックされる場合" data-i18n="installGuide">インストールと初回起動</a><p data-i18n="downloadNote">macOS 12以降 · Universal · インストーラ約 2.5 MB</p></div>
+          <div class="download-actions"><a class="button button-light" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">v1.3.0 を入手</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a><button class="install-guide" type="button" data-install-guide aria-haspopup="dialog" aria-controls="install-dialog"><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261026-install#info-circle"></use></svg><span data-i18n="installGuide">インストールと初回起動</span></button><p data-i18n="downloadNote">macOS 12以降 · Universal · インストーラ約 2.5 MB</p></div>
         </div>
       </section>
     </main>
@@ -156,6 +156,21 @@
       <p data-i18n="footerTagline">ローカルネイティブ画像ビューア · ixiehao 制作</p>
       <div><a href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer">GitHub</a><a href="https://github.com/ixiehao/LumaView/issues" target="_blank" rel="noreferrer" data-i18n="footerIssues">フィードバック</a><a href="https://github.com/ixiehao/LumaView/releases" target="_blank" rel="noreferrer" data-i18n="footerReleases">リリース</a></div>
     </footer>
-    <script src="../app.js?v=20261026-static-locales"></script>
+    <dialog id="install-dialog" class="install-dialog" aria-labelledby="install-title">
+      <div class="install-heading">
+        <h2 id="install-title" data-i18n="installTitle">インストールと初回起動</h2>
+        <button class="dialog-close" type="button" data-close-dialog autofocus data-i18n="installClose">閉じる</button>
+      </div>
+      <p data-i18n="installStep">ダウンロードした DMG を開き、<strong>LumaView.app</strong> を<strong>アプリケーション</strong>にドラッグして、そこから起動します。</p>
+      <h3 data-i18n="installSecurityTitle">「開発元を検証できない」と表示された場合</h3>
+      <p data-i18n="installSecurityIntro">LumaView の GitHub リリースページから入手したことを確認してください。一度起動を試した後、セキュリティ設定を開きます。</p>
+      <dl class="security-paths">
+        <div><dt>macOS 12 Monterey</dt><dd data-i18n="installMonterey">システム環境設定 → セキュリティとプライバシー → 一般</dd></div>
+        <div><dt data-i18n="installNewerLabel">macOS 13 以降</dt><dd data-i18n="installNewer">システム設定 → プライバシーとセキュリティ → セキュリティ</dd></div>
+      </dl>
+      <p data-i18n="installConfirm">LumaView のメッセージで<strong>このまま開く</strong>をクリックし、認証後に<strong>開く</strong>を選びます。ボタンが見当たらない場合は、もう一度起動を試してください。</p>
+      <p class="install-caution" data-i18n="installCaution">「壊れている」または「コンピュータに損害を与える」と表示される場合は、リリースページから再ダウンロードするか、問題を報告してください。</p>
+    </dialog>
+    <script src="../app.js?v=20261026-install-dialog"></script>
   </body>
 </html>

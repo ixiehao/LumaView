@@ -31,7 +31,17 @@
     "footerTagline": "本地原生图片浏览器 · 由 ixiehao 制作",
     "footerIssues": "反馈",
     "footerReleases": "版本",
-    "installGuide": "安装与首次打开说明"
+    "installGuide": "安装与首次打开说明",
+    "installTitle": "安装与首次打开",
+    "installStep": "打开下载的 DMG，将 <strong>LumaView.app</strong> 拖入<strong>应用程序</strong>，然后从应用程序中打开。",
+    "installSecurityTitle": "如果提示“无法验证开发者”",
+    "installSecurityIntro": "确认安装包来自 LumaView 的 GitHub 发布页，尝试打开一次后，进入系统安全设置：",
+    "installMonterey": "系统偏好设置 → 安全性与隐私 → 通用",
+    "installNewer": "系统设置 → 隐私与安全性 → 安全性",
+    "installConfirm": "找到 LumaView 的提示，点按<strong>仍要打开</strong>，验证后选择<strong>打开</strong>。未看到按钮时，先再尝试启动一次。",
+    "installCaution": "若提示“已损坏”或“会损坏你的电脑”，请重新从发布页下载或反馈问题。",
+    "installClose": "关闭",
+    "installNewerLabel": "macOS 13 及以上"
   },
   "en": {
     "navExperience": "Features",
@@ -65,7 +75,17 @@
     "footerTagline": "A local native image viewer · by ixiehao",
     "footerIssues": "Feedback",
     "footerReleases": "Releases",
-    "installGuide": "Installation and first launch"
+    "installGuide": "Installation and first launch",
+    "installTitle": "Install and open LumaView",
+    "installStep": "Open the downloaded DMG, drag <strong>LumaView.app</strong> into <strong>Applications</strong>, then open it from Applications.",
+    "installSecurityTitle": "If macOS cannot verify the developer",
+    "installSecurityIntro": "Make sure the installer came from LumaView’s GitHub Releases. Try opening the app once, then go to security settings:",
+    "installMonterey": "System Preferences → Security & Privacy → General",
+    "installNewer": "System Settings → Privacy & Security → Security",
+    "installConfirm": "Find the LumaView message and click <strong>Open Anyway</strong>. Authenticate, then choose <strong>Open</strong>. If the button is missing, try launching the app again first.",
+    "installCaution": "If macOS says the app is damaged or will damage your computer, download it again from Releases or report the issue.",
+    "installClose": "Close",
+    "installNewerLabel": "macOS 13 or later"
   },
   "ja": {
     "navExperience": "機能",
@@ -99,6 +119,16 @@
     "footerTagline": "ローカルネイティブ画像ビューア · ixiehao 制作",
     "footerIssues": "フィードバック",
     "footerReleases": "リリース",
-    "installGuide": "インストールと初回起動"
+    "installGuide": "インストールと初回起動",
+    "installTitle": "インストールと初回起動",
+    "installStep": "ダウンロードした DMG を開き、<strong>LumaView.app</strong> を<strong>アプリケーション</strong>にドラッグして、そこから起動します。",
+    "installSecurityTitle": "「開発元を検証できない」と表示された場合",
+    "installSecurityIntro": "LumaView の GitHub リリースページから入手したことを確認してください。一度起動を試した後、セキュリティ設定を開きます。",
+    "installMonterey": "システム環境設定 → セキュリティとプライバシー → 一般",
+    "installNewer": "システム設定 → プライバシーとセキュリティ → セキュリティ",
+    "installConfirm": "LumaView のメッセージで<strong>このまま開く</strong>をクリックし、認証後に<strong>開く</strong>を選びます。ボタンが見当たらない場合は、もう一度起動を試してください。",
+    "installCaution": "「壊れている」または「コンピュータに損害を与える」と表示される場合は、リリースページから再ダウンロードするか、問題を報告してください。",
+    "installClose": "閉じる",
+    "installNewerLabel": "macOS 13 以降"
   }
 }

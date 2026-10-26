@@ -64,7 +64,7 @@
   "description": "一款极简的Mac原生看图软件。"
 }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20261026-static-locales" />
+    <link rel="stylesheet" href="styles.css?v=20261026-install-dialog" />
   </head>
   <body>
     <header class="nav wrap">
@@ -91,7 +91,7 @@
             <a class="button button-primary" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">下载 v1.3.0</span><svg class="button-icon" aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a>
             <a class="button button-secondary" href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer"><span data-i18n="sourceButton">查看源码</span><svg class="button-icon" aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261018-icon-semantics#brand-github"></use></svg></a>
           </div>
-          <p><a class="install-guide" href="https://github.com/ixiehao/LumaView/blob/main/README.zh-CN.md#首次打开被系统拦截时" data-i18n="installGuide">安装与首次打开说明</a></p>
+          <div class="install-help"><button class="install-guide" type="button" data-install-guide aria-haspopup="dialog" aria-controls="install-dialog"><svg class="button-icon" aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261026-install#info-circle"></use></svg><span data-i18n="installGuide">安装与首次打开说明</span></button></div>
           <p class="compatibility" data-i18n="compatibility">macOS 12+ · Intel + Apple Silicon</p>
         </div>
 
@@ -146,7 +146,7 @@
             <p class="eyebrow"><span data-i18n="readyEyebrow">现在开始看图</span></p>
             <h2 data-i18n="downloadTitle">免费下载<br /><em>LumaView。</em></h2>
           </div>
-          <div class="download-actions"><a class="button button-light" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">下载 v1.3.0</span><svg class="button-icon" aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a><a class="install-guide" href="https://github.com/ixiehao/LumaView/blob/main/README.zh-CN.md#首次打开被系统拦截时" data-i18n="installGuide">安装与首次打开说明</a><p data-i18n="downloadNote">macOS 12+ · Universal · 安装包约 2.5 MB</p></div>
+          <div class="download-actions"><a class="button button-light" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">下载 v1.3.0</span><svg class="button-icon" aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a><button class="install-guide" type="button" data-install-guide aria-haspopup="dialog" aria-controls="install-dialog"><svg class="button-icon" aria-hidden="true"><use href="assets/tabler-icons.svg?v=20261026-install#info-circle"></use></svg><span data-i18n="installGuide">安装与首次打开说明</span></button><p data-i18n="downloadNote">macOS 12+ · Universal · 安装包约 2.5 MB</p></div>
         </div>
       </section>
     </main>
@@ -156,6 +156,21 @@
       <p data-i18n="footerTagline">本地原生图片浏览器 · 由 ixiehao 制作</p>
       <div><a href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer">GitHub</a><a href="https://github.com/ixiehao/LumaView/issues" target="_blank" rel="noreferrer" data-i18n="footerIssues">反馈</a><a href="https://github.com/ixiehao/LumaView/releases" target="_blank" rel="noreferrer" data-i18n="footerReleases">版本</a></div>
     </footer>
-    <script src="app.js?v=20261026-static-locales"></script>
+    <dialog id="install-dialog" class="install-dialog" aria-labelledby="install-title">
+      <div class="install-heading">
+        <h2 id="install-title" data-i18n="installTitle">安装与首次打开</h2>
+        <button class="dialog-close" type="button" data-close-dialog autofocus data-i18n="installClose">关闭</button>
+      </div>
+      <p data-i18n="installStep">打开下载的 DMG，将 <strong>LumaView.app</strong> 拖入<strong>应用程序</strong>，然后从应用程序中打开。</p>
+      <h3 data-i18n="installSecurityTitle">如果提示“无法验证开发者”</h3>
+      <p data-i18n="installSecurityIntro">确认安装包来自 LumaView 的 GitHub 发布页，尝试打开一次后，进入系统安全设置：</p>
+      <dl class="security-paths">
+        <div><dt>macOS 12 Monterey</dt><dd data-i18n="installMonterey">系统偏好设置 → 安全性与隐私 → 通用</dd></div>
+        <div><dt data-i18n="installNewerLabel">macOS 13 及以上</dt><dd data-i18n="installNewer">系统设置 → 隐私与安全性 → 安全性</dd></div>
+      </dl>
+      <p data-i18n="installConfirm">找到 LumaView 的提示，点按<strong>仍要打开</strong>，验证后选择<strong>打开</strong>。未看到按钮时，先再尝试启动一次。</p>
+      <p class="install-caution" data-i18n="installCaution">若提示“已损坏”或“会损坏你的电脑”，请重新从发布页下载或反馈问题。</p>
+    </dialog>
+    <script src="app.js?v=20261026-install-dialog"></script>
   </body>
 </html>

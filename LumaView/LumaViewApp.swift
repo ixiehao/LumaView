@@ -1098,7 +1098,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         case LumaViewToolbarIdentifier.rotateRight:
             return toolbarItem(itemIdentifier, kind: .rotateRight, labelKey: "toolbar.rotateRight", action: #selector(rotateRightToolbarAction))
         case LumaViewToolbarIdentifier.information:
-            return informationToolbarItem(itemIdentifier)
+            return toolbarItem(itemIdentifier, kind: .information, labelKey: "toolbar.info", action: #selector(informationToolbarAction))
         default:
             return nil
         }
@@ -1157,37 +1157,6 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
         let overflowItem = NSMenuItem(title: item.label, action: action, keyEquivalent: "")
         overflowItem.target = self
         overflowItem.image = image
-        item.menuFormRepresentation = overflowItem
-        return item
-    }
-
-    /// The standard toolbar image items do not expose their rendered button as
-    /// a public anchor. The inspector alone uses a compact native button view so
-    /// its transient popover can point at the control the person just clicked.
-    private func informationToolbarItem(_ identifier: NSToolbarItem.Identifier) -> NSToolbarItem {
-        let item = NSToolbarItem(itemIdentifier: identifier)
-        let label = Self.currentLocalization.text("toolbar.info")
-        let button = NSButton(
-            image: NSImage(named: LumaIconKind.information.tablerAssetName) ?? NSImage(),
-            target: self,
-            action: #selector(informationToolbarAction)
-        )
-        button.image?.isTemplate = true
-        button.bezelStyle = .toolbar
-        button.imagePosition = .imageOnly
-        button.toolTip = label
-        button.setAccessibilityLabel(label)
-        button.frame = NSRect(x: 0, y: 0, width: 30, height: 30)
-        item.label = label
-        item.paletteLabel = label
-        item.toolTip = label
-        item.view = button
-        // AppKit forwards overflow selections through the toolbar item itself.
-        item.target = self
-        item.action = #selector(informationToolbarAction)
-        let overflowItem = NSMenuItem(title: label, action: #selector(informationToolbarAction), keyEquivalent: "")
-        overflowItem.target = self
-        overflowItem.image = button.image
         item.menuFormRepresentation = overflowItem
         return item
     }

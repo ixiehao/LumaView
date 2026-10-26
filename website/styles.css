@@ -239,4 +239,35 @@ h2 {
   .reveal { opacity: 1; transform: none; }
 }
 
-.install-guide { display: inline-block; color: var(--blue-deep); font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
+.install-help { margin-top: 14px; }
+.install-guide {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 36px; padding: 6px 8px; border: 0; border-radius: 8px;
+  color: var(--blue-deep); background: transparent; cursor: pointer;
+  font-size: 13px; font-weight: 550; line-height: 1.5;
+  transition: background-color 160ms ease;
+}
+.install-help .install-guide { margin-left: -8px; }
+.install-guide:hover { background: var(--blue-soft); }
+.install-help + .compatibility { margin-top: 10px; }
+body.modal-open { overflow: hidden; }
+.install-dialog {
+  width: min(560px, calc(100% - 32px)); max-height: calc(100% - 48px);
+  margin: auto; padding: clamp(22px, 4vw, 32px); overflow: auto;
+  border: 0; border-radius: 20px; color: var(--ink); background: #fff;
+  box-shadow: 0 24px 80px rgba(23, 32, 51, .18);
+}
+.install-dialog::backdrop { background: rgba(23, 32, 51, .3); backdrop-filter: blur(4px); }
+.install-heading { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+.install-dialog h2 { flex: 1; font-size: 22px; line-height: 1.35; letter-spacing: -.02em; }
+.dialog-close { border: 0; border-radius: 7px; padding: 7px 9px; color: var(--muted); background: var(--paper); cursor: pointer; font-size: 13px; }
+.dialog-close:hover { color: var(--ink); background: var(--line); }
+.install-dialog h3 { margin: 26px 0 10px; font-size: 16px; line-height: 1.5; }
+.install-dialog p, .security-paths { color: var(--muted); font-size: 14px; line-height: 1.8; }
+.install-dialog p { margin-bottom: 16px; }
+.install-dialog strong { color: var(--ink); font-weight: 600; }
+.security-paths { margin: 18px 0; }
+.security-paths div + div { margin-top: 14px; }
+.security-paths dt { color: var(--ink); font-weight: 600; }
+.security-paths dd { margin: 2px 0 0; }
+.install-dialog .install-caution { margin: 22px 0 0; font-size: 12px; color: var(--muted); }
