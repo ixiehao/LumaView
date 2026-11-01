@@ -13,7 +13,7 @@ jobs:
   validate:
     # UI tests execute on Apple Silicon; validate-project.sh also compiles and
     # verifies the x86_64 slice in the universal Release app.
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Check out source
         uses: actions/checkout@v6
