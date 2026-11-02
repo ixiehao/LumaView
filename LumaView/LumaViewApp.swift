@@ -354,6 +354,7 @@ final class LumaViewAppDelegate: NSObject, NSApplicationDelegate {
         LumaViewWindowRegistry.shared.openDocumentWindows(for: urls)
     }
     private var welcomeWindowWorkItem: DispatchWorkItem?
+    private var preferencesObserver: AnyCancellable?
 
     func application(_ application: NSApplication, open urls: [URL]) {
         _ = documentRouter.receive(urls)
@@ -390,12 +391,12 @@ final class LumaViewAppDelegate: NSObject, NSApplicationDelegate {
         }
         localizeSystemMenus(selectedLocalization)
 
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(userDefaultsDidChange),
-            name: UserDefaults.didChangeNotification,
-            object: UserDefaults.standard
-        )
+        // Defaults notifications arrive on the writer's thread, including writes
+        // made by system frameworks. UI preferences always belong to the main queue.
+        preferencesObserver = NotificationCenter.default
+            .publisher(for: UserDefaults.didChangeNotification, object: UserDefaults.standard)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.userDefaultsDidChange() }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -422,7 +423,7 @@ final class LumaViewAppDelegate: NSObject, NSApplicationDelegate {
         return L10n(language: AppLanguage(rawValue: rawValue) ?? .automatic)
     }
 
-    @objc private func userDefaultsDidChange() {
+    private func userDefaultsDidChange() {
         let localization = selectedLocalization
         localizeSystemMenus(localization)
         LumaViewWindowRegistry.shared.applyWindowPreferences(

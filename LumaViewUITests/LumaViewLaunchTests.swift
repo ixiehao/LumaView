@@ -121,20 +121,7 @@ final class LumaViewLaunchTests: XCTestCase {
         expect(rendered, accessibilityLabelContaining: "Page 2 of 3")
         expectCanvasAspect(rendered, ratio: 1 / 1.5)
         // Portrait pages may move Information into AppKit's overflow menu.
-        if app.buttons["Image information"].exists {
-            app.buttons["Image information"].click()
-        } else {
-            let overflow = app.toolbars.popUpButtons.firstMatch
-            XCTAssertTrue(overflow.exists)
-            overflow.click()
-            let informationItem = app.menuItems["Image information"]
-            XCTAssertTrue(informationItem.waitForExistence(timeout: 3))
-            XCTAssertTrue(informationItem.isEnabled)
-            // AppKit's overflow uses a private forwarding menu action. Send a
-            // real click within the observed item instead of XCTest's AX menu
-            // selection, which can leave that popup highlighted but uninvoked.
-            informationItem.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
-        }
+        clickToolbarItem("Image information", in: app)
         let inspector = app.popovers.firstMatch
         XCTAssertTrue(inspector.waitForExistence(timeout: 5))
         expectInspector(inspector, toShow: "Page 2 of 3")
@@ -236,12 +223,8 @@ final class LumaViewLaunchTests: XCTestCase {
             (0, [red, green, blue, yellow], 1.2)
         ]
         for turn in turns {
-            let rotateRight = app.buttons
-                .matching(NSPredicate(format: "label == %@", "Rotate right"))
-                .firstMatch
-            XCTAssertTrue(rotateRight.waitForExistence(timeout: 5))
-            XCTAssertTrue(rotateRight.isEnabled)
-            rotateRight.click()
+            // Rotating to portrait can move this command into toolbar overflow.
+            clickToolbarItem("Rotate right", in: app)
             expect(canvas, accessibilityLabelContaining: "\(turn.angle)°")
             verify(turn.colors, ratio: turn.ratio)
         }
@@ -255,6 +238,25 @@ final class LumaViewLaunchTests: XCTestCase {
         canvas.typeKey("]", modifierFlags: .command)
         expect(canvas, accessibilityLabelContaining: "0°")
         verify([red, green, blue, yellow], ratio: 1.2)
+    }
+
+    private func clickToolbarItem(_ title: String, in app: XCUIApplication,
+                                  file: StaticString = #filePath, line: UInt = #line) {
+        let button = app.buttons.matching(NSPredicate(format: "label == %@", title)).firstMatch
+        if button.exists && button.isHittable {
+            XCTAssertTrue(button.isEnabled, file: file, line: line)
+            button.click()
+            return
+        }
+        let overflow = app.toolbars.popUpButtons.firstMatch
+        XCTAssertTrue(overflow.waitForExistence(timeout: 5), file: file, line: line)
+        overflow.click()
+        let item = app.menuItems[title]
+        XCTAssertTrue(item.waitForExistence(timeout: 3), file: file, line: line)
+        XCTAssertTrue(item.isEnabled, file: file, line: line)
+        // AppKit forwards overflow commands privately. A real click invokes
+        // them reliably where XCTest's AX menu selection can leave them open.
+        item.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
     }
 
     func testImageInformationToolbarPresentsMetadataInspector() throws {
