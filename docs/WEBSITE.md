@@ -7,7 +7,7 @@
 - Source: [`website/`](../website/), not the repository root or `docs/`.
 - Public URL: https://ixiehao.github.io/LumaView/
 - Deployment: [`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml).
-- Languages, in menu order: English `/en/`, 简体中文 `/`, Français `/fr/`, Русский `/ru/`, Español `/es/`, 日本語 `/ja/`, 한국어 `/ko/`. Arabic is not included.
+- Languages, in menu order: English `/` (default), 简体中文 `/zh/`, Français `/fr/`, Русский `/ru/`, Español `/es/`, 日本語 `/ja/`, 한국어 `/ko/`. Arabic is not included. The legacy `/en/` address remains an English page with `/` as its canonical URL. The default page does not depend on browser language or JavaScript.
 - Copy: `website/content.json`; layout: `website/index.html`. Run `python3 Scripts/build-website.py` after changing either. Commit the generated locale pages together.
 - Every locale includes its own text, title, description, canonical, language tags and structured data in the initial HTML. The language disclosure uses native HTML details and links, works without JavaScript, and marks the current language. JavaScript adds arrow-key navigation, Escape/outside dismissal and old `?lang=` redirects. Each language has a localized installation dialog; both installation buttons open it without navigation.
 

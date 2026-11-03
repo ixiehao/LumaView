@@ -4,7 +4,7 @@
 
 打开一张图片，直接浏览同一文件夹。LumaView 将画面留在中心，把日常操作放在顺手的位置。
 
-**[下载 LumaView 1.3.0 · 通用 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg)** · [官网](https://ixiehao.github.io/LumaView/) · [English](README.md) · [日本語](README.ja.md) · [变更记录](CHANGELOG.md)
+**[下载 LumaView 1.3.0 · 通用 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg)** · [官网](https://ixiehao.github.io/LumaView/zh/) · [English](README.md) · [日本語](README.ja.md) · [变更记录](CHANGELOG.md)
 
 macOS 12+ · Intel + Apple Silicon · 通用版 DMG · 约 2.5 MB
 

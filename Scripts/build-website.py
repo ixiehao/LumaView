@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / 'website'
 BASE = 'https://ixiehao.github.io/LumaView/'
 LOCALES = {
-    'en': ('en', 'en_US', 'en/', 'English'),
-    'zh': ('zh-CN', 'zh_CN', '', '中文'),
+    'en': ('en', 'en_US', '', 'English'),
+    'zh': ('zh-CN', 'zh_CN', 'zh/', '中文'),
     'fr': ('fr', 'fr_FR', 'fr/', 'Français'),
     'ru': ('ru', 'ru_RU', 'ru/', 'Русский'),
     'es': ('es', 'es_ES', 'es/', 'Español'),
@@ -22,9 +22,11 @@ LOCALES = {
     'ko': ('ko', 'ko_KR', 'ko/', '한국어'),
 }
 
-def generate(source, copy, language):
+def generate(source, copy, language, page_path=None):
     code, og, path, label = LOCALES[language]
     url = BASE + path
+    # Keep legacy /en/ links usable, with the root URL as their canonical.
+    page_path = path if page_path is None else page_path
     text = source
     for key, value in copy.items():
         pattern = r'(<([\w-]+)\b[^>]*\bdata-i18n="' + re.escape(key) + r'"[^>]*>)[\s\S]*?(</\2>)'
@@ -57,7 +59,7 @@ def generate(source, copy, language):
     schema_match = re.search(r'(<script id="software-schema"[^>]*>)([\s\S]*?)(</script>)', text)
     schema = json.loads(schema_match[2]);schema.update(url=url, description=copy['seoDescription'], inLanguage=code)
     text = text[:schema_match.start()] + schema_match[1]+'\n'+json.dumps(schema,ensure_ascii=False,indent=2)+'\n    '+schema_match[3]+text[schema_match.end():]
-    prefix = '../' if path else './'
+    prefix = '../' if page_path else './'
     options = '\n'.join(
         f'          <li><a href="{prefix + data[2]}" data-language="{key}" lang="{data[0]}" hreflang="{data[0]}"' +
         (' aria-current="page"' if key == language else '') + f'><span>{data[3]}</span>' +
@@ -66,7 +68,7 @@ def generate(source, copy, language):
     text = re.sub(r'(<ul id="language-options"[^>]*>)[\s\S]*?(</ul>)', lambda m:m[1]+'\n'+options+'\n        '+m[2], text)
     text = re.sub(r'<span id="current-language"[^>]*>.*?</span>',
                   lambda _: f'<span id="current-language" lang="{code}">{label}</span>', text)
-    if path:
+    if page_path:
         text = re.sub(r'((?:src|href)=")(assets/|styles.css|app.js|manifest.webmanifest)',r'\1../\2',text)
     return text
 
@@ -83,8 +85,9 @@ def main():
     if set(content) != set(LOCALES) or any(set(copy) != set(content['en']) for copy in content.values()):
         raise SystemExit('Every website language must provide the same content keys.')
     stale=[]
-    for language,data in LOCALES.items():
-        target=SITE/data[2]/'index.html';output=generate(source,content[language],language)
+    pages = [(language, data[2]) for language, data in LOCALES.items()] + [('en', 'en/')]
+    for language,path in pages:
+        target=SITE/path/'index.html';output=generate(source,content[language],language,path)
         if args.check:
             if not target.exists() or target.read_text()!=output:stale.append(str(target.relative_to(ROOT)))
         else:
@@ -94,6 +97,6 @@ def main():
         if target.read_text() != output: stale.append('website/sitemap.xml')
     else: target.write_text(output)
     if stale:raise SystemExit('Run python3 Scripts/build-website.py: '+', '.join(stale))
-    print('Seven static locale pages checked.' if args.check else 'Generated seven locale pages and sitemap.')
+    print('Seven static locale pages and the English alias checked.' if args.check else 'Generated seven locale pages, the English alias and sitemap.')
 
 if __name__=='__main__': main()

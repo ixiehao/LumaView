@@ -5,7 +5,7 @@
 Open an image and browse the rest of its folder. LumaView keeps the picture in
 focus, with the everyday controls close at hand.
 
-**[Download LumaView 1.3.0 · Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg)** · [Website](https://ixiehao.github.io/LumaView/en/) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Changelog](CHANGELOG.md)
+**[Download LumaView 1.3.0 · Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg)** · [Website](https://ixiehao.github.io/LumaView/) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Changelog](CHANGELOG.md)
 
 macOS 12+ · Intel + Apple Silicon · Universal DMG · ~2.5 MB
 
