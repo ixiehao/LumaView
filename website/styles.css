@@ -74,7 +74,8 @@ button { font: inherit; }
 .language-switch[open] .language-chevron { transform: rotate(180deg); }
 .language-options {
   position: absolute; inset-inline-end: 0; top: calc(100% + 10px);
-  width: 188px; margin: 0; padding: 6px; list-style: none;
+  width: 188px; max-width: calc(100vw - 32px); max-height: min(360px, 60dvh);
+  overflow-y: auto; margin: 0; padding: 6px; list-style: none;
   border: 1px solid rgba(215, 222, 234, .75); border-radius: 14px;
   background: #fff; box-shadow: 0 12px 36px rgba(23, 32, 51, .12);
 }

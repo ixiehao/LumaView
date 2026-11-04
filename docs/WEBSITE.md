@@ -33,6 +33,28 @@ git diff --check
 
 Check images, favicon, navigation, official download destinations, desktop and narrow layouts, keyboard focus, language switching, localized metadata and download/signing wording. Check canonical and share URLs, robots and sitemap where present. A path-only migration should preserve site content.
 
+## Automated responsive checks
+
+Website changes and pull requests run Playwright before Pages deployment. CI reads the actual language list from `website-test.config.mjs`, runs Chromium and WebKit for each language, and publishes only when every matrix job passes. Pull requests never deploy; a failure keeps the existing public site.
+
+From the repository root:
+
+```sh
+npm ci --ignore-scripts
+npx playwright install chromium webkit
+npm run check:website
+npm run test:website
+# Reproduce one CI job (choose a language supported by this website):
+SITE_TEST_LANGUAGE=en npm run test:website -- --project=webkit
+npm run test:website:report
+```
+
+The checks cover phone portrait/landscape, tablet and desktop sizes, both sides of this site's CSS breakpoints, actual mobile viewport width, local image decoding and aspect ratios, content overflow, overlapping controls, component bounds and column counts. They also check static HTML without JavaScript, language navigation and installation-dialog bounds, scrolling, Escape and focus restoration. Test fixtures deliberately inject overflow to verify that the guard rejects broken layouts. Intentional horizontal navigation/code scrolling and text ellipses are treated separately from unintended clipping.
+
+The test server uses the public URL prefix and starts/stops with Playwright. Set `SITE_TEST_PORT` if port 4173 is occupied. External requests are blocked for deterministic layout checks; upstream download availability still needs separate verification. Mobile browser emulation does not replace real-device review.
+
+Download `website-report-*` from the workflow run's **Artifacts**; each browser/language report is retained for 7 days. The HTML report includes failure screenshots, traces and geometry attachments; `test-results/report.json` provides counts. Run `npx playwright show-report <downloaded-playwright-report-directory>` to inspect a downloaded report. Test dependencies and reports are excluded from the published site. Local shared maintenance documents stay outside this repository.
+
 ## Deployment
 
 The workflow uploads `website/` and deploys it as the site root. It runs on relevant changes to `main` and supports manual dispatch. Pages should be configured to use **GitHub Actions**; moving the source directory must be accompanied by the matching workflow path update.
