@@ -10,3 +10,6 @@ xcuserdata/
 *.mobileprovision
 *.dmg
 *.dmg.sha256
+node_modules/
+playwright-report/
+test-results/

@@ -4,22 +4,90 @@ on:
   push:
     branches: [main]
     paths:
-      - website/**
-      - Scripts/build-website.py
-      - .github/workflows/deploy-pages.yml
+      - 'website/**'
+      - 'website-tests/**'
+      - 'Scripts/serve-website-tests.mjs'
+      - 'Scripts/website-test-matrix.mjs'
+      - 'website-test.config.mjs'
+      - 'playwright.config.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/deploy-pages.yml'
+      - 'Scripts/build-website.py'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - 'website-tests/**'
+      - 'Scripts/serve-website-tests.mjs'
+      - 'Scripts/website-test-matrix.mjs'
+      - 'website-test.config.mjs'
+      - 'playwright.config.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/deploy-pages.yml'
+      - 'Scripts/build-website.py'
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: github-pages
-  cancel-in-progress: false
+  group: pages-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  plan:
+    name: Discover website languages
+    runs-on: ubuntu-24.04
+    outputs:
+      languages: ${{ steps.languages.outputs.languages }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - id: languages
+        run: node Scripts/website-test-matrix.mjs
+  validate:
+    name: Website (${{ matrix.browser }}, ${{ matrix.language }})
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+        language: ${{ fromJSON(needs.plan.outputs.languages) }}
+    env:
+      SITE_TEST_LANGUAGE: ${{ matrix.language }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run check:website
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: npm run test:website -- --project=${{ matrix.browser }}
+      - name: Save layout reports and failure screenshots
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-report-${{ matrix.browser }}-${{ matrix.language }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            playwright-report/
+            test-results/report.json
+          retention-days: 7
+          if-no-files-found: ignore
   deploy:
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     runs-on: ubuntu-latest
     environment:
       name: github-pages

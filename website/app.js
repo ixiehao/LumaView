@@ -31,7 +31,9 @@ document.addEventListener("pointerdown", event => {
   if (!languageSwitch.contains(event.target)) languageSwitch.open = false;
 });
 languageSwitch.addEventListener("focusout", event => {
-  if (!languageSwitch.contains(event.relatedTarget)) languageSwitch.open = false;
+  // WebKit may report a null focus target while activating a link.
+  // Keep the disclosure open until the link receives its click/navigation.
+  if (event.relatedTarget && !languageSwitch.contains(event.relatedTarget)) languageSwitch.open = false;
 });
 
 // One native dialog serves both installation buttons without leaving the page.

@@ -74,7 +74,8 @@ button { font: inherit; }
 .language-switch[open] .language-chevron { transform: rotate(180deg); }
 .language-options {
   position: absolute; inset-inline-end: 0; top: calc(100% + 10px);
-  width: 188px; margin: 0; padding: 6px; list-style: none;
+  width: 188px; max-width: calc(100vw - 32px); max-height: min(360px, 60dvh);
+  overflow-y: auto; margin: 0; padding: 6px; list-style: none;
   border: 1px solid rgba(215, 222, 234, .75); border-radius: 14px;
   background: #fff; box-shadow: 0 12px 36px rgba(23, 32, 51, .12);
 }
@@ -103,7 +104,7 @@ button { font: inherit; }
   min-height: 650px;
   padding: 40px 2%;
 }
-.hero-copy { max-width: 530px; }
+.hero-copy { min-width: 0; max-width: 530px; }
 .eyebrow {
   display: block;
   margin: 0 0 20px;
@@ -112,7 +113,7 @@ button { font: inherit; }
   font-weight: 700;
   letter-spacing: 0.025em;
 }
-h1, h2, h3, p { margin-top: 0; }
+h1, h2, h3, p { margin-top: 0; overflow-wrap: anywhere; }
 h1 {
   max-width: 560px;
   margin-bottom: 22px;
