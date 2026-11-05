@@ -1,0 +1,8 @@
+{
+  "name": "LumaView",
+  "site_url": "https://ixiehao.github.io/LumaView/",
+  "directory": "website",
+  "source_url": "https://github.com/ixiehao/LumaView",
+  "key_file": "website/indexnow-key.txt",
+  "language_source": "website/content.json"
+}

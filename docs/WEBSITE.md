@@ -55,6 +55,24 @@ The test server uses the public URL prefix and starts/stops with Playwright. Set
 
 Download `website-report-*` from the workflow run's **Artifacts**; each browser/language report is retained for 7 days. The HTML report includes failure screenshots, traces and geometry attachments; `test-results/report.json` provides counts. Run `npx playwright show-report <downloaded-playwright-report-directory>` to inspect a downloaded report. Test dependencies and reports are excluded from the published site. Local shared maintenance documents stay outside this repository.
 
+## SEO and AI reading files
+
+The existing static generator remains the source of translated product facts. `search-content.config.json` points to the actual language source and published directory. Python 3 standard-library tools generate an `index.md` beside each canonical HTML page and an `llms.txt` reading index from the rendered page, including installation notes and media credits. No runtime dependency, analytics, account or tracking is added.
+
+```sh
+npm run build:website
+npm run check:website
+npm run test:website
+# Only after successful deployment and the public ownership file is reachable:
+npm run notify:search
+```
+
+`Scripts/search-content.py --check` checks canonical/hreflang and sharing metadata, real static body text, schema, sitemap language coverage, Markdown parity and AI reading links. `--self-test` verifies text/link extraction and rejection of empty or stale content. Pages still requires all responsive browser checks before deployment. Generated reading files under `website/` are committed with their source, so stale content can be rejected before publication.
+
+A separate, project-scoped IndexNow ownership file is published at `indexnow-key.txt`. The deployment-dependent notification job first reads that public file, then submits only this site's canonical pages. HTTP 200 means received; 202 means received with ownership verification pending. A failed external notification warns and can be retried; core checks and deployment gates remain strict. Acceptance is not indexing or an AI citation.
+
+Read back every language's raw HTML and Markdown, llms.txt, sitemap, assets and ownership file after deployment. Effective robots rules are managed at `https://ixiehao.github.io/robots.txt`; child project files do not replace the domain-root policy. Keep useful no-JavaScript content and language links. `llms.txt` is an optional reading aid, not an indexing guarantee. No Search Console or Bing Webmaster account submission is implied.
+
 ## Deployment
 
 The workflow uploads `website/` and deploys it as the site root. It runs on relevant changes to `main` and supports manual dispatch. Pages should be configured to use **GitHub Actions**; moving the source directory must be accompanied by the matching workflow path update.
