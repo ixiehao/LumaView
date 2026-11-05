@@ -27,7 +27,7 @@ def generate(source, copy, language, page_path=None):
     url = BASE + path
     # Keep legacy /en/ links usable, with the root URL as their canonical.
     page_path = path if page_path is None else page_path
-    text = source
+    text = re.sub(r'    <!-- search-discovery:start -->[\s\S]*?    <!-- search-discovery:end -->\n', '', source)
     for key, value in copy.items():
         pattern = r'(<([\w-]+)\b[^>]*\bdata-i18n="' + re.escape(key) + r'"[^>]*>)[\s\S]*?(</\2>)'
         text = re.sub(pattern, lambda m: m[1] + value + m[3], text)
@@ -70,7 +70,8 @@ def generate(source, copy, language, page_path=None):
                   lambda _: f'<span id="current-language" lang="{code}">{label}</span>', text)
     if page_path:
         text = re.sub(r'((?:src|href)=")(assets/|styles.css|app.js|manifest.webmanifest)',r'\1../\2',text)
-    return text
+    discovery = f'    <!-- search-discovery:start -->\n    <link rel="alternate" type="text/markdown" href="{url}index.md" />\n    <link rel="describedby" type="text/plain" href="{BASE}llms.txt" />\n    <!-- search-discovery:end -->\n'
+    return text.replace('  </head>', discovery + '  </head>')
 
 def sitemap():
     links = ''.join(f'    <xhtml:link rel="alternate" hreflang="{data[0]}" href="{BASE + data[2]}" />\n' for data in LOCALES.values())

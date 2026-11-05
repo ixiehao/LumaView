@@ -1,0 +1,17 @@
+# LumaView
+
+> A minimal native image viewer for Mac.
+
+## Pages
+
+- [English](https://ixiehao.github.io/LumaView/index.md)
+- [简体中文](https://ixiehao.github.io/LumaView/zh/index.md)
+- [Français](https://ixiehao.github.io/LumaView/fr/index.md)
+- [Русский](https://ixiehao.github.io/LumaView/ru/index.md)
+- [Español](https://ixiehao.github.io/LumaView/es/index.md)
+- [日本語](https://ixiehao.github.io/LumaView/ja/index.md)
+- [한국어](https://ixiehao.github.io/LumaView/ko/index.md)
+
+## Optional
+
+- [Source and project documentation](https://github.com/ixiehao/LumaView)

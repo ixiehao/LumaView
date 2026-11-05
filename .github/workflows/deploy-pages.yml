@@ -6,6 +6,8 @@ on:
     paths:
       - 'website/**'
       - 'website-tests/**'
+      - 'Scripts/search-content.py'
+      - 'search-content.config.json'
       - 'Scripts/serve-website-tests.mjs'
       - 'Scripts/website-test-matrix.mjs'
       - 'website-test.config.mjs'
@@ -19,6 +21,8 @@ on:
     paths:
       - 'website/**'
       - 'website-tests/**'
+      - 'Scripts/search-content.py'
+      - 'search-content.config.json'
       - 'Scripts/serve-website-tests.mjs'
       - 'Scripts/website-test-matrix.mjs'
       - 'website-test.config.mjs'
@@ -97,6 +101,14 @@ jobs:
         uses: actions/checkout@v6
       - name: Verify static language pages
         run: python3 Scripts/build-website.py --check
+      - name: Set up website build runtime
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Build and check search reading files
+        run: |
+          npm run build:website
+          python3 Scripts/search-content.py --check
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6
       - name: Upload static site
@@ -106,3 +118,18 @@ jobs:
       - name: Deploy GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+  notify-search:
+    name: Notify search engines
+    needs: deploy
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v6
+      - name: Submit published canonical pages
+        id: indexnow
+        continue-on-error: true
+        run: python3 Scripts/search-content.py --notify
+      - name: Report notification retry instructions
+        if: steps.indexnow.outcome == 'failure'
+        run: echo '::warning::Pages is published but IndexNow was not confirmed. Retry npm run notify:search after propagation. Indexing is not guaranteed.'
