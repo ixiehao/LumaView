@@ -8,7 +8,7 @@
     "seoSocialDescription": "Side-by-side multi-window comparison, folder browsing, zoom, rotate, and print.",
     "heroTitle": "Open an image.<br /><em>Start browsing.</em>",
     "heroLede": "A minimal native image viewer for Mac.",
-    "downloadButton": "Download v1.3.0",
+    "downloadButton": "Download v1.3.1",
     "sourceButton": "View source",
     "compatibility": "macOS 12+ · Intel + Apple Silicon",
     "heroImageAlt": "LumaView browsing an image in its native window, with previous, next, zoom, and rotate controls",
@@ -27,7 +27,7 @@
     "windowsImageAlt": "Nine native LumaView image windows arranged in a grid for side-by-side comparison",
     "readyEyebrow": "Start viewing",
     "downloadTitle": "Download<br /><em>LumaView for free.</em>",
-    "downloadNote": "macOS 12+ · Universal · About 2.5 MB",
+    "downloadNote": "macOS 12+ · About 2 MB each",
     "footerTagline": "A local native image viewer · by ixiehao",
     "footerIssues": "Feedback",
     "footerReleases": "Releases",
@@ -44,7 +44,10 @@
     "installNewerLabel": "macOS 13 or later",
     "homeLabel": "LumaView Home",
     "navigationLabel": "Main navigation",
-    "languageLabel": "Language"
+    "languageLabel": "Language",
+    "chipHelp": "Apple menu → About This Mac: choose Apple Silicon for an M-series chip, or Intel for an Intel processor.",
+    "downloadAppleSiliconLabel": "Download for Apple Silicon",
+    "downloadIntelLabel": "Download for Intel"
   },
   "zh": {
     "navExperience": "看图功能",
@@ -55,7 +58,7 @@
     "seoSocialDescription": "多窗口并排对比、文件夹前后浏览、大图缩放、旋转与打印。",
     "heroTitle": "打开图片，<br /><em>极速浏览。</em>",
     "heroLede": "一款极简的 Mac 原生看图软件。",
-    "downloadButton": "下载 v1.3.0",
+    "downloadButton": "下载 v1.3.1",
     "sourceButton": "查看源码",
     "compatibility": "macOS 12+ · Intel + Apple Silicon",
     "heroImageAlt": "LumaView 在原生窗口中浏览图片，顶部有上一张、下一张、缩放和旋转操作",
@@ -74,7 +77,7 @@
     "windowsImageAlt": "九个 LumaView 原生图片窗口以网格并排显示，方便多图对比",
     "readyEyebrow": "现在开始看图",
     "downloadTitle": "免费下载<br /><em>LumaView。</em>",
-    "downloadNote": "macOS 12+ · Universal · 安装包约 2.5 MB",
+    "downloadNote": "macOS 12+ · 每个安装包约 2 MB",
     "footerTagline": "本地原生图片浏览器 · 由 ixiehao 制作",
     "footerIssues": "反馈",
     "footerReleases": "版本",
@@ -91,7 +94,10 @@
     "installNewerLabel": "macOS 13 及以上",
     "homeLabel": "LumaView 首页",
     "navigationLabel": "主导航",
-    "languageLabel": "语言"
+    "languageLabel": "语言",
+    "chipHelp": "苹果菜单 → 关于本机：M 系列芯片选 Apple Silicon，Intel 处理器选 Intel。",
+    "downloadAppleSiliconLabel": "下载 Apple Silicon 版",
+    "downloadIntelLabel": "下载 Intel 版"
   },
   "fr": {
     "navExperience": "Fonctions",
@@ -102,7 +108,7 @@
     "seoSocialDescription": "Comparez des images côte à côte, parcourez vos dossiers, zoomez, faites pivoter et imprimez.",
     "heroTitle": "Ouvrez une image.<br /><em>Parcourez sans attendre.</em>",
     "heroLede": "Une visionneuse d’images native et minimaliste pour Mac.",
-    "downloadButton": "Télécharger v1.3.0",
+    "downloadButton": "Télécharger v1.3.1",
     "sourceButton": "Code source",
     "compatibility": "macOS 12+ · Intel + Apple Silicon",
     "heroImageAlt": "LumaView affiche une image dans une fenêtre native avec les commandes de navigation, de zoom et de rotation.",
@@ -121,7 +127,7 @@
     "windowsImageAlt": "Neuf fenêtres natives de LumaView disposées en grille pour comparer plusieurs images.",
     "readyEyebrow": "À vous de regarder",
     "downloadTitle": "Téléchargez<br /><em>LumaView gratuitement.</em>",
-    "downloadNote": "macOS 12+ · Universal · Environ 2,5 Mo",
+    "downloadNote": "macOS 12+ · Environ 2 Mo par version",
     "footerTagline": "Visionneuse d’images native et locale · par ixiehao",
     "footerIssues": "Signaler un problème",
     "footerReleases": "Versions",
@@ -138,7 +144,10 @@
     "installNewerLabel": "macOS 13 ou version ultérieure",
     "homeLabel": "Accueil de LumaView",
     "navigationLabel": "Navigation principale",
-    "languageLabel": "Langue"
+    "languageLabel": "Langue",
+    "chipHelp": "Menu Apple → À propos de ce Mac : choisissez Apple Silicon pour une puce M, ou Intel pour un processeur Intel.",
+    "downloadAppleSiliconLabel": "Télécharger pour Apple Silicon",
+    "downloadIntelLabel": "Télécharger pour Intel"
   },
   "ru": {
     "navExperience": "Возможности",
@@ -149,7 +158,7 @@
     "seoSocialDescription": "Сравнивайте изображения в нескольких окнах, просматривайте папки, меняйте масштаб, поворачивайте и печатайте.",
     "heroTitle": "Откройте изображение.<br /><em>Смотрите без задержек.</em>",
     "heroLede": "Минималистичный просмотрщик изображений с нативным интерфейсом для Mac.",
-    "downloadButton": "Скачать v1.3.0",
+    "downloadButton": "Скачать v1.3.1",
     "sourceButton": "Исходный код",
     "compatibility": "macOS 12+ · Intel + Apple Silicon",
     "heroImageAlt": "Изображение в нативном окне LumaView с кнопками перехода, масштабирования и поворота.",
@@ -168,7 +177,7 @@
     "windowsImageAlt": "Девять нативных окон LumaView расположены сеткой для сравнения изображений.",
     "readyEyebrow": "Начните просмотр",
     "downloadTitle": "Скачайте<br /><em>LumaView бесплатно.</em>",
-    "downloadNote": "macOS 12+ · Universal · Около 2,5 МБ",
+    "downloadNote": "macOS 12+ · Около 2 МБ на версию",
     "footerTagline": "Локальный просмотрщик с нативным интерфейсом · ixiehao",
     "footerIssues": "Сообщить о проблеме",
     "footerReleases": "Версии",
@@ -185,7 +194,10 @@
     "installNewerLabel": "macOS 13 и новее",
     "homeLabel": "Главная LumaView",
     "navigationLabel": "Основная навигация",
-    "languageLabel": "Язык"
+    "languageLabel": "Язык",
+    "chipHelp": "Меню Apple → «Об этом Mac»: для чипа серии M выберите Apple Silicon, для процессора Intel — Intel.",
+    "downloadAppleSiliconLabel": "Скачать для Apple Silicon",
+    "downloadIntelLabel": "Скачать для Intel"
   },
   "es": {
     "navExperience": "Funciones",
@@ -196,7 +208,7 @@
     "seoSocialDescription": "Compara imágenes en varias ventanas, recorre carpetas, amplía, gira e imprime.",
     "heroTitle": "Abre una imagen.<br /><em>Explora al instante.</em>",
     "heroLede": "Un visor de imágenes nativo y minimalista para Mac.",
-    "downloadButton": "Descargar v1.3.0",
+    "downloadButton": "Descargar v1.3.1",
     "sourceButton": "Código fuente",
     "compatibility": "macOS 12+ · Intel + Apple Silicon",
     "heroImageAlt": "LumaView muestra una imagen en una ventana nativa con controles de navegación, zoom y giro.",
@@ -215,7 +227,7 @@
     "windowsImageAlt": "Nueve ventanas nativas de LumaView dispuestas en una cuadrícula para comparar imágenes.",
     "readyEyebrow": "Empieza a ver tus imágenes",
     "downloadTitle": "Descarga<br /><em>LumaView gratis.</em>",
-    "downloadNote": "macOS 12+ · Universal · Unos 2,5 MB",
+    "downloadNote": "macOS 12+ · Unos 2 MB por versión",
     "footerTagline": "Visor de imágenes local y nativo · por ixiehao",
     "footerIssues": "Informar de un problema",
     "footerReleases": "Versiones",
@@ -232,7 +244,10 @@
     "installNewerLabel": "macOS 13 o posterior",
     "homeLabel": "Inicio de LumaView",
     "navigationLabel": "Navegación principal",
-    "languageLabel": "Idioma"
+    "languageLabel": "Idioma",
+    "chipHelp": "Menú Apple → Acerca de este Mac: elige Apple Silicon si tiene un chip de la serie M, o Intel si tiene un procesador Intel.",
+    "downloadAppleSiliconLabel": "Descargar para Apple Silicon",
+    "downloadIntelLabel": "Descargar para Intel"
   },
   "ja": {
     "navExperience": "機能",
@@ -243,7 +258,7 @@
     "seoSocialDescription": "複数ウインドウでの比較、フォルダ内の画像閲覧、拡大、回転、プリント。",
     "heroTitle": "画像を開いて、<br /><em>すばやく見る。</em>",
     "heroLede": "ミニマルな Mac ネイティブ画像ビューア。",
-    "downloadButton": "v1.3.0 を入手",
+    "downloadButton": "v1.3.1 を入手",
     "sourceButton": "ソースを見る",
     "compatibility": "macOS 12以降 · Intel + Apple Silicon",
     "heroImageAlt": "LumaView のネイティブウインドウで画像を表示。上部に前後移動、拡大、回転の操作があります",
@@ -262,7 +277,7 @@
     "windowsImageAlt": "比較しやすいよう、9個の LumaView ネイティブ画像ウインドウをグリッド表示",
     "readyEyebrow": "すぐに画像を見る",
     "downloadTitle": "LumaView を<br /><em>無料でダウンロード。</em>",
-    "downloadNote": "macOS 12以降 · Universal · インストーラ約 2.5 MB",
+    "downloadNote": "macOS 12 以降 · 各インストーラ約 2 MB",
     "footerTagline": "ローカルネイティブ画像ビューア · ixiehao 制作",
     "footerIssues": "フィードバック",
     "footerReleases": "リリース",
@@ -279,7 +294,10 @@
     "installNewerLabel": "macOS 13 以降",
     "homeLabel": "LumaView ホーム",
     "navigationLabel": "メインナビゲーション",
-    "languageLabel": "言語"
+    "languageLabel": "言語",
+    "chipHelp": "Apple メニュー →「この Mac について」で確認できます。M シリーズのチップなら Apple Silicon、Intel プロセッサなら Intel を選んでください。",
+    "downloadAppleSiliconLabel": "Apple Silicon 版をダウンロード",
+    "downloadIntelLabel": "Intel 版をダウンロード"
   },
   "ko": {
     "navExperience": "기능",
@@ -290,7 +308,7 @@
     "seoSocialDescription": "여러 윈도우로 이미지를 나란히 비교하고, 폴더 탐색·확대·회전·프린트를 간편하게 이용하세요.",
     "heroTitle": "이미지를 열고,<br /><em>빠르게 둘러보세요.</em>",
     "heroLede": "심플한 Mac 네이티브 이미지 뷰어.",
-    "downloadButton": "v1.3.0 다운로드",
+    "downloadButton": "v1.3.1 다운로드",
     "sourceButton": "소스 코드",
     "compatibility": "macOS 12 이상 · Intel + Apple Silicon",
     "heroImageAlt": "탐색, 확대 및 회전 도구가 있는 LumaView 네이티브 윈도우에서 이미지를 보고 있는 모습.",
@@ -309,7 +327,7 @@
     "windowsImageAlt": "이미지를 나란히 비교할 수 있도록 격자로 배치한 9개의 LumaView 네이티브 윈도우.",
     "readyEyebrow": "지금 시작하세요",
     "downloadTitle": "LumaView를<br /><em>무료로 다운로드하세요.</em>",
-    "downloadNote": "macOS 12 이상 · Universal · 설치 파일 약 2.5 MB",
+    "downloadNote": "macOS 12 이상 · 설치 파일 각각 약 2 MB",
     "footerTagline": "로컬 네이티브 이미지 뷰어 · 제작 ixiehao",
     "footerIssues": "문제 신고",
     "footerReleases": "버전",
@@ -326,6 +344,9 @@
     "installNewerLabel": "macOS 13 이상",
     "homeLabel": "LumaView 홈",
     "navigationLabel": "주요 탐색",
-    "languageLabel": "언어"
+    "languageLabel": "언어",
+    "chipHelp": "Apple 메뉴 → 이 Mac에 관하여에서 확인하세요. M 시리즈 칩이면 Apple Silicon, Intel 프로세서이면 Intel을 선택하세요.",
+    "downloadAppleSiliconLabel": "Apple Silicon용 다운로드",
+    "downloadIntelLabel": "Intel용 다운로드"
   }
 }

@@ -4,9 +4,11 @@
 
 打开一张图片，直接浏览同一文件夹。LumaView 将画面留在中心，把日常操作放在顺手的位置。
 
-**[下载 LumaView 1.3.0 · 通用 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg)** · [官网](https://ixiehao.github.io/LumaView/zh/) · [English](README.md) · [日本語](README.ja.md) · [变更记录](CHANGELOG.md)
+**下载 LumaView 1.3.1** — [Apple Silicon 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg) · [Intel 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg) · [官网](https://ixiehao.github.io/LumaView/zh/) · [English](README.md) · [日本語](README.ja.md) · [变更记录](CHANGELOG.md)
 
-macOS 12+ · Intel + Apple Silicon · 通用版 DMG · 约 2.5 MB
+macOS 12+ · Apple Silicon / Intel 独立安装包 · 每个约 2 MB
+
+苹果菜单 → **关于本机**：M 系列芯片选 Apple Silicon，Intel 处理器选 Intel。
 
 ## 软件实机截图
 
@@ -27,7 +29,7 @@ macOS 12+ · Intel + Apple Silicon · 通用版 DMG · 约 2.5 MB
 
 ## 安装
 
-1. [下载通用版 DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg)。
+1. 下载对应的 [Apple Silicon 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg)或 [Intel 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg) DMG。
 2. 打开它，将 **LumaView.app** 拖进“应用程序”。
 3. 从“应用程序”打开 LumaView；也可在访达中右键图片，选择“打开方式” → **LumaView**。
 
@@ -70,7 +72,7 @@ DMG 只是安装包。删除它不会删除 LumaView 或任何图片；如需卸
 
 ## 从源码构建
 
-需要 macOS 13+、Xcode 15+ 与 Intel 或 Apple Silicon Mac。
+构建环境请参考[开发说明](docs/DEVELOPMENT.md)中的 macOS / Xcode 工具链。编译后的应用支持 macOS 12 及以上，以及 Apple Silicon 和 Intel Mac。
 
 ```sh
 open LumaView.xcodeproj

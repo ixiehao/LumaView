@@ -8,7 +8,7 @@
 
 一款极简的 Mac 原生看图软件。
 
-[下载 v1.3.0](https://github.com/ixiehao/LumaView/releases/latest) [查看源码](https://github.com/ixiehao/LumaView)
+[下载 v1.3.1](https://ixiehao.github.io/LumaView/zh/#download) [查看源码](https://github.com/ixiehao/LumaView)
 
 macOS 12+ · Intel + Apple Silicon
 
@@ -44,9 +44,11 @@ macOS 12+ · Intel + Apple Silicon
 
 ### 免费下载 LumaView。
 
-[下载 v1.3.0](https://github.com/ixiehao/LumaView/releases/latest)
+苹果菜单 → 关于本机：M 系列芯片选 Apple Silicon，Intel 处理器选 Intel。
 
-macOS 12+ · Universal · 安装包约 2.5 MB
+[Apple Silicon](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg) [Intel](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg)
+
+macOS 12+ · 每个安装包约 2 MB
 
 [LumaView](https://ixiehao.github.io/LumaView/zh/#top)
 

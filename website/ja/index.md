@@ -8,7 +8,7 @@
 
 ミニマルな Mac ネイティブ画像ビューア。
 
-[v1.3.0 を入手](https://github.com/ixiehao/LumaView/releases/latest) [ソースを見る](https://github.com/ixiehao/LumaView)
+[v1.3.1 を入手](https://ixiehao.github.io/LumaView/ja/#download) [ソースを見る](https://github.com/ixiehao/LumaView)
 
 macOS 12以降 · Intel + Apple Silicon
 
@@ -44,9 +44,11 @@ JPEG、PNG、HEIC、GIF、TIFF、WebP、RAW、Sketch のプレビュー、複数
 
 ### LumaView を 無料でダウンロード。
 
-[v1.3.0 を入手](https://github.com/ixiehao/LumaView/releases/latest)
+Apple メニュー →「この Mac について」で確認できます。M シリーズのチップなら Apple Silicon、Intel プロセッサなら Intel を選んでください。
 
-macOS 12以降 · Universal · インストーラ約 2.5 MB
+[Apple Silicon](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg) [Intel](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg)
+
+macOS 12 以降 · 各インストーラ約 2 MB
 
 [LumaView](https://ixiehao.github.io/LumaView/ja/#top)
 

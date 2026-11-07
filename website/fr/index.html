@@ -52,9 +52,12 @@
   "applicationCategory": "MultimediaApplication",
   "applicationSubCategory": "Image Viewer",
   "operatingSystem": "macOS 12 or later",
-  "softwareVersion": "1.3.0",
+  "softwareVersion": "1.3.1",
   "url": "https://ixiehao.github.io/LumaView/fr/",
-  "downloadUrl": "https://github.com/ixiehao/LumaView/releases/latest",
+  "downloadUrl": [
+    "https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg",
+    "https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg"
+  ],
   "codeRepository": "https://github.com/ixiehao/LumaView",
   "license": "https://github.com/ixiehao/LumaView/blob/main/LICENSE",
   "image": "https://ixiehao.github.io/LumaView/assets/social-preview.jpg?v=20261017-canvas-fill",
@@ -114,7 +117,7 @@
           <h1 data-i18n="heroTitle">Ouvrez une image.<br /><em>Parcourez sans attendre.</em></h1>
           <p class="lede" data-i18n="heroLede">Une visionneuse d’images native et minimaliste pour Mac.</p>
           <div class="hero-actions">
-            <a class="button button-primary" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">Télécharger v1.3.0</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a>
+            <a class="button button-primary" href="#download"><span data-i18n="downloadButton">Télécharger v1.3.1</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a>
             <a class="button button-secondary" href="https://github.com/ixiehao/LumaView" target="_blank" rel="noreferrer"><span data-i18n="sourceButton">Code source</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#brand-github"></use></svg></a>
           </div>
           <div class="install-help"><button class="install-guide" type="button" data-install-guide aria-haspopup="dialog" aria-controls="install-dialog"><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261026-install#info-circle"></use></svg><span data-i18n="installGuide">Installation et premier lancement</span></button></div>
@@ -171,8 +174,14 @@
           <div>
             <p class="eyebrow"><span data-i18n="readyEyebrow">À vous de regarder</span></p>
             <h2 data-i18n="downloadTitle">Téléchargez<br /><em>LumaView gratuitement.</em></h2>
+            <p class="compatibility" data-i18n="chipHelp">Menu Apple → À propos de ce Mac : choisissez Apple Silicon pour une puce M, ou Intel pour un processeur Intel.</p>
           </div>
-          <div class="download-actions"><a class="button button-light" href="https://github.com/ixiehao/LumaView/releases/latest" target="_blank" rel="noreferrer"><span data-i18n="downloadButton">Télécharger v1.3.0</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a><button class="install-guide" type="button" data-install-guide aria-haspopup="dialog" aria-controls="install-dialog"><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261026-install#info-circle"></use></svg><span data-i18n="installGuide">Installation et premier lancement</span></button><p data-i18n="downloadNote">macOS 12+ · Universal · Environ 2,5 Mo</p></div>
+          <div class="download-actions">
+            <a class="button button-light" href="https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg" aria-label="Télécharger pour Apple Silicon" data-i18n-aria="downloadAppleSiliconLabel"><span>Apple Silicon</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a>
+            <a class="button button-secondary" href="https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg" aria-label="Télécharger pour Intel" data-i18n-aria="downloadIntelLabel"><span>Intel</span><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261018-icon-semantics#download"></use></svg></a>
+            <button class="install-guide" type="button" data-install-guide aria-haspopup="dialog" aria-controls="install-dialog"><svg class="button-icon" aria-hidden="true"><use href="../assets/tabler-icons.svg?v=20261026-install#info-circle"></use></svg><span data-i18n="installGuide">Installation et premier lancement</span></button>
+            <p data-i18n="downloadNote">macOS 12+ · Environ 2 Mo par version</p>
+          </div>
         </div>
       </section>
     </main>

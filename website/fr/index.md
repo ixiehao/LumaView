@@ -8,7 +8,7 @@
 
 Une visionneuse d’images native et minimaliste pour Mac.
 
-[Télécharger v1.3.0](https://github.com/ixiehao/LumaView/releases/latest) [Code source](https://github.com/ixiehao/LumaView)
+[Télécharger v1.3.1](https://ixiehao.github.io/LumaView/fr/#download) [Code source](https://github.com/ixiehao/LumaView)
 
 macOS 12+ · Intel + Apple Silicon
 
@@ -44,9 +44,11 @@ JPEG, PNG, HEIC, GIF, TIFF, WebP, RAW, aperçus Sketch et PDF multipages sont pr
 
 ### Téléchargez LumaView gratuitement.
 
-[Télécharger v1.3.0](https://github.com/ixiehao/LumaView/releases/latest)
+Menu Apple → À propos de ce Mac : choisissez Apple Silicon pour une puce M, ou Intel pour un processeur Intel.
 
-macOS 12+ · Universal · Environ 2,5 Mo
+[Apple Silicon](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg) [Intel](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg)
+
+macOS 12+ · Environ 2 Mo par version
 
 [LumaView](https://ixiehao.github.io/LumaView/fr/#top)
 

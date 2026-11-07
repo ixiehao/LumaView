@@ -8,7 +8,7 @@
 
 Un visor de imágenes nativo y minimalista para Mac.
 
-[Descargar v1.3.0](https://github.com/ixiehao/LumaView/releases/latest) [Código fuente](https://github.com/ixiehao/LumaView)
+[Descargar v1.3.1](https://ixiehao.github.io/LumaView/es/#download) [Código fuente](https://github.com/ixiehao/LumaView)
 
 macOS 12+ · Intel + Apple Silicon
 
@@ -44,9 +44,11 @@ Empieza a ver tus imágenes
 
 ### Descarga LumaView gratis.
 
-[Descargar v1.3.0](https://github.com/ixiehao/LumaView/releases/latest)
+Menú Apple → Acerca de este Mac: elige Apple Silicon si tiene un chip de la serie M, o Intel si tiene un procesador Intel.
 
-macOS 12+ · Universal · Unos 2,5 MB
+[Apple Silicon](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg) [Intel](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg)
+
+macOS 12+ · Unos 2 MB por versión
 
 [LumaView](https://ixiehao.github.io/LumaView/es/#top)
 

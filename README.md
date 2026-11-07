@@ -5,9 +5,11 @@
 Open an image and browse the rest of its folder. LumaView keeps the picture in
 focus, with the everyday controls close at hand.
 
-**[Download LumaView 1.3.0 · Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg)** · [Website](https://ixiehao.github.io/LumaView/) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Changelog](CHANGELOG.md)
+**LumaView 1.3.1** — [Apple Silicon DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg) · [Intel DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg) · [Website](https://ixiehao.github.io/LumaView/) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Changelog](CHANGELOG.md)
 
-macOS 12+ · Intel + Apple Silicon · Universal DMG · ~2.5 MB
+macOS 12+ · Separate Apple Silicon and Intel installers · ~2 MB each
+
+Apple menu → **About This Mac**: choose Apple Silicon for an M-series chip, or Intel for an Intel processor.
 
 ## LumaView in use
 
@@ -28,7 +30,7 @@ macOS 12+ · Intel + Apple Silicon · Universal DMG · ~2.5 MB
 
 ## Install
 
-1. [Download the Universal DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg).
+1. Download the DMG for [Apple Silicon](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg) or [Intel](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg).
 2. Open it and drag **LumaView.app** to **Applications**.
 3. Open LumaView from Applications. To open an image directly, Control-click it in Finder and choose **Open With → LumaView**.
 
@@ -71,7 +73,7 @@ The DMG is only the installer. Removing it never removes LumaView or your images
 
 ## Build from source
 
-Requirements: macOS 13+, Xcode 15+, and an Intel or Apple Silicon Mac.
+Use the macOS/Xcode toolchain described in the [development guide](docs/DEVELOPMENT.md). The built app runs on macOS 12 or later, on both Apple Silicon and Intel Macs.
 
 ```sh
 open LumaView.xcodeproj
