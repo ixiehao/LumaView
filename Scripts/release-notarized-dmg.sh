@@ -1,6 +1,9 @@
 #!/bin/zsh
 set -euo pipefail
 
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+source "$PROJECT_DIR/Scripts/build-common.sh"
+
 # Public distribution path. Secrets remain in Keychain; never put certificates, API keys,
 # profiles, or Apple passwords in this project or its CI logs.
 : "${DEVELOPER_ID_APPLICATION:?Set the exact Developer ID Application signing identity.}"
@@ -22,7 +25,6 @@ if ! xcrun notarytool history --keychain-profile "$NOTARYTOOL_PROFILE" --output-
   exit 2
 fi
 
-PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 OUTPUT_DIR="${OUTPUT_DIR:-$PROJECT_DIR/dist}"
 OUTPUT_DIR="${OUTPUT_DIR:a}"
 STAGE_DIR="$(mktemp -d /tmp/lumaview-release.XXXXXX)"
@@ -41,17 +43,11 @@ trap cleanup EXIT
 mkdir -p "$OUTPUT_DIR"
 cd "$PROJECT_DIR"
 
-xcodebuild \
-  -project LumaView.xcodeproj \
-  -scheme LumaView \
-  -configuration Release \
-  -derivedDataPath "$DERIVED_DATA" \
-  ARCHS='arm64 x86_64' ONLY_ACTIVE_ARCH=NO CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
-  build
+build_release_app "$DERIVED_DATA" CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual
 
 ditto "$DERIVED_DATA/Build/Products/Release/LumaView.app" "$APP_PATH"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Contents/Info.plist")"
-DMG_PATH="$OUTPUT_DIR/LumaView-$VERSION-universal-notarized.dmg"
+DMG_PATH="$OUTPUT_DIR/LumaView-$VERSION-$LUMAVIEW_ARCH-notarized.dmg"
 [[ ! -e "$DMG_PATH" && ! -L "$DMG_PATH" && ! -e "$DMG_PATH.sha256" && ! -L "$DMG_PATH.sha256" ]] || {
   print -u2 "Refusing to replace an existing installer or checksum: $DMG_PATH"
   exit 73
@@ -60,11 +56,7 @@ DMG_PATH="$OUTPUT_DIR/LumaView-$VERSION-universal-notarized.dmg"
 # Sign the final, immutable app bundle with hardened runtime and a secure timestamp.
 codesign --force --sign "$DEVELOPER_ID_APPLICATION" --options runtime --timestamp "$APP_PATH"
 codesign --verify --deep --strict --verbose=2 "$APP_PATH"
-ARCHITECTURES="$(lipo -archs "$APP_PATH/Contents/MacOS/LumaView")"
-[[ " $ARCHITECTURES " == *" arm64 "* && " $ARCHITECTURES " == *" x86_64 "* ]] || {
-  print -u2 "Release must contain both arm64 and x86_64 slices."
-  exit 1
-}
+verify_app_architecture "$APP_PATH"
 
 "$PROJECT_DIR/Scripts/create-dmg-layout.sh" "$APP_PATH" "$DMG_PATH" "LumaView $VERSION"
 
@@ -80,12 +72,8 @@ VALIDATION_DEVICE="$(print -r -- "$ATTACH_OUTPUT" | awk '/Apple_APFS|Apple_HFS/ 
 [[ "$(readlink "$MOUNT_DIR/Applications")" == "/Applications" ]] || { print -u2 "Final DMG Applications link is invalid."; exit 1; }
 "$PROJECT_DIR/build/dmg-tools/bin/python3" "$PROJECT_DIR/Scripts/verify-dmg-layout.py" "$MOUNT_DIR" "LumaView.app"
 codesign --verify --deep --strict --verbose=2 "$MOUNT_DIR/LumaView.app"
-MOUNTED_ARCHITECTURES="$(lipo -archs "$MOUNT_DIR/LumaView.app/Contents/MacOS/LumaView")"
-[[ "$MOUNTED_ARCHITECTURES" == "$ARCHITECTURES" ]] || { print -u2 "Mounted DMG architecture differs from build."; exit 1; }
-[[ " $MOUNTED_ARCHITECTURES " == *" arm64 "* && " $MOUNTED_ARCHITECTURES " == *" x86_64 "* ]] || {
-  print -u2 "Mounted DMG must contain both arm64 and x86_64 slices."
-  exit 1
-}
+verify_app_architecture "$MOUNT_DIR/LumaView.app"
+cmp "$APP_PATH/Contents/MacOS/LumaView" "$MOUNT_DIR/LumaView.app/Contents/MacOS/LumaView"
 spctl --assess --type execute --verbose=4 "$MOUNT_DIR/LumaView.app"
 hdiutil detach "$VALIDATION_DEVICE" -quiet
 VALIDATION_DEVICE=""

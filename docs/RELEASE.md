@@ -1,6 +1,6 @@
 # LumaView release procedure
 
-LumaView 1.3.0 targets **Intel and Apple Silicon Macs** on macOS 12+. The older v1.2.9 installer requires macOS 13+. Every release script requires both `arm64` and `x86_64` slices. Complete the Monterey hardware check before describing the new minimum as verified.
+LumaView 1.3.1 targets **Intel and Apple Silicon Macs** on macOS 12+. The older v1.2.9 installer requires macOS 13+. New builds support separate `arm64` and `x86_64` installers, with an optional Universal installer. Existing published Universal downloads remain unchanged. Complete the Monterey hardware check before describing the minimum as verified.
 
 There are two deliberately distinct paths:
 
@@ -16,10 +16,14 @@ There are two deliberately distinct paths:
 ## Internal QA package
 
 ```sh
-./Scripts/package-dmg.sh
+LUMAVIEW_ARCH=arm64 ./Scripts/package-dmg.sh
+LUMAVIEW_ARCH=x86_64 ./Scripts/package-dmg.sh
 ```
 
-This produces `dist/LumaView-<version>-universal.dmg` and its SHA-256 file. The
+This produces `dist/LumaView-<version>-arm64.dmg` and
+`dist/LumaView-<version>-x86_64.dmg`, each with its SHA-256 file.
+Use `LUMAVIEW_ARCH=universal` for the combined installer; it remains the default
+when the variable is omitted. The
 installer has an original LumaView background, clear drag-to-install guidance,
 and only `LumaView.app` plus an `Applications` shortcut. The script writes its
 Finder presentation deterministically (window, icon locations and image alias),
@@ -36,15 +40,20 @@ Finder-layout guarantees.
 
 Use this only when the project owner explicitly chooses a public preview before
 Developer ID/notarization is available. Run the full test and packaging gate
-from a clean `main` checkout, then upload exactly these two generated files to
+from a clean `main` checkout, then upload both generated installers and their checksums to
 the matching GitHub Release:
 
-- `LumaView-<version>-universal.dmg`
-- `LumaView-<version>-universal.dmg.sha256`
+- `LumaView-<version>-arm64.dmg` and its `.sha256` file
+- `LumaView-<version>-x86_64.dmg` and its `.sha256` file
+
+Optionally include `LumaView-<version>-universal.dmg` and its checksum for users
+who need one installer for both architectures. Update website and README download
+choices only when those artifacts are actually released, and label Apple Silicon
+and Intel explicitly.
 
 Keep public release notes concise, in English, Simplified Chinese and Japanese: describe the main features and fixes. Keep installation and distribution details in the linked README and this guide; do not duplicate a signing-status section in release notes. Verify the following before publication:
 
-1. macOS 12+ on both **Intel and Apple Silicon** Macs; the package contains `x86_64` and `arm64` slices. Confirm the current DMG background, website/README compatibility text and social-preview generator match the version being released; do not advertise the new minimum for an older installer.
+1. macOS 12+ on both **Intel and Apple Silicon** Macs; each package contains exactly its advertised architecture (both slices for Universal). Confirm the current DMG background, website/README compatibility text and social-preview generator match the version being released; do not advertise the new minimum for an older installer.
 2. The DMG is ad-hoc signed and **not Apple-notarized**.
 3. If macOS cannot verify the developer: copy the app to Applications and try
    opening it once. On macOS 12, use **System Preferences → Security & Privacy
@@ -71,7 +80,8 @@ Prerequisites:
 ```sh
 export DEVELOPER_ID_APPLICATION='Developer ID Application: Your Name (TEAMID)'
 export NOTARYTOOL_PROFILE='lumaview-notary'
-./Scripts/release-notarized-dmg.sh
+LUMAVIEW_ARCH=arm64 ./Scripts/release-notarized-dmg.sh
+LUMAVIEW_ARCH=x86_64 ./Scripts/release-notarized-dmg.sh
 ```
 
 The script signs with hardened runtime and a secure timestamp, submits the exact final DMG, staples it after acceptance, runs `spctl` Gatekeeper assessment, re-mounts the final image, verifies the contained app and Applications shortcut, and writes a matching SHA-256 file. Do not rebuild or modify the bundle after submission.

@@ -21,6 +21,9 @@ final class ImageOperationCancellation: @unchecked Sendable {
 /// contain a compact preview of the last edited page. Reading that preview avoids
 /// parsing Sketch's private editing model and keeps preview work bounded to a bitmap.
 enum SketchPreviewExtractor {
+    // NSCache synchronizes lookup/insertion internally. Configuration is set
+    // once before publication; cached NSData values are immutable snapshots.
+    private final class PreviewCache: NSCache<NSString, NSData>, @unchecked Sendable {}
     private static let previewPaths = [
         "previews/preview.png",
         "previews/preview.jpg",
@@ -28,8 +31,8 @@ enum SketchPreviewExtractor {
     ]
     private static let maximumPreviewBytes = 64 * 1024 * 1024
     private static let extractionTimeout: DispatchTimeInterval = .seconds(4)
-    private static let previewCache: NSCache<NSString, NSData> = {
-        let cache = NSCache<NSString, NSData>()
+    private static let previewCache: PreviewCache = {
+        let cache = PreviewCache()
         cache.totalCostLimit = 48 * 1024 * 1024
         cache.countLimit = 2
         return cache
@@ -276,7 +279,9 @@ private final class ImageLRUCache {
 
 /// In-memory only. Two global LRU budgets are shared across all document
 /// windows; no image data is persisted to disk.
-final class ImageMemoryCache {
+// All mutable indexes are lock-protected; the nested LRUs synchronize their
+// dictionaries. Published bitmap-backed images are read-only after insertion.
+final class ImageMemoryCache: @unchecked Sendable {
     static let shared = ImageMemoryCache()
 
     private let navigationPreviews = ImageLRUCache(costLimit: 24 * 1024 * 1024, countLimit: 4)
@@ -293,8 +298,8 @@ final class ImageMemoryCache {
 
     private init() {}
 
-    func navigationPreview(for url: URL) -> NSImage? {
-        let key = Self.cacheKey(for: url)
+    func navigationPreview(for url: URL, cacheKey: NSString? = nil) -> NSImage? {
+        let key = cacheKey ?? Self.cacheKey(for: url)
         let image = navigationPreviews.image(for: key)
         updateNavigationKey(key, for: url, if: image != nil)
         return image
@@ -326,8 +331,8 @@ final class ImageMemoryCache {
         return nil
     }
 
-    func storeNavigationPreview(_ image: NSImage, for url: URL, pixelSize: Int) {
-        let key = Self.cacheKey(for: url)
+    func storeNavigationPreview(_ image: NSImage, for url: URL, pixelSize: Int, cacheKey: NSString? = nil) {
+        let key = cacheKey ?? Self.cacheKey(for: url)
         navigationPreviews.insert(
             image,
             for: key,
@@ -587,9 +592,13 @@ enum ImageDecoder {
         isCancelled: @escaping ImageCancellationProbe = { false }
     ) -> NSImage? {
         guard !isCancelled() else { return nil }
-        if let cached = ImageMemoryCache.shared.navigationPreview(for: url) { return cached }
+        // Keep the fingerprint captured before decoding. If an editor replaces
+        // the file during the decode, old pixels must not acquire its new key.
+        // This also avoids repeating filesystem metadata I/O on cache insertion.
+        let key = ImageMemoryCache.cacheKey(for: url)
+        if let cached = ImageMemoryCache.shared.navigationPreview(for: url, cacheKey: key) { return cached }
         guard let image = decode(url: url, maxPixelSize: maxPixelSize, isCancelled: isCancelled), !isCancelled() else { return nil }
-        ImageMemoryCache.shared.storeNavigationPreview(image, for: url, pixelSize: maxPixelSize)
+        ImageMemoryCache.shared.storeNavigationPreview(image, for: url, pixelSize: maxPixelSize, cacheKey: key)
         return image
     }
 

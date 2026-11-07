@@ -1,10 +1,10 @@
 # LumaView release and QA gate
 
-Run this checklist before creating a universal (`arm64` + `x86_64`) release DMG.
+Run this checklist before creating Apple Silicon (`arm64`), Intel (`x86_64`), or optional universal release DMGs.
 
-- [ ] For the Monterey compatibility build, verify `LSMinimumSystemVersion` and both Mach-O `minos` fields are `12.0`. On a real macOS 12 Mac, check launch, opening images/PDFs, page/file navigation, Information, settings, zoom/rotation and printing. Newer-host tests cannot establish old-OS runtime compatibility.
+- [ ] For the Monterey compatibility build, verify `LSMinimumSystemVersion` and every delivered Mach-O `minos` field are `12.0`. On a real macOS 12 Mac, check launch, opening images/PDFs, page/file navigation, Information, settings, zoom/rotation and printing. Newer-host tests cannot establish old-OS runtime compatibility.
 
-- [ ] `./Scripts/validate-project.sh` passes on the host Mac and verifies both universal Release slices. Validation uses an isolated bundle identifier and unregisters temporary builds from LaunchServices on exit; it does not replace the installed app.
+- [ ] `./Scripts/validate-project.sh` passes on the host Mac and verifies the requested Release architecture(s). Validation uses an isolated bundle identifier and unregisters temporary builds from LaunchServices on exit; it does not replace the installed app.
 - [ ] For a lifecycle or performance release, run the optional real-window 1 / 4 / 8 5K rendering gate with `LUMAVIEW_RUN_STRESS_TEST=1 ./Scripts/validate-project.sh`: first canvas appears within 25 seconds; all canvases appear within `30 + 12 × window count` seconds; every source has exactly one AppKit window, stable document accessibility scope, and an independent initial canvas/viewport state; target RSS stays below 1.2 GiB. These are broad lifecycle safety limits, not a device benchmark; routine functional releases skip this opt-in gate.
 - [ ] The automated Finder-style opening test passes: a file opened at launch shows before directory indexing completes, and `←` / `→` moves between its natural-order siblings. The router unit test separately covers buffered pre-launch URLs, duplicate filtering, unsupported URLs, and a new open event while the app is already running.
 - [ ] English, Simplified Chinese, French, Russian, Spanish, Japanese, and Korean have been checked in Light and Dark appearance, including menus, settings and toolbar labels. English is first in both language selectors; the stored language survives restart.
@@ -14,6 +14,7 @@ Run this checklist before creating a universal (`arm64` + `x86_64`) release DMG.
 - [ ] On Monterey, switch between General and Default Applications; check light/dark appearance, long translations, window sizing and every format row. From a controlled test account, install the app into Applications, select only JPEG and PNG, apply and confirm Finder uses that installed copy. Verify unselected formats remain unchanged, system cancellation stops the batch, partial failures stay selected and external changes refresh. Do not run association-changing tests on the user's normal account without authorization; restore the controlled account's original choices afterwards. A mounted installer must show the installation hint and disable Apply.
 - [ ] On Monterey, focus a multi-page PDF and use bare Up / Down and Fn-Up / Fn-Down, including holding a key and reaching each boundary. No image pan should occur; Left / Right must still switch files. Settings, text fields and modal sheets must retain their normal keyboard behavior and must not turn pages in a background document.
 - [ ] Folder scan, previous/next, zoom, fit, rotation, print, Finder reveal, drag-and-drop, and unsupported-file feedback have been checked manually. For print, use a non-sensitive image, open `⌘P`, verify the standard macOS panel, then cancel or save to a disposable PDF. For drag-and-drop, use a real Finder drag rather than a synthetic provider.
+- [ ] In the print panel, switch paper sizes, portrait/landscape and available printers. The whole image must fill the printable area along at least one axis, stay centered and remain on one page; do not expect borderless output from a printer/paper mode that cannot provide it. Check a small image, all four rotations and the current PDF page. Core tests separately inspect actual Save-to-PDF output without sending a physical print job.
 - [ ] Click the **Image Information** toolbar button for a photo with EXIF and for a PNG without EXIF. Confirm the compact inspector shows file facts in both cases, only shows camera rows when they exist, and does not change the displayed image.
 - [ ] Open a multi-page PDF with landscape and portrait pages. Use the bottom Tabler page controls, Up / Down and Page Up / Page Down; confirm first/last boundaries, page count, actual page pixels, zoom readout and page-shaped windows. Left / Right must still navigate files. Open Information from the narrow-window overflow menu, then turn a page: the old inspector must close and reopening must show the new page number and dimensions in points. Check current-page print output and PDF rotation/fit. Single-page PDFs must not show extra page controls.
 - [ ] Read a later PDF page, switch to the next file, then return: the same page must reopen at fit zoom. Repeat with two PDFs, including identical filenames in different folders and two independent windows. If pages are removed externally, returning must clamp to the last remaining page rather than showing an invalid page.
@@ -27,27 +28,26 @@ Run this checklist before creating a universal (`arm64` + `x86_64`) release DMG.
 - [ ] A large image and a non-private `.sketch` document preview correctly.
 - [ ] `LICENSE`, `THIRD-PARTY-NOTICES.md`, `PRIVACY.md`, `SECURITY.md`, and `CHANGELOG.md` describe the shipped build accurately.
 - [ ] Marketing version, build number, annotated Git tag, release notes, DMG filename, and SHA-256 agree.
-- [ ] The internal QA DMG installs on a clean Apple Silicon account and its contained executable reports both architectures with `lipo -archs`.
+- [ ] Each internal QA DMG installs on its intended hardware and its contained executable reports exactly the requested architecture(s) with `lipo -archs`.
 - [ ] On an Intel Mac, open a supported image and verify previous/next, zoom, rotation, print, quit, and reopen. Cross-compilation and `lipo` validation do not replace this hardware smoke check.
 - [ ] Before public distribution: Developer ID signature, notarization, stapling, Gatekeeper assessment, and a clean-machine install all pass.
 
-A release package missing either `arm64` or `x86_64` is a release failure.
+A single-architecture package must contain exactly its named slice. A universal package must contain both `arm64` and `x86_64`; a missing or extra slice fails packaging. Validate each delivered architecture independently.
 
-## Visual test permissions
+## Visual automation
 
-The rotation pixel test captures only the validation app's window as PNG and
-checks four colored quadrants near both side edges. It requires Screen Recording
-permission for the test runner. Without that permission, this individual test
-reports **skipped**; toolbar, keyboard, and aspect-ratio tests still run. A skip
-does not establish visual correctness: inspect all four orientations and canvas
-edges in the running app before accepting a release. Do not substitute a test's
-angle label for the displayed pixels or enable system permissions automatically.
+The rotation pixel test captures only the validation app's canvas through
+`XCUIElement.screenshot().pngRepresentation`. It checks four colored quadrants
+near both side edges and verifies that the captured dimensions match the canvas
+aspect ratio. Capture failure is a test failure, not a skip; there is no desktop
+capture fallback. The test uses generated fixtures and requires the isolated
+validation app to own foreground focus.
 
-Build the runner before granting Screen Recording permission, then use
-`test-without-building` for the authorized binary. Rebuilding an ad-hoc-signed
-runner can change its identity while System Settings still shows the old entry
-as enabled. If preflight remains false, verify the current runner path and ask
-the user to authorize refreshing that entry; do not edit the privacy database.
+Use XCTest's screenshot service instead of launching a second `screencapture`
+process from the runner. The latter adds a separate Screen Recording permission
+and ad-hoc-signature lifecycle that can fail even when XCTest itself can capture
+the target element. Do not modify the privacy database or silently enable system
+permissions to work around a failed capture.
 
 Window screenshots carry the display's ICC profile. Convert the entire bitmap
 to sRGB before sampling channels, and use distinct, moderately saturated test
@@ -65,10 +65,12 @@ Native UI tests need the document window to own keyboard focus. Activation alone
 can leave another panel or application intercepting input on a multi-display
 desktop. Open/print panel controls must be queried inside their panel; a global
 `Cancel` query can match the Touch Bar instead. Full-screen tests enter through
-the native window control and exit through Control-Command-F. On the current
-multi-display host, this synthesized exit and a native menu traversal both
-failed while manual Control-Command-F worked. Keep that automation failure
-explicit; manual verification does not turn a failed XCTest into a pass.
+the native window control and exit through the View menu. Before clicking Exit
+Full Screen, wait for its command to become enabled: screen-sized geometry alone
+does not establish that the AppKit transition has finished. A coordinate click
+on the resolved menu item avoids synthesized keyboard events aimed at a stale
+full-screen accessibility element. Verify Control-Command-F separately in the
+running app; menu navigation is not evidence that keyboard delivery succeeded.
 Measure the union of the AX window and its toolbar, since macOS can expose them
 as separate frames. A display with a camera cutout can reserve its safe area
 in full screen; use `NSScreen.safeAreaInsets` as well as the full screen bounds,

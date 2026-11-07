@@ -408,21 +408,22 @@ struct ImageCanvasView: View {
         }
         let operation = BlockOperation()
         let cancellation = ImageOperationCancellation(operation)
-        operation.addExecutionBlock { [weak operation] in
-            guard operation?.isCancelled == false else { return }
+        let operationID = ObjectIdentifier(operation)
+        operation.addExecutionBlock {
+            guard !cancellation.isCancelled else { return }
             let decoded: NSImage? = autoreleasepool {
-                guard operation?.isCancelled == false else { return nil }
+                guard !cancellation.isCancelled else { return nil }
                 return ImageDecoder.renderedImage(for: request, isCancelled: {
                     cancellation.isCancelled
                 })
             }
-            guard operation?.isCancelled == false else { return }
+            guard !cancellation.isCancelled else { return }
             let failure = decoded == nil ? request.url.map(ImageDecoder.previewFailure) : nil
             DispatchQueue.main.async {
-                guard renderOperation === operation, activeRequest == request,
+                guard renderOperation.map(ObjectIdentifier.init) == operationID, activeRequest == request,
                       browser.selectionGeneration == request.selectionGeneration,
                       browser.selectedURL == request.url,
-                      operation?.isCancelled == false else { return }
+                      !cancellation.isCancelled else { return }
                 // A failed resolution upgrade should not erase an already
                 // usable image. A new URL still reports its normal decode error.
                 if let decoded {

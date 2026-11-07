@@ -5,27 +5,44 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      strict_warnings:
+        description: Treat complete Swift concurrency and compiler warnings as errors
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   validate:
-    # UI tests execute on Apple Silicon; validate-project.sh also compiles and
-    # verifies the x86_64 slice in the universal Release app.
-    runs-on: macos-15
+    name: Validate ${{ matrix.arch }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-15
+          - arch: x86_64
+            runner: macos-26-intel
+    # Each architecture runs its full core/UI suite on native hardware, then
+    # builds and verifies its own size-optimized Release app.
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Check out source
         uses: actions/checkout@v6
       - name: Validate project
         env:
           LUMAVIEW_TEST_RESULT_PATH: ${{ runner.temp }}/LumaViewTests.xcresult
+          LUMAVIEW_ARCH: ${{ matrix.arch }}
+          LUMAVIEW_STRICT_WARNINGS: ${{ inputs.strict_warnings && '1' || '0' }}
         run: ./Scripts/validate-project.sh
       - name: Keep failed test diagnostics
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: LumaView-test-results
+          name: LumaView-test-results-${{ matrix.arch }}
           path: ${{ runner.temp }}/LumaViewTests.xcresult
           retention-days: 7
           if-no-files-found: warn

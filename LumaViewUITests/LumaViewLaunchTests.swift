@@ -24,11 +24,13 @@ final class LumaViewLaunchTests: XCTestCase {
         try? FileManager.default.removeItem(at: fixtureDirectory)
     }
 
+    @MainActor
     func testLaunchExposesAccessiblePrimaryControls() throws {
         let app = launchApp()
         XCTAssertTrue(app.buttons["Open file"].waitForExistence(timeout: 5))
     }
 
+    @MainActor
     func testOpenShortcutWorksAfterTheLastDocumentWindowCloses() throws {
         let app = launchApp()
         XCTAssertTrue(app.buttons["Open file"].waitForExistence(timeout: 5))
@@ -50,6 +52,7 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 5), .completed)
     }
 
+    @MainActor
     func testFinderStyleOpenLoadsFirstImageAndArrowKeysNavigateFolder() throws {
         let app = launchApp(opening: fixtureDirectory.appendingPathComponent("01-first.png"))
         XCTAssertTrue(app.windows["01-first.png"].waitForExistence(timeout: 5))
@@ -61,6 +64,7 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertTrue(app.windows["01-first.png"].waitForExistence(timeout: 5))
     }
 
+    @MainActor
     func testNavigationLoadsTheNextImageAtFitZoom() throws {
         let landscape = fixtureDirectory.appendingPathComponent("04-landscape.png")
         let portrait = fixtureDirectory.appendingPathComponent("05-portrait.png")
@@ -79,14 +83,17 @@ final class LumaViewLaunchTests: XCTestCase {
         expectCanvasAspect(portraitCanvas, ratio: 9.0 / 16.0)
     }
 
+    @MainActor
     func testPDFPageControlsShortcutsAndCurrentPageInformation() throws {
         try assertPDFPageControlsAndInformation(legacyInformationAnchor: false)
     }
 
+    @MainActor
     func testPDFInformationUsesTheMontereyCompatibleAnchor() throws {
         try assertPDFPageControlsAndInformation(legacyInformationAnchor: true)
     }
 
+    @MainActor
     private func assertPDFPageControlsAndInformation(legacyInformationAnchor: Bool) throws {
         let folder = fixtureDirectory.appendingPathComponent("pdf", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -156,6 +163,7 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertTrue(rendered.waitForExistence(timeout: 5))
     }
 
+    @MainActor
     func testSinglePagePDFDoesNotAddPageNavigation() throws {
         let pdf = fixtureDirectory.appendingPathComponent("single.pdf")
         try makePDF(at: pdf, pageSizes: [CGSize(width: 600, height: 400)])
@@ -182,18 +190,17 @@ final class LumaViewLaunchTests: XCTestCase {
         context.closePDF()
     }
 
+    @MainActor
     func testToolbarRotationCyclesThroughEveryRightAngle() throws {
         exerciseRotationSequence(verifyPixels: false)
     }
 
+    @MainActor
     func testRenderedRotationPixelsFillTheCanvasAtEveryRightAngle() throws {
-        try XCTSkipUnless(
-            CGPreflightScreenCaptureAccess(),
-            "Screen Recording permission is required for pixel verification. Perform the documented visual rotation check when this test is skipped."
-        )
         exerciseRotationSequence(verifyPixels: true)
     }
 
+    @MainActor
     private func exerciseRotationSequence(verifyPixels: Bool) {
         let file = fixtureDirectory.appendingPathComponent("03-toolbar.png")
         let app = launchApp(opening: file)
@@ -240,6 +247,7 @@ final class LumaViewLaunchTests: XCTestCase {
         verify([red, green, blue, yellow], ratio: 1.2)
     }
 
+    @MainActor
     private func clickToolbarItem(_ title: String, in app: XCUIApplication,
                                   file: StaticString = #filePath, line: UInt = #line) {
         let button = app.buttons.matching(NSPredicate(format: "label == %@", title)).firstMatch
@@ -259,6 +267,7 @@ final class LumaViewLaunchTests: XCTestCase {
         item.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
     }
 
+    @MainActor
     func testImageInformationToolbarPresentsMetadataInspector() throws {
         let file = fixtureDirectory.appendingPathComponent("90-exif-current.png")
         let app = launchApp(opening: file)
@@ -274,6 +283,7 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Image Information"].waitForExistence(timeout: 5))
     }
 
+    @MainActor
     func testBrowsingClosesImageInformationInspector() throws {
         let first = fixtureDirectory.appendingPathComponent("90-exif-current.png")
         let next = fixtureDirectory.appendingPathComponent("91-exif-next.png")
@@ -300,6 +310,7 @@ final class LumaViewLaunchTests: XCTestCase {
         expectInspector(inspector, toShow: next.lastPathComponent, excluding: first.lastPathComponent)
     }
 
+    @MainActor
     func testExitingFullScreenRefitsTheImageRotatedWhileFullScreen() throws {
         let file = fixtureDirectory.appendingPathComponent("03-toolbar.png")
         let app = launchApp(opening: file)
@@ -317,13 +328,24 @@ final class LumaViewLaunchTests: XCTestCase {
         expectFullScreen(true, in: window)
         rendered.typeKey("]", modifierFlags: .command)
         expect(rendered, accessibilityLabelContaining: "90°")
-        // Exercise the native menu shortcut without relying on a titlebar that
-        // may stay auto-hidden in the CI virtual display.
-        rendered.typeKey("f", modifierFlags: [.control, .command])
+        // Menu coordinates remain stable while AppKit hides the titlebar in a
+        // full-screen Space. Wait for the transition to enable its command;
+        // screen-sized geometry alone does not establish that it has finished.
+        app.activate()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 5))
+        app.menuBars.menuBarItems["View"].click()
+        let exitFullScreen = app.menuItems["Exit Full Screen"]
+        let commandReady = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == true AND enabled == true"),
+            object: exitFullScreen
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [commandReady], timeout: 5), .completed)
+        exitFullScreen.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
         expectFullScreen(false, in: window)
         expectCanvasAspect(rendered, ratio: 1 / 1.2)
     }
 
+    @MainActor
     private func expectInspector(_ inspector: XCUIElement, toShow fileName: String, excluding staleName: String? = nil) {
         // SwiftUI can propagate the VStack identifier to every text row. Scope
         // the query to the native popover, then match actual text/value instead
@@ -343,11 +365,13 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertEqual(result, .completed, "Inspector must show \(fileName), with no stale file name")
     }
 
+    @MainActor
     private func fullWindowFrame(_ window: XCUIElement) -> CGRect {
         let toolbar = window.toolbars.firstMatch
         return toolbar.exists ? window.frame.union(toolbar.frame) : window.frame
     }
 
+    @MainActor
     private func expectFullScreen(_ fullScreen: Bool, in window: XCUIElement) {
         // A notched display may reserve its camera safe area even in full
         // screen. Accept the actual screen bounds or its system-defined safe
@@ -376,6 +400,7 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertEqual(result, .completed, "Full-screen window geometry must match the requested state: \(fullScreen)")
     }
 
+    @MainActor
     func testEverySupportedLanguageHasCompleteToolbarLabelsWithoutPrintButton() throws {
         let image = fixtureDirectory.appendingPathComponent("03-toolbar.png")
         let configurations: [(language: String, appearance: String, previous: String, information: String, print: String, fileMenu: String)] = [
@@ -402,6 +427,7 @@ final class LumaViewLaunchTests: XCTestCase {
         }
     }
 
+    @MainActor
     func testUndecodableAcceptedFileShowsExplicitPreviewFailureInsteadOfWelcomeUI() throws {
         let corrupted = fixtureDirectory.appendingPathComponent("broken.jpg")
         try Data("not a JPEG".utf8).write(to: corrupted)
@@ -415,6 +441,7 @@ final class LumaViewLaunchTests: XCTestCase {
         )
     }
 
+    @MainActor
     func testChangingLanguageRelocalizesExistingDecodeFailure() throws {
         let corrupted = fixtureDirectory.appendingPathComponent("broken.jpg")
         try Data("not a JPEG".utf8).write(to: corrupted)
@@ -425,7 +452,14 @@ final class LumaViewLaunchTests: XCTestCase {
         let status = app.descendants(matching: .any)["image.status"]
         expectStatus(status, containing: "This Mac cannot decode the file")
 
-        app.typeKey(",", modifierFlags: .command)
+        // This test checks settings-driven localization, not punctuation-key
+        // injection, which depends on the host's active input source.
+        app.menuBars.menuBarItems["LumaView"].click()
+        let settings = app.menuItems.matching(NSPredicate(
+            format: "title IN %@ OR label IN %@", ["Settings…", "Preferences…"], ["Settings…", "Preferences…"]
+        )).firstMatch
+        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        settings.click()
         // Locate the setting by its own identifier across native picker roles.
         let language = app.descendants(matching: .any).matching(identifier: "settings.language").firstMatch
         XCTAssertTrue(language.waitForExistence(timeout: 5))
@@ -439,6 +473,7 @@ final class LumaViewLaunchTests: XCTestCase {
         expect(app.descendants(matching: .any)["canvas.unavailable.broken.jpg"], accessibilityLabelContaining: message)
     }
 
+    @MainActor
     private func expectStatus(_ status: XCUIElement, containing message: String) {
         // SwiftUI exposes this combined status as StaticText.value on macOS 14.
         let translated = XCTNSPredicateExpectation(predicate: NSPredicate(
@@ -447,6 +482,7 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [translated], timeout: 5), .completed)
     }
 
+    @MainActor
     private func chooseLanguage(_ name: String, in app: XCUIApplication) {
         let titles = ["Language", "语言", "Langue", "Язык", "Idioma", "言語", "언어"]
         let menu = app.menuBars.menuBarItems.matching(NSPredicate(
@@ -459,6 +495,7 @@ final class LumaViewLaunchTests: XCTestCase {
         )).firstMatch.click()
     }
 
+    @MainActor
     func testMinimizingReleasesCanvasWithoutReportingDecodeFailureAndRestoresImage() throws {
         let file = fixtureDirectory.appendingPathComponent("03-toolbar.png")
         let app = launchApp(opening: file)
@@ -483,14 +520,17 @@ final class LumaViewLaunchTests: XCTestCase {
         expectCanvasAspect(rendered, ratio: 1.2)
     }
 
+    @MainActor
     private func canvas(in window: XCUIElement, named sourceName: String) -> XCUIElement {
         window.descendants(matching: .any)["image.rendered.\(sourceName)"]
     }
 
+    @MainActor
     private func canvas(in app: XCUIApplication, named sourceName: String) -> XCUIElement {
         app.descendants(matching: .any)["image.rendered.\(sourceName)"]
     }
 
+    @MainActor
     private func launchApp(
         opening file: URL? = nil,
         language: String? = "automatic",
@@ -591,6 +631,7 @@ final class LumaViewLaunchTests: XCTestCase {
         try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: url, options: .atomic)
     }
 
+    @MainActor
     private func expect(
         _ element: XCUIElement,
         accessibilityLabelContaining expectedValue: String,
@@ -604,6 +645,7 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertTrue(element.label.contains(expectedValue), message)
     }
 
+    @MainActor
     private func expectCanvasAspect(_ element: XCUIElement, ratio: CGFloat) {
         let fitted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             let size = element.frame.size
@@ -613,6 +655,7 @@ final class LumaViewLaunchTests: XCTestCase {
                        "Canvas \(element.frame.size) must adapt to image aspect \(ratio)")
     }
 
+    @MainActor
     private func expectCanvasPixels(_ element: XCUIElement, in app: XCUIApplication, colors: [NSColor], ratio: CGFloat) {
         expectCanvasAspect(element, ratio: ratio)
         app.activate()
@@ -666,6 +709,7 @@ final class LumaViewLaunchTests: XCTestCase {
                        "Rendered quadrants must rotate and fill the canvas")
     }
 
+    @MainActor
     private func captureCanvas(_ element: XCUIElement, in app: XCUIApplication) throws -> NSBitmapImageRep {
         func failure(_ description: String) -> NSError {
             NSError(domain: "LumaViewUICapture", code: 1, userInfo: [NSLocalizedDescriptionKey: description])
@@ -675,49 +719,25 @@ final class LumaViewLaunchTests: XCTestCase {
               frontmost.bundleURL?.lastPathComponent == "LumaView.app" else {
             throw failure("The tested LumaView must be foreground before capturing its window")
         }
-        let frame = app.windows.firstMatch.frame
+        let frame = fullWindowFrame(app.windows.firstMatch)
         let canvasFrame = element.frame
-        let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
-            as? [[String: Any]] ?? []
-        let match = windows.first { window in
-            guard (window[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value == frontmost.processIdentifier,
-                  (window[kCGWindowLayer as String] as? NSNumber)?.intValue == 0,
-                  let bounds = window[kCGWindowBounds as String] as? [String: Any],
-                  let windowFrame = CGRect(dictionaryRepresentation: bounds as CFDictionary) else { return false }
-            return abs(windowFrame.minX - frame.minX) < 2 && abs(windowFrame.minY - frame.minY) < 2
-                && abs(windowFrame.width - frame.width) < 2 && abs(windowFrame.height - frame.height) < 2
+        guard frame.width > 0, frame.height > 0,
+              canvasFrame.width > 0, canvasFrame.height > 0,
+              frame.contains(canvasFrame) else {
+            throw failure("Cannot identify a canvas contained in the tested window")
         }
-        guard let windowID = (match?[kCGWindowNumber as String] as? NSNumber)?.uint32Value,
-              frame.width > 0, frame.height > 0, frame.contains(canvasFrame) else {
-            throw failure("Cannot identify the tested LumaView window and its canvas; refusing to capture another surface")
+        // XCTest captures only this element through its automation service.
+        // Avoid a separately signed screencapture process and its independent
+        // TCC permission. Failure to obtain real pixels remains a test failure.
+        guard let bitmap = NSBitmapImageRep(data: element.screenshot().pngRepresentation) else {
+            throw failure("XCTest could not capture the tested canvas as PNG")
         }
-
-        // XCUIScreenshot's HEVC encoding can fail on a secondary display. The
-        // system PNG capture keeps the same real-pixel test without capturing
-        // the desktop, menu bar, or any other application's window.
-        let url = fixtureDirectory.appendingPathComponent("rotation-window.png")
-        defer { try? FileManager.default.removeItem(at: url) }
-        let capture = Process()
-        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        capture.arguments = ["-x", "-o", "-l", String(windowID), "-t", "png", url.path]
-        capture.standardError = FileHandle.nullDevice
-        try capture.run()
-        capture.waitUntilExit()
-        guard capture.terminationStatus == 0,
-              let image = NSImage(contentsOf: url),
-              let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            throw failure("Cannot capture the validation window as PNG; check the test host's Screen Recording permission")
+        guard bitmap.pixelsWide > 0, bitmap.pixelsHigh > 0,
+              abs(CGFloat(bitmap.pixelsWide) / CGFloat(bitmap.pixelsHigh)
+                  - canvasFrame.width / canvasFrame.height) < 0.01 else {
+            throw failure("The captured pixels do not match the tested canvas bounds")
         }
-        let scaleX = CGFloat(cgImage.width) / frame.width
-        let scaleY = CGFloat(cgImage.height) / frame.height
-        let crop = CGRect(
-            x: (canvasFrame.minX - frame.minX) * scaleX,
-            y: (canvasFrame.minY - frame.minY) * scaleY,
-            width: canvasFrame.width * scaleX,
-            height: canvasFrame.height * scaleY
-        ).integral
-        guard let canvas = cgImage.cropping(to: crop) else { throw failure("Cannot crop the captured canvas") }
-        return NSBitmapImageRep(cgImage: canvas)
+        return bitmap
     }
 
 }

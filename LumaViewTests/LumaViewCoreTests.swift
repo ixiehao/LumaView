@@ -236,7 +236,7 @@ final class LumaViewCoreTests: XCTestCase {
 
         let store = await MainActor.run { ImageBrowserStore() }
         await MainActor.run { store.open(folder: missing, selecting: nil) }
-        try await waitForScan(store)
+        try await Self.waitForScan(store)
         await MainActor.run {
             XCTAssertTrue(store.files.isEmpty)
             XCTAssertNil(store.selectedURL)
@@ -279,7 +279,7 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertNotNil(ImageDecoder.navigationPreview(for: file))
         let store = await MainActor.run { ImageBrowserStore() }
         await MainActor.run { store.open(file: file) }
-        try await waitForScan(store)
+        try await Self.waitForScan(store)
 
         try await MainActor.run {
             let warning = try XCTUnwrap(store.folderScanErrorMessage)
@@ -301,7 +301,7 @@ final class LumaViewCoreTests: XCTestCase {
 
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: directory.path)
         await MainActor.run { store.open(file: file) }
-        try await waitForScan(store)
+        try await Self.waitForScan(store)
         await MainActor.run {
             XCTAssertEqual(store.files.count, 2)
             XCTAssertNil(store.folderScanErrorMessage)
@@ -600,6 +600,36 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertNil(ImageMemoryCache.shared.navigationPreview(for: url))
     }
 
+    func testNavigationPreviewDoesNotCacheOldPixelsAsAnEditedFile() throws {
+        let url = directory.appendingPathComponent("edited-during-prefetch.png")
+        try makePNG(at: url, width: 96, height: 48)
+        let keyBeforeDecode = ImageMemoryCache.cacheKey(for: url)
+        let oldImage = try XCTUnwrap(ImageDecoder.renderedImage(for: ImageRenderRequest(url: url, maxPixelSize: 1_024)))
+
+        // Reproduce replacement between decoding the old file and inserting its
+        // preview. The new file must be decoded rather than served the old image.
+        try makePNG(at: url, width: 48, height: 96)
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(2)], ofItemAtPath: url.path)
+        ImageMemoryCache.shared.storeNavigationPreview(oldImage, for: url, pixelSize: 1_024, cacheKey: keyBeforeDecode)
+        XCTAssertNil(ImageMemoryCache.shared.navigationPreview(for: url))
+        let newImage = try XCTUnwrap(ImageDecoder.navigationPreview(for: url))
+        XCTAssertEqual(ViewerGeometry.decodedSize(for: newImage), CGSize(width: 48, height: 96))
+        XCTAssertTrue(newImage === ImageMemoryCache.shared.navigationPreview(for: url))
+    }
+
+    func testQuarterTurnsHandleExtremeAndNonfiniteAnglesWithoutOverflow() {
+        for turn in QuarterTurn.allCases {
+            XCTAssertEqual(turn.rotated(by: .nan), turn)
+            XCTAssertEqual(turn.rotated(by: .infinity), turn)
+            XCTAssertEqual(turn.rotated(by: -.infinity), turn)
+            XCTAssertEqual(turn.rotated(by: Double.greatestFiniteMagnitude), turn)
+            XCTAssertEqual(turn.rotated(by: -Double.greatestFiniteMagnitude), turn)
+            XCTAssertEqual(turn.rotated(by: 360_000_000_000_000_000), turn)
+            XCTAssertEqual(turn.rotated(by: 450), turn.rotated(by: 90))
+            XCTAssertEqual(turn.rotated(by: -450), turn.rotated(by: -90))
+        }
+    }
+
     func testNavigationPreviewCacheUsesLeastRecentlyUsedEviction() throws {
         let urls = (1...5).map { directory.appendingPathComponent("preview-\($0).jpg") }
         let image = NSImage(size: CGSize(width: 12, height: 12))
@@ -798,7 +828,7 @@ final class LumaViewCoreTests: XCTestCase {
         try makePDF(at: url)
         let browser = ImageBrowserStore()
         browser.open(file: url)
-        try await waitForScan(browser)
+        try await Self.waitForScan(browser)
         let host = NSHostingView(rootView: ImageCanvasView(browser: browser, l: L10n(language: .english)))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 600, height: 400), styleMask: [], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -842,6 +872,28 @@ final class LumaViewCoreTests: XCTestCase {
             NSItemProvider(object: "ignored" as NSString)
         ])
         XCTAssertEqual(urls, [first, second].map { $0.standardizedFileURL.resolvingSymlinksInPath() })
+    }
+
+    func testCancelledDropDiscardsAProviderThatCompletesLate() async throws {
+        let url = directory.appendingPathComponent("late-drop.png")
+        let data = url.dataRepresentation
+        let started = expectation(description: "The drop provider started")
+        let release = DispatchSemaphore(value: 0)
+        let provider = NSItemProvider()
+        provider.registerDataRepresentation(forTypeIdentifier: UTType.fileURL.identifier, visibility: .all) { completion in
+            started.fulfill()
+            // Bound the fixture's wait even if the test itself fails.
+            _ = release.wait(timeout: .now() + .seconds(3))
+            completion(data, nil)
+            return nil
+        }
+        let task = Task { await DocumentDrop.fileURLs(from: [provider]) }
+        defer { task.cancel(); release.signal() }
+        await fulfillment(of: [started], timeout: 2)
+        task.cancel()
+        release.signal()
+        let urls = await task.value
+        XCTAssertTrue(urls.isEmpty, "A closed or superseded drop must not open its late result")
     }
 
     @MainActor
@@ -911,8 +963,8 @@ final class LumaViewCoreTests: XCTestCase {
         let first = ImageBrowserStore(), second = ImageBrowserStore()
         first.open(url: url)
         second.open(url: url)
-        try await waitForScan(first)
-        try await waitForScan(second)
+        try await Self.waitForScan(first)
+        try await Self.waitForScan(second)
         try await waitForPageSize(first, CGSize(width: 600, height: 400))
         try await waitForPageSize(second, CGSize(width: 600, height: 400))
         XCTAssertEqual(first.pdfPageCount, 3)
@@ -962,7 +1014,7 @@ final class LumaViewCoreTests: XCTestCase {
         try makePNG(at: image, width: 120, height: 80)
         let store = ImageBrowserStore()
         store.open(file: url)
-        try await waitForScan(store)
+        try await Self.waitForScan(store)
         try await waitForPageSize(store, CGSize(width: 600, height: 400))
         XCTAssertEqual(store.pdfPageCount, 225)
         store.selectPDFPage(36)
@@ -1027,7 +1079,7 @@ final class LumaViewCoreTests: XCTestCase {
         try makePNG(at: image, width: 120, height: 80)
         let store = ImageBrowserStore()
         store.open(file: url)
-        try await waitForScan(store)
+        try await Self.waitForScan(store)
         try await waitForPageSize(store, CGSize(width: 600, height: 400))
         store.selectPDFPage(2)
         store.next()
@@ -1384,7 +1436,7 @@ final class LumaViewCoreTests: XCTestCase {
         await MainActor.run { store.open(url: package) }
         let immediateURL = await MainActor.run { store.selectedURL }
         XCTAssertEqual(immediateURL, package.standardizedFileURL.resolvingSymlinksInPath())
-        try await waitForScan(store)
+        try await Self.waitForScan(store)
         let state = await MainActor.run { (store.folderURL, store.files.map(\.name), store.selectedURL) }
         XCTAssertEqual(state.0, directory.standardizedFileURL.resolvingSymlinksInPath())
         XCTAssertEqual(state.1, ["01-design.sketch", "02-photo.png"])
@@ -1412,7 +1464,7 @@ final class LumaViewCoreTests: XCTestCase {
             store.next()
             store.open(url: second)
         }
-        try await waitForScan(store)
+        try await Self.waitForScan(store)
         let state = await MainActor.run { (store.folderURL, store.files.map(\.name), store.selectedURL, store.isScanning) }
         XCTAssertEqual(state.0, secondFolder.standardizedFileURL.resolvingSymlinksInPath())
         XCTAssertEqual(state.1, ["second.png"])
@@ -1524,13 +1576,13 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertEqual(store.displayStatusMessage(french), french.text("error.noPrintSelection"))
         try FileManager.default.removeItem(at: unsupported)
         store.open(folder: directory, selecting: nil)
-        try await waitForScan(store)
+        try await Self.waitForScan(store)
         XCTAssertEqual(store.displayStatusMessage(french), french.text("error.emptyFolder"))
 
         let file = directory.appendingPathComponent("broken.jpg")
         try Data("not an image".utf8).write(to: file)
         store.open(file: file)
-        try await waitForScan(store)
+        try await Self.waitForScan(store)
         store.reportImageLoadResult(isAvailable: false)
         for language in AppLanguage.allCases where language != .automatic {
             let l = L10n(language: language)
@@ -1540,6 +1592,182 @@ final class LumaViewCoreTests: XCTestCase {
         }
         store.reportImageLoadResult(isAvailable: true)
         XCTAssertNil(store.displayStatusMessage(french))
+    }
+
+    @MainActor
+    func testPrintOutputUsesThePrintablePaperArea() throws {
+        let info = NSPrintInfo()
+        info.paperSize = NSSize(width: 595, height: 842)
+        // Simulate the large default document margins that shrank photo prints.
+        info.leftMargin = 72
+        info.rightMargin = 72
+        info.topMargin = 72
+        info.bottomMargin = 72
+        let output = try renderPrintedImage(size: NSSize(width: 300, height: 400), info: info)
+        let area = output.info.imageablePageBounds.intersection(output.paper)
+        let scale = min(area.width / 300, area.height / 400)
+        XCTAssertEqual(output.ink.width, 300 * scale, accuracy: 3)
+        XCTAssertEqual(output.ink.height, 400 * scale, accuracy: 3)
+        XCTAssertEqual(output.ink.midX, area.midX, accuracy: 2)
+        XCTAssertEqual(output.ink.midY, area.midY, accuracy: 2)
+    }
+
+    @MainActor
+    func testPrintLayoutReflowsWhenPaperOrOrientationChanges() throws {
+        for (size, paper, orientation) in [
+            (NSSize(width: 400, height: 300), NSSize(width: 595, height: 842), NSPrintInfo.PaperOrientation.landscape),
+            (NSSize(width: 400, height: 300), NSSize(width: 612, height: 792), .portrait),
+            (NSSize(width: 300, height: 400), NSSize(width: 842, height: 1191), .portrait),
+            (NSSize(width: 40, height: 60), NSSize(width: 288, height: 432), .portrait)
+        ] {
+            let info = NSPrintInfo()
+            info.paperSize = NSSize(width: 595, height: 842)
+            let output = try renderPrintedImage(size: size, info: info) { settings in
+                settings.paperSize = paper
+                settings.orientation = orientation
+            }
+            XCTAssertEqual(output.paper.width, output.info.paperSize.width, accuracy: 0.2)
+            XCTAssertEqual(output.paper.height, output.info.paperSize.height, accuracy: 0.2)
+            let area = output.info.imageablePageBounds.intersection(output.paper)
+            let scale = min(area.width / size.width, area.height / size.height)
+            XCTAssertEqual(output.ink.width, size.width * scale, accuracy: 3)
+            XCTAssertEqual(output.ink.height, size.height * scale, accuracy: 3)
+            XCTAssertEqual(output.ink.midX, area.midX, accuracy: 2)
+            XCTAssertEqual(output.ink.midY, area.midY, accuracy: 2)
+        }
+    }
+
+    @MainActor
+    func testPrintUsesFitScalingWithoutChangingSharedSettings() throws {
+        let info = NSPrintInfo()
+        info.scalingFactor = 0.45
+        info.leftMargin = 72
+        let output = try renderPrintedImage(size: NSSize(width: 60, height: 60), info: info)
+        XCTAssertEqual(output.info.scalingFactor, 1)
+        XCTAssertEqual(info.scalingFactor, 0.45)
+        XCTAssertEqual(info.leftMargin, 72)
+        let area = output.info.imageablePageBounds.intersection(output.paper)
+        XCTAssertEqual(output.ink.width, min(area.width, area.height), accuracy: 3)
+        XCTAssertEqual(output.ink.height, output.ink.width, accuracy: 1)
+    }
+
+    @MainActor
+    func testPrintGeometryHandlesAsymmetricMarginsAndBorderlessPaper() {
+        let paper = NSRect(x: 0, y: 0, width: 600, height: 800)
+        let area = NSRect(x: 10, y: 30, width: 570, height: 720)
+        let fitted = PrintableImageView.imageRect(imageSize: NSSize(width: 200, height: 400),
+                                                  paperBounds: paper, imageableBounds: area)
+        XCTAssertEqual(fitted, NSRect(x: 115, y: 30, width: 360, height: 720))
+        for reported in [paper.insetBy(dx: -4, dy: -4), .zero] {
+            let full = PrintableImageView.imageRect(imageSize: paper.size, paperBounds: paper, imageableBounds: reported)
+            XCTAssertEqual(full, paper)
+        }
+        XCTAssertEqual(PrintableImageView.imageRect(imageSize: .zero, paperBounds: paper, imageableBounds: area), .zero)
+    }
+
+    @MainActor
+    func testPrintedPagePreservesAllFourRotationsAndImageEdges() throws {
+        let file = directory.appendingPathComponent("printed-rotation.pdf")
+        try makeCroppedPDF(at: file, rotation: 0, markCorner: true)
+        for turn in QuarterTurn.allCases {
+            let cg = try XCTUnwrap(ImageDecoder.printBitmap(for: file, maxPixelSize: 400, rotation: turn))
+            let image = NSImage(cgImage: cg, size: .zero)
+            let info = NSPrintInfo()
+            info.orientation = turn.swapsAxes ? .portrait : .landscape
+            let output = try renderPrintedImage(size: image.size, info: info, image: image)
+            XCTAssertEqual(output.ink.width / output.ink.height, CGFloat(cg.width) / CGFloat(cg.height), accuracy: 0.01)
+            let area = output.info.imageablePageBounds.intersection(output.paper)
+            XCTAssertTrue(abs(output.ink.width - area.width) <= 3 || abs(output.ink.height - area.height) <= 3)
+            for (index, point) in [(0.25, 0.25), (0.75, 0.25), (0.75, 0.75), (0.25, 0.75)].enumerated() {
+                let x = Int(output.ink.minX + output.ink.width * point.0)
+                let y = Int(CGFloat(output.bitmap.pixelsHigh) - output.ink.maxY + output.ink.height * point.1)
+                let color = try XCTUnwrap(output.bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB))
+                // The print pipeline color-manages RGB. Verify the corner's hue
+                // and position without requiring the source's exact RGB values.
+                let blueOverGreen = color.blueComponent - color.greenComponent
+                if index == turn.rawValue {
+                    XCTAssertGreaterThan(blueOverGreen, 0.5)
+                } else {
+                    XCTAssertLessThan(blueOverGreen, -0.5)
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func renderPrintedImage(size: NSSize, info: NSPrintInfo, image source: NSImage? = nil,
+                                    changeSettings: ((NSPrintInfo) -> Void)? = nil) throws
+        -> (ink: NSRect, paper: NSRect, info: NSPrintInfo, bitmap: NSBitmapImageRep) {
+        // Use the actual print operation's Save-to-PDF path, never a printer or screenshot.
+        let image = source ?? NSImage(size: size, flipped: false) { rect in
+            NSColor.black.setFill()
+            rect.fill()
+            return true
+        }
+        let operation = PrintableImageView.operation(image: image, printInfo: info)
+        XCTAssertTrue(operation.printPanel.options.contains([.showsPaperSize, .showsOrientation]))
+        changeSettings?(operation.printInfo)
+        let url = directory.appendingPathComponent("print-\(UUID().uuidString).pdf")
+        operation.printInfo.jobDisposition = .save
+        operation.printInfo.dictionary()[NSPrintInfo.AttributeKey.jobSavingURL] = url
+        operation.showsPrintPanel = false
+        operation.showsProgressPanel = false
+        XCTAssertTrue(operation.run())
+        let attachment = XCTAttachment(data: try Data(contentsOf: url), uniformTypeIdentifier: "com.adobe.pdf")
+        attachment.name = "Printed page"
+        add(attachment)
+        let document = try XCTUnwrap(CGPDFDocument(url as CFURL))
+        XCTAssertEqual(document.numberOfPages, 1)
+        let page = try XCTUnwrap(document.page(at: 1))
+        let paper = page.getBoxRect(.mediaBox)
+        let width = Int(paper.width.rounded(.up)), height = Int(paper.height.rounded(.up))
+        let context = try XCTUnwrap(CGContext(data: nil, width: width, height: height,
+            bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+        context.setFillColor(CGColor(gray: 1, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        context.drawPDFPage(page)
+        let pixels = try XCTUnwrap(context.data).assumingMemoryBound(to: UInt8.self)
+        var minX = width, minY = height, maxX = -1, maxY = -1
+        for y in 0..<height {
+            for x in 0..<width {
+                let offset = (y * width + x) * 4
+                guard pixels[offset] < 240 || pixels[offset + 1] < 240 || pixels[offset + 2] < 240 else { continue }
+                minX = min(minX, x); maxX = max(maxX, x)
+                minY = min(minY, y); maxY = max(maxY, y)
+            }
+        }
+        XCTAssertGreaterThan(maxX, minX)
+        // Bitmap rows are top-down; print/page coordinates are bottom-up.
+        let ink = NSRect(x: minX, y: height - maxY - 1, width: maxX - minX + 1, height: maxY - minY + 1)
+        let bitmap = NSBitmapImageRep(cgImage: try XCTUnwrap(context.makeImage()))
+        return (ink, paper, operation.printInfo, bitmap)
+    }
+
+    @MainActor
+    func testClosingStoreCancelsQueuedPrintAndMetadataWithoutDeallocation() async throws {
+        let url = directory.appendingPathComponent("closing.png")
+        // Invalid pixels keep a failing implementation from opening a print
+        // panel; its late failure would still overwrite the cleared state.
+        try Data([0x01]).write(to: url)
+        let store = ImageBrowserStore()
+        ImageDecodeQueue.prints.isSuspended = true
+        defer { ImageDecodeQueue.prints.isSuspended = false }
+        store.open(file: url)
+        store.printSelectedImage()
+        XCTAssertTrue(store.isPreparingPrint)
+        store.cancelPendingWork()
+        XCTAssertFalse(store.isPreparingPrint)
+        XCTAssertFalse(store.isScanning)
+        XCTAssertNil(store.status)
+        ImageDecodeQueue.prints.isSuspended = false
+        for _ in 0..<200 where ImageDecodeQueue.prints.operationCount > 0 {
+            try await Task.sleep(nanoseconds: 5_000_000)
+        }
+        try await Task.sleep(nanoseconds: 80_000_000)
+        XCTAssertEqual(ImageDecodeQueue.prints.operationCount, 0)
+        XCTAssertNil(store.status, "Closing must invalidate a retained store's late print callback")
+        XCTAssertNil(store.originalPixelSize)
     }
 
     func testPrintBitmapRemainsBoundedAndHonorsCancellation() throws {
@@ -1735,10 +1963,11 @@ final class LumaViewCoreTests: XCTestCase {
         try makePNG(at: directory.appendingPathComponent("photo-2.png"), width: 96, height: 64)
         let store = await MainActor.run { ImageBrowserStore() }
 
-        await MainActor.run { store.open(folder: directory, selecting: nil) }
-        try await waitForScan(store)
+        let folder = directory!
+        await MainActor.run { store.open(folder: folder, selecting: nil) }
+        try await Self.waitForScan(store)
         let nextURL = try await MainActor.run { try XCTUnwrap(store.files.dropFirst().first?.url) }
-        try await waitForNavigationPreview(at: nextURL)
+        try await Self.waitForNavigationPreview(at: nextURL)
 
         let result = await MainActor.run { () -> (Int, Int?, CGFloat, QuarterTurn) in
             for _ in 0..<10 { store.next() }
@@ -1780,7 +2009,7 @@ final class LumaViewCoreTests: XCTestCase {
         let store = await MainActor.run { ImageBrowserStore() }
 
         await MainActor.run { store.open(url: second) }
-        try await waitForScan(store)
+        try await Self.waitForScan(store)
 
         let state = await MainActor.run { (store.selectedFile?.url, store.files.count, store.hasNext) }
         XCTAssertEqual(state.0, second.standardizedFileURL.resolvingSymlinksInPath())
@@ -1799,7 +2028,7 @@ final class LumaViewCoreTests: XCTestCase {
         let immediateSelection = await MainActor.run { store.selectedURL }
         XCTAssertEqual(immediateSelection, second.standardizedFileURL.resolvingSymlinksInPath())
 
-        try await waitForScan(store)
+        try await Self.waitForScan(store)
         let indexedState = await MainActor.run { (store.files.count, store.selectedURL, store.positionText) }
         XCTAssertEqual(indexedState.0, 2)
         XCTAssertEqual(indexedState.1, second.standardizedFileURL.resolvingSymlinksInPath())
@@ -1814,7 +2043,7 @@ final class LumaViewCoreTests: XCTestCase {
         let store = await MainActor.run { ImageBrowserStore() }
 
         await MainActor.run { store.open(url: hidden) }
-        try await waitForScan(store)
+        try await Self.waitForScan(store)
         let selected = await MainActor.run { store.selectedURL }
         XCTAssertEqual(selected, hidden.standardizedFileURL.resolvingSymlinksInPath())
         let names = await MainActor.run { store.files.map(\.name) }
@@ -1839,7 +2068,7 @@ final class LumaViewCoreTests: XCTestCase {
             store.open(url: first)
             store.next()
         }
-        try await waitForScan(store)
+        try await Self.waitForScan(store)
 
         let selected = await MainActor.run { store.selectedURL }
         XCTAssertEqual(selected, second.standardizedFileURL.resolvingSymlinksInPath())
@@ -1871,8 +2100,8 @@ final class LumaViewCoreTests: XCTestCase {
             firstWindow.open(url: first)
             secondWindow.open(url: second)
         }
-        try await waitForScan(firstWindow)
-        try await waitForScan(secondWindow)
+        try await Self.waitForScan(firstWindow)
+        try await Self.waitForScan(secondWindow)
 
         let selections = await MainActor.run { (firstWindow.selectedURL, secondWindow.selectedURL) }
         XCTAssertEqual(selections.0, first.standardizedFileURL.resolvingSymlinksInPath())
@@ -1893,8 +2122,8 @@ final class LumaViewCoreTests: XCTestCase {
             firstWindow.open(url: first)
             secondWindow.open(url: third)
         }
-        try await waitForScan(firstWindow)
-        try await waitForScan(secondWindow)
+        try await Self.waitForScan(firstWindow)
+        try await Self.waitForScan(secondWindow)
 
         await MainActor.run { firstWindow.next() }
         let selections = await MainActor.run { (firstWindow.selectedURL, secondWindow.selectedURL) }
@@ -1963,7 +2192,7 @@ final class LumaViewCoreTests: XCTestCase {
         try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: url)
     }
 
-    private func waitForScan(_ store: ImageBrowserStore) async throws {
+    private static func waitForScan(_ store: ImageBrowserStore) async throws {
         for _ in 0..<200 {
             if await MainActor.run(body: { !store.isScanning }) { return }
             try await Task.sleep(nanoseconds: 10_000_000)
@@ -1971,7 +2200,7 @@ final class LumaViewCoreTests: XCTestCase {
         XCTFail("Timed out waiting for the folder scan")
     }
 
-    private func waitForNavigationPreview(at url: URL) async throws {
+    private static func waitForNavigationPreview(at url: URL) async throws {
         for _ in 0..<200 {
             if ImageMemoryCache.shared.navigationPreview(for: url) != nil { return }
             try await Task.sleep(nanoseconds: 10_000_000)
@@ -1981,28 +2210,16 @@ final class LumaViewCoreTests: XCTestCase {
 }
 
 private final class UpdateCheckURLProtocol: URLProtocol {
-    private static let lock = NSLock()
-    private static var requests = 0
+    private static let counter = TestRequestCounter()
 
-    static var requestCount: Int {
-        lock.lock()
-        defer { lock.unlock() }
-        return requests
-    }
-
-    static func reset() {
-        lock.lock()
-        requests = 0
-        lock.unlock()
-    }
+    static var requestCount: Int { counter.value }
+    static func reset() { counter.reset() }
 
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
-        Self.lock.lock()
-        Self.requests += 1
-        Self.lock.unlock()
+        Self.counter.increment()
 
         let body = Data(#"{"tag_name":"v1.2.1","html_url":"https://github.com/ixiehao/LumaView/releases/tag/v1.2.1","draft":false,"prerelease":false}"#.utf8)
         let response = HTTPURLResponse(
@@ -2011,11 +2228,13 @@ private final class UpdateCheckURLProtocol: URLProtocol {
             httpVersion: "HTTP/1.1",
             headerFields: ["Content-Type": "application/json"]
         )!
-        DispatchQueue.global().asyncAfter(deadline: .now() + 0.05) { [self] in
-            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            client?.urlProtocol(self, didLoad: body)
-            client?.urlProtocolDidFinishLoading(self)
-        }
+        // URLSession already invokes this on its protocol-loading thread.
+        // A short deterministic delay lets concurrent update checks join; keep
+        // the callback on that thread instead of sending URLProtocol across queues.
+        Thread.sleep(forTimeInterval: 0.05)
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: body)
+        client?.urlProtocolDidFinishLoading(self)
     }
 
     override func stopLoading() {}
@@ -2042,5 +2261,23 @@ private final class TestDefaultApplicationHandler: DefaultApplicationHandling {
         await Task.yield()
         if let error = errors[type.identifier] { throw error }
         if !ignored.contains(type.identifier) { applications[type.identifier] = url }
+    }
+}
+
+// The URLProtocol callbacks and test assertions use different threads.
+private final class TestRequestCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+    var value: Int {
+        lock.lock(); defer { lock.unlock() }
+        return count
+    }
+    func increment() {
+        lock.lock(); defer { lock.unlock() }
+        count += 1
+    }
+    func reset() {
+        lock.lock(); defer { lock.unlock() }
+        count = 0
     }
 }

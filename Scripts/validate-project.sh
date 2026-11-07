@@ -4,12 +4,28 @@ set -euo pipefail
 # One repeatable local gate for contributors and CI. Derived files live in a
 # temporary directory so validation never changes a checked-out project.
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+source "$PROJECT_DIR/Scripts/build-common.sh"
+TEST_ARCHITECTURE="$(uname -m)"
+if [[ "$LUMAVIEW_ARCH" != "universal" && "$LUMAVIEW_ARCH" != "$TEST_ARCHITECTURE" ]]; then
+  print -u2 "Native $LUMAVIEW_ARCH validation requires a $LUMAVIEW_ARCH host; current process is $TEST_ARCHITECTURE."
+  exit 64
+fi
+# A translated shell is not evidence of testing on Intel hardware.
+if [[ "$(sysctl -in sysctl.proc_translated 2>/dev/null || true)" == "1" ]]; then
+  print -u2 "Use a native shell for validation. Rosetta execution is not native Intel verification."
+  exit 64
+fi
+TEST_SELECTION=()
+case "${LUMAVIEW_TEST_SCOPE:-all}" in
+  all) ;;
+  core) TEST_SELECTION=(-only-testing:LumaViewTests) ;;
+  *) print -u2 "LUMAVIEW_TEST_SCOPE must be all or core."; exit 64 ;;
+esac
 STAGE_DIR="$(mktemp -d /tmp/lumaview-validation.XXXXXX)"
 DERIVED_DATA="$STAGE_DIR/DerivedData"
 # CI keeps its result bundle outside the disposable build directory so a
 # failed assertion retains the generated-fixture screenshots and AX hierarchy.
 TEST_RESULT_PATH="${LUMAVIEW_TEST_RESULT_PATH:-$STAGE_DIR/Tests.xcresult}"
-TEST_ARCHITECTURE="$(uname -m)"
 VALIDATION_BUNDLE_ID='com.lumaview.validation.$(PRODUCT_NAME)'
 
 cleanup() {
@@ -28,6 +44,7 @@ cd "$PROJECT_DIR"
 
 # Fast offline regression checks for installer output safety.
 python3 Scripts/test-packaging.py
+python3 Scripts/build-website.py --check
 
 # Run core and UI tests in one locally signed XCTest session. Splitting macOS UI
 # automation into a second `xcodebuild` process can leave the accessibility service
@@ -40,36 +57,19 @@ xcodebuild \
   -derivedDataPath "$DERIVED_DATA" \
   -resultBundlePath "$TEST_RESULT_PATH" \
   -destination "platform=macOS,arch=$TEST_ARCHITECTURE" \
+  -test-timeouts-enabled YES \
+  -default-test-execution-time-allowance 180 \
+  -maximum-test-execution-time-allowance 300 \
+  "ARCHS=$TEST_ARCHITECTURE" ONLY_ACTIVE_ARCH=YES \
   PRODUCT_BUNDLE_IDENTIFIER="$VALIDATION_BUNDLE_ID" \
+  "${TEST_SELECTION[@]}" "${LUMAVIEW_WARNING_SETTINGS[@]}" \
   test CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY="-"
 
-xcodebuild \
-  -project LumaView.xcodeproj \
-  -scheme LumaView \
-  -configuration Release \
-  -derivedDataPath "$DERIVED_DATA" \
+build_release_app "$DERIVED_DATA" \
   PRODUCT_BUNDLE_IDENTIFIER="$VALIDATION_BUNDLE_ID" \
-  ARCHS='arm64 x86_64' ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO \
-  build
+  CODE_SIGNING_ALLOWED=NO
 
-RELEASE_BINARY="$DERIVED_DATA/Build/Products/Release/LumaView.app/Contents/MacOS/LumaView"
-RELEASE_PLIST="$DERIVED_DATA/Build/Products/Release/LumaView.app/Contents/Info.plist"
-[[ "$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$RELEASE_PLIST")" == "12.0" ]] || {
-  print -u2 "Release app must support macOS 12.0."
-  exit 1
-}
-RELEASE_ARCHITECTURES="$(lipo -archs "$RELEASE_BINARY")"
-[[ " $RELEASE_ARCHITECTURES " == *" arm64 "* && " $RELEASE_ARCHITECTURES " == *" x86_64 "* ]] || {
-  print -u2 "Release build must contain both arm64 and x86_64 slices; found: $RELEASE_ARCHITECTURES"
-  exit 1
-}
-for architecture in arm64 x86_64; do
-  minimum_os="$(xcrun vtool -arch "$architecture" -show-build "$RELEASE_BINARY" | awk '/minos/ {print $2}')"
-  [[ "$minimum_os" == "12.0" ]] || {
-    print -u2 "Release $architecture slice requires macOS $minimum_os, expected 12.0."
-    exit 1
-  }
-done
+verify_app_architecture "$DERIVED_DATA/Build/Products/Release/LumaView.app"
 
 if [[ "${LUMAVIEW_RUN_STRESS_TEST:-0}" == "1" ]]; then
   STRESS_BINARY="$STAGE_DIR/lumaview-stress"

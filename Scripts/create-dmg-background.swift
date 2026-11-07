@@ -12,6 +12,13 @@ guard CommandLine.arguments.count == 2 else {
 }
 
 let outputURL = URL(fileURLWithPath: CommandLine.arguments[1])
+let architectureLabel: String
+switch ProcessInfo.processInfo.environment["LUMAVIEW_ARCH"] ?? "universal" {
+case "arm64": architectureLabel = "Apple Silicon"
+case "x86_64": architectureLabel = "Intel"
+case "universal": architectureLabel = "Universal · Intel + Apple Silicon"
+default: throw InstallerArtworkError.invalidArguments
+}
 let canvas = NSSize(width: 980, height: 620)
 let canvasRect = NSRect(origin: .zero, size: canvas)
 
@@ -156,7 +163,7 @@ drawText(
     color: color(0.25, 0.30, 0.39, 0.86)
 )
 drawText(
-    "Universal · Intel + Apple Silicon · macOS 12 or later",
+    "\(architectureLabel) · macOS 12 or later",
     in: NSRect(x: 130, y: 94, width: 720, height: 19),
     font: .systemFont(ofSize: 12, weight: .regular),
     color: color(0.40, 0.45, 0.54, 0.70)

@@ -23,7 +23,7 @@ From the repository root:
 ./Scripts/validate-project.sh
 ```
 
-This runs core/UI tests in one XCTest session, then builds a release application and verifies both arm64 and x86_64 slices. UI tests require an interactive macOS session. For the optional generated-image stress gate:
+This runs core/UI tests in one XCTest session, then builds a release application. `LUMAVIEW_ARCH=arm64` or `x86_64` selects a native architecture gate and a single-architecture Release; the default `universal` still verifies both slices. CI defines separate native Apple Silicon and Intel jobs. `LUMAVIEW_TEST_SCOPE=core` avoids desktop interaction. UI tests require an interactive macOS session. For the optional generated-image stress gate:
 
 ```sh
 LUMAVIEW_RUN_STRESS_TEST=1 ./Scripts/validate-project.sh
@@ -57,6 +57,14 @@ Render the current page into a bounded bitmap (longest edge at most 5,120 pixels
 
 Core tests cover distinct page pixels, crop origins, all four intrinsic rotations, cache invalidation, page boundaries, cancellation, malformed/locked files, current-page metadata/print output and independent window state. UI tests cover page buttons/shortcuts, mixed page dimensions, overflow Information, inspector dismissal, zoom, file navigation and single-page behavior. A core bitmap test does not require screen-recording permission.
 
+## Printing
+
+Print one paper-sized page and fit the prepared image once to `NSPrintInfo.imageablePageBounds`, intersected with the physical paper. Preserve the image's aspect ratio and all four edges. Do not add a fixed inset and then use AppKit's fit pagination: that applies a second reduction and produces oversized margins. A printer's non-printable edges and an image/paper aspect-ratio mismatch can still leave white space.
+
+Copy the shared print settings before clearing document margins and resetting the initial scale. The operation owns another copy: read its current paper size and imageable area during pagination/drawing so paper, orientation and printer changes reflow the preview. Expose the system paper-size and orientation controls; use bottom-left page coordinates consistently. Printing keeps the current PDF page and image rotation, with the existing bounded background decode and cancellation checks.
+
+Core tests run the real `NSPrintOperation` Save-to-PDF path without a print panel or physical print job. Rasterized output verifies page count, image extent, centering, paper/orientation changes, small-image enlargement and all four rotations. Color-management can change exact RGB values, so the orientation check uses distinct corner hues rather than requiring byte-identical colors. This does not replace a printer-driver preview or physical-paper check.
+
 ## Settings and default applications
 
 Use the macOS 12 `NSWorkspace` content-type APIs to read and set the default application. Stage checkboxes first; only the explicit Apply action writes associations. Handle individual UTTypes, never the generic `public.image` parent. Select Images excludes PDF. Existing LumaView defaults are checked and read-only; Finder's Get Info remains the place to choose another app.
@@ -68,3 +76,11 @@ The settings render test uses invisible AppKit windows and `NSView.cacheDisplay`
 ## Packaging
 
 Follow [RELEASE.md](RELEASE.md); it distinguishes preview builds from Developer ID–signed, notarized distribution. Do not treat a successful local build as a release authorization.
+
+## Preparing for newer SDKs
+
+Keep one shared Swift implementation for both CPU architectures. Release packaging uses whole-module size optimization and dead-code stripping; architecture-specific installers omit the other Mach-O slice. Native Apple frameworks choose platform implementations at runtime. Do not add CPU-specific caches or unsafe intrinsics without measured evidence.
+
+Complete Swift concurrency checking is enabled in the project and scripts. Use `LUMAVIEW_STRICT_WARNINGS=1` for a compiler-warning gate. Shared cache declarations are justified by lock protection or immutable publication; cancelled work must also reject stale completion by identity. Window close cancels operations immediately, rather than waiting for deallocation.
+
+As of 2026-11-06, this review uses Xcode 27.2 / macOS SDK 27.2. Apple's [SDK requirements](https://developer.apple.com/xcode/system-requirements/) do not list a macOS 28 SDK. This is preparation, not a macOS 28 compatibility claim. When that SDK is available, compile with the strict gate, review deprecations and API availability, and rerun native UI/printing/permission tests on the new OS. Keep the macOS 12 deployment target until a separate compatibility decision is made. Cross-compilation or Rosetta tests do not replace Intel and Monterey hardware validation.
