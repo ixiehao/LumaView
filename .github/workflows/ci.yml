@@ -25,7 +25,7 @@ jobs:
           - arch: arm64
             runner: macos-15
           - arch: x86_64
-            runner: macos-26-intel
+            runner: macos-15-intel
     # Each architecture runs its full core/UI suite on native hardware, then
     # builds and verifies its own size-optimized Release app.
     runs-on: ${{ matrix.runner }}

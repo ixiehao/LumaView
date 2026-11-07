@@ -36,7 +36,7 @@ LUMAVIEW_STRICT_WARNINGS=1 LUMAVIEW_TEST_SCOPE=core ./Scripts/validate-project.s
 ```
 
 The default test scope is `all` (core and UI). GitHub CI uses `macos-15` for
-Apple Silicon and `macos-26-intel` for Intel, as listed in the
+Apple Silicon and `macos-15-intel` for Intel, as listed in the
 [GitHub runner documentation](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
 Each job executes native tests and builds its corresponding single-architecture
 Release app. The validation script rejects translated shells and mismatched
