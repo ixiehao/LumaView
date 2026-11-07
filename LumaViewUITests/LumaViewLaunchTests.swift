@@ -341,17 +341,25 @@ final class LumaViewLaunchTests: XCTestCase {
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 5))
         let viewMenu = app.menuBars.menuBarItems["View"]
         XCTAssertTrue(viewMenu.waitForExistence(timeout: 5))
-        let menuPosition = viewMenu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        // The CI display auto-hides the menu bar in full screen. Moving to its
-        // real position reveals it; AXPress alone rejects the hidden item.
-        menuPosition.hover()
-        menuPosition.click()
+        // The hidden menu's AX frame remains at y=0, but hovering its centre
+        // hits the full-screen toolbar on macOS 15. Reach the actual top edge
+        // first, then wait for AppKit to expose a clickable menu bar.
+        viewMenu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0)).hover()
+        let menuRevealed = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "hittable == true"), object: viewMenu
+        )
+        let revealResult = XCTWaiter.wait(for: [menuRevealed], timeout: 5)
+        if revealResult != .completed { print("Full-screen menu did not reveal: \(app.debugDescription)") }
+        XCTAssertEqual(revealResult, .completed)
+        viewMenu.click()
         let exitFullScreen = app.menuItems["Exit Full Screen"]
         let commandReady = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "exists == true AND enabled == true AND hittable == true"),
             object: exitFullScreen
         )
-        XCTAssertEqual(XCTWaiter.wait(for: [commandReady], timeout: 5), .completed)
+        let commandResult = XCTWaiter.wait(for: [commandReady], timeout: 5)
+        if commandResult != .completed { print("Full-screen command unavailable: \(app.debugDescription)") }
+        XCTAssertEqual(commandResult, .completed)
         // Use XCTest's menu-selection event path, which hovers/selects the
         // item before activation. A raw coordinate click can leave the native
         // full-screen menu tracking on macOS 15 without invoking its action.

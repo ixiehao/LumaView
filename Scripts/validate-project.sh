@@ -19,7 +19,8 @@ TEST_SELECTION=()
 case "${LUMAVIEW_TEST_SCOPE:-all}" in
   all) ;;
   core) TEST_SELECTION=(-only-testing:LumaViewTests) ;;
-  *) print -u2 "LUMAVIEW_TEST_SCOPE must be all or core."; exit 64 ;;
+  fullscreen) TEST_SELECTION=(-only-testing:LumaViewUITests/LumaViewLaunchTests/testExitingFullScreenRefitsTheImageRotatedWhileFullScreen) ;;
+  *) print -u2 "LUMAVIEW_TEST_SCOPE must be all, core or fullscreen."; exit 64 ;;
 esac
 STAGE_DIR="$(mktemp -d /tmp/lumaview-validation.XXXXXX)"
 DERIVED_DATA="$STAGE_DIR/DerivedData"

@@ -879,15 +879,19 @@ final class LumaViewCoreTests: XCTestCase {
         let data = url.dataRepresentation
         let started = expectation(description: "The drop provider started")
         let release = DispatchSemaphore(value: 0)
-        let provider = NSItemProvider()
-        provider.registerDataRepresentation(forTypeIdentifier: UTType.fileURL.identifier, visibility: .all) { completion in
-            started.fulfill()
-            // Bound the fixture's wait even if the test itself fails.
-            _ = release.wait(timeout: .now() + .seconds(3))
-            completion(data, nil)
-            return nil
+        let task = Task { @MainActor in
+            // Match the UI drop path: create/use the non-Sendable provider on
+            // the same actor instead of transferring it from the test task.
+            let provider = NSItemProvider()
+            provider.registerDataRepresentation(forTypeIdentifier: UTType.fileURL.identifier, visibility: .all) { completion in
+                started.fulfill()
+                // Bound the fixture's wait even if the test itself fails.
+                _ = release.wait(timeout: .now() + .seconds(3))
+                completion(data, nil)
+                return nil
+            }
+            return await DocumentDrop.fileURLs(from: [provider])
         }
-        let task = Task { await DocumentDrop.fileURLs(from: [provider]) }
         defer { task.cancel(); release.signal() }
         await fulfillment(of: [started], timeout: 2)
         task.cancel()

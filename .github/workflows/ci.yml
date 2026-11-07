@@ -10,13 +10,18 @@ on:
         description: Treat complete Swift concurrency and compiler warnings as errors
         type: boolean
         default: false
+      test_scope:
+        description: Diagnostic test selection (releases require all)
+        type: choice
+        options: [all, core, fullscreen]
+        default: all
 
 permissions:
   contents: read
 
 jobs:
   validate:
-    name: Validate ${{ matrix.arch }}
+    name: Validate ${{ matrix.arch }}${{ inputs.test_scope && inputs.test_scope != 'all' && format(' ({0} diagnostic)', inputs.test_scope) || '' }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -37,6 +42,7 @@ jobs:
           LUMAVIEW_TEST_RESULT_PATH: ${{ runner.temp }}/LumaViewTests.xcresult
           LUMAVIEW_ARCH: ${{ matrix.arch }}
           LUMAVIEW_STRICT_WARNINGS: ${{ inputs.strict_warnings && '1' || '0' }}
+          LUMAVIEW_TEST_SCOPE: ${{ inputs.test_scope || 'all' }}
         run: ./Scripts/validate-project.sh
       - name: Keep failed test diagnostics
         if: failure()
