@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Exercise installer output safety without Xcode, network access or mounting DMGs."""
 import os
+import json
+import plistlib
 from pathlib import Path
 import shutil
 import subprocess
@@ -18,6 +20,7 @@ class PackagingTests(unittest.TestCase):
         scripts.mkdir()
         source = Path(__file__).resolve().parent
         shutil.copyfile(source / "create-dmg-layout.sh", scripts / "create-dmg-layout.sh")
+        shutil.copyfile(source / "build-common.sh", scripts / "build-common.sh")
         self.script = scripts / "create-dmg-layout.sh"
         self.app = self.root / "Example.app"
         self.app.mkdir()
@@ -28,6 +31,7 @@ class PackagingTests(unittest.TestCase):
         self.tools = self.root / "build" / "dmg-tools" / "bin"
         self.tools.mkdir(parents=True)
         self.env = dict(os.environ, PATH=str(self.bin) + os.pathsep + os.environ["PATH"])
+        self.env.update(LUMAVIEW_ARCH="universal", LUMAVIEW_STRICT_WARNINGS="0")
         self.env["PACKAGING_PYTHON"] = str(self.bin / "chosen-python")
         self.env["PROBE_MARKER"] = str(self.root / "python-used")
         self.env["FINAL_DMG"] = str(self.output)
@@ -105,15 +109,17 @@ sys.exit(1 if os.environ.get('FAIL_BUILD') else 0)
         source = Path(__file__).resolve().parent
         self.executable(self.bin / "xcodebuild", """
 import plistlib
+import json
 derived = Path(sys.argv[sys.argv.index('-derivedDataPath') + 1])
 app = derived / 'Build/Products/Release/LumaView.app/Contents'
 app.mkdir(parents=True)
-(app / 'Info.plist').write_bytes(plistlib.dumps({'CFBundleShortVersionString': '1.0'}))
+(app / 'Info.plist').write_bytes(plistlib.dumps({'CFBundleShortVersionString': '1.0', 'LSMinimumSystemVersion': '12.0'}))
+Path(os.environ['BUILD_ARGS_FILE']).write_text(json.dumps(sys.argv[1:]))
 """)
         self.executable(self.bin / "codesign", "sys.exit(0)")
-        self.executable(self.bin / "lipo", "print('arm64 x86_64')")
+        self.executable(self.bin / "lipo", "print(os.environ['EXPECTED_SLICES'])")
         self.executable(self.bin / "security", "print('1) fake \\\"Developer ID Application: Test\\\"')")
-        self.executable(self.bin / "xcrun", "sys.exit(0)")
+        self.executable(self.bin / "xcrun", "print('minos 12.0') if sys.argv[1] == 'vtool' else None")
         self.executable(self.script, """
 Path(os.environ['LAYOUT_DEST_FILE']).write_text(sys.argv[2])
 sys.exit(74)  # Stop before any disk-image mounting or publication.
@@ -121,17 +127,65 @@ sys.exit(74)  # Stop before any disk-image mounting or publication.
         caller = self.root / "caller"
         caller.mkdir()
         marker = self.root / "destination"
-        for name, suffix in [("package-dmg.sh", "universal"), ("release-notarized-dmg.sh", "universal-notarized")]:
-            with self.subTest(script=name):
-                script = self.root / "Scripts" / name
-                shutil.copyfile(source / name, script)
-                result = subprocess.run(
-                    ["/bin/zsh", str(script)], cwd=caller, capture_output=True, text=True,
-                    env=dict(self.env, OUTPUT_DIR="artifacts", LAYOUT_DEST_FILE=str(marker),
-                             DEVELOPER_ID_APPLICATION="Developer ID Application: Test", NOTARYTOOL_PROFILE="test"),
-                )
-                self.assertEqual(result.returncode, 74, result.stderr)
-                self.assertEqual(marker.read_text(), str(caller / "artifacts" / f"LumaView-1.0-{suffix}.dmg"))
+        args_file = self.root / "build-arguments.json"
+        for arch, slices in [("universal", "arm64 x86_64"), ("arm64", "arm64"), ("x86_64", "x86_64")]:
+            for name, suffix in [("package-dmg.sh", arch), ("release-notarized-dmg.sh", arch + "-notarized")]:
+                with self.subTest(script=name, architecture=arch):
+                    script = self.root / "Scripts" / name
+                    shutil.copyfile(source / name, script)
+                    result = subprocess.run(
+                        ["/bin/zsh", str(script)], cwd=caller, capture_output=True, text=True,
+                        env=dict(self.env, OUTPUT_DIR="artifacts", LAYOUT_DEST_FILE=str(marker),
+                                 BUILD_ARGS_FILE=str(args_file), LUMAVIEW_ARCH=arch, EXPECTED_SLICES=slices,
+                                 DEVELOPER_ID_APPLICATION="Developer ID Application: Test", NOTARYTOOL_PROFILE="test"),
+                    )
+                    self.assertEqual(result.returncode, 74, result.stderr)
+                    self.assertEqual(marker.read_text(), str(caller / "artifacts" / f"LumaView-1.0-{suffix}.dmg"))
+                    arguments = json.loads(args_file.read_text())
+                    self.assertIn("ARCHS=" + slices, arguments)
+                    self.assertIn("ONLY_ACTIVE_ARCH=NO", arguments)
+
+    def verify_architecture(self, expected, actual, minimum="12.0", declared_minimum="12.0"):
+        contents = self.app / "Contents"
+        contents.mkdir(exist_ok=True)
+        (contents / "Info.plist").write_bytes(plistlib.dumps({"LSMinimumSystemVersion": declared_minimum}))
+        self.executable(self.bin / "lipo", "print(os.environ['ACTUAL_SLICES'])")
+        self.executable(self.bin / "xcrun", "print('minos ' + os.environ['BINARY_MINIMUM'])")
+        return subprocess.run(
+            ["/bin/zsh", "-eu", "-c", 'source "$1"; verify_app_architecture "$2"', "check",
+             str(self.root / "Scripts/build-common.sh"), str(self.app)],
+            env=dict(self.env, LUMAVIEW_ARCH=expected, ACTUAL_SLICES=actual, BINARY_MINIMUM=minimum),
+            capture_output=True, text=True,
+        )
+
+    def test_package_must_contain_exactly_the_requested_slices(self):
+        for expected, actual, success in [
+            ("arm64", "arm64", True), ("x86_64", "x86_64", True),
+            ("universal", "x86_64 arm64", True),
+            ("arm64", "arm64 x86_64", False), ("x86_64", "arm64", False),
+            ("universal", "arm64", False), ("universal", "arm64 x86_64 arm64e", False),
+        ]:
+            with self.subTest(expected=expected, actual=actual):
+                result = self.verify_architecture(expected, actual)
+                self.assertEqual(result.returncode == 0, success, result.stderr)
+
+    def test_minimum_os_is_checked_in_both_plist_and_binary(self):
+        for binary, declared in [("13.0", "12.0"), ("12.0", "13.0"), ("", "12.0")]:
+            with self.subTest(binary=binary, declared=declared):
+                result = self.verify_architecture("arm64", "arm64", binary, declared)
+                self.assertNotEqual(result.returncode, 0)
+
+    def test_unknown_architecture_is_rejected_before_building(self):
+        source = Path(__file__).resolve().parent
+        marker = self.root / "unexpected-build"
+        self.executable(self.bin / "xcodebuild", "Path(os.environ['BUILD_MARKER']).touch()")
+        for name in ["package-dmg.sh", "release-notarized-dmg.sh"]:
+            script = self.root / "Scripts" / name
+            shutil.copyfile(source / name, script)
+            result = subprocess.run(["/bin/zsh", str(script)], capture_output=True, text=True,
+                                    env=dict(self.env, LUMAVIEW_ARCH="invalid", BUILD_MARKER=str(marker)))
+            self.assertEqual(result.returncode, 64, result.stderr)
+            self.assertFalse(marker.exists())
 
 
 if __name__ == "__main__":

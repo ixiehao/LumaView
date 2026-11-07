@@ -6,6 +6,13 @@ private struct CanvasRenderTask: Hashable {
     let isSuspended: Bool
 }
 
+// Older AppKit SDKs do not annotate NSImage as Sendable. The decoder finishes
+// constructing this image before publication; neither the canvas nor the cache
+// mutates it afterward. Keep that immutable handoff local to the render path.
+private struct DecodedCanvasImage: @unchecked Sendable {
+    let image: NSImage?
+}
+
 struct ImageCanvasView: View {
     @ObservedObject var browser: ImageBrowserStore
     let l: L10n
@@ -408,25 +415,26 @@ struct ImageCanvasView: View {
         }
         let operation = BlockOperation()
         let cancellation = ImageOperationCancellation(operation)
-        operation.addExecutionBlock { [weak operation] in
-            guard operation?.isCancelled == false else { return }
-            let decoded: NSImage? = autoreleasepool {
-                guard operation?.isCancelled == false else { return nil }
+        let operationID = ObjectIdentifier(operation)
+        operation.addExecutionBlock {
+            guard !cancellation.isCancelled else { return }
+            let decoded = DecodedCanvasImage(image: autoreleasepool {
+                guard !cancellation.isCancelled else { return nil }
                 return ImageDecoder.renderedImage(for: request, isCancelled: {
                     cancellation.isCancelled
                 })
-            }
-            guard operation?.isCancelled == false else { return }
-            let failure = decoded == nil ? request.url.map(ImageDecoder.previewFailure) : nil
+            })
+            guard !cancellation.isCancelled else { return }
+            let failure = decoded.image == nil ? request.url.map(ImageDecoder.previewFailure) : nil
             DispatchQueue.main.async {
-                guard renderOperation === operation, activeRequest == request,
+                guard renderOperation.map(ObjectIdentifier.init) == operationID, activeRequest == request,
                       browser.selectionGeneration == request.selectionGeneration,
                       browser.selectedURL == request.url,
-                      operation?.isCancelled == false else { return }
+                      !cancellation.isCancelled else { return }
                 // A failed resolution upgrade should not erase an already
                 // usable image. A new URL still reports its normal decode error.
-                if let decoded {
-                    image = decoded
+                if let decodedImage = decoded.image {
+                    image = decodedImage
                     displayedURL = request.url
                     displayedGeneration = request.selectionGeneration
                     decodedURL = request.url

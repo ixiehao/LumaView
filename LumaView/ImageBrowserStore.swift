@@ -16,8 +16,11 @@ enum QuarterTurn: Int, CaseIterable, Sendable {
 
     func rotated(by degrees: Double) -> QuarterTurn {
         guard degrees.isFinite else { return self }
-        let steps = Int((degrees / 90).rounded())
-        guard abs(degrees - Double(steps * 90)) < 0.001 else { return self }
+        // Reduce before converting to Int: a finite Double can still exceed
+        // Int's range, or overflow when its quarter turns are multiplied by 90.
+        let remainder = degrees.truncatingRemainder(dividingBy: 360)
+        let steps = Int((remainder / 90).rounded())
+        guard abs(remainder - Double(steps * 90)) < 0.001 else { return self }
         let raw = (rawValue + steps % 4 + 4) % 4
         return QuarterTurn(rawValue: raw) ?? self
     }
@@ -228,7 +231,8 @@ actor FolderIndexCoordinator {
 /// Header dimensions are shared by every window, but are only read from a
 /// background task. Storing them by the versioned image cache key makes arrow
 /// navigation avoid repeating filesystem metadata work for an unchanged file.
-final class ImageMetadataCache {
+// Every mutable cache field is accessed under `lock`; metadata is value-only.
+final class ImageMetadataCache: @unchecked Sendable {
     static let shared = ImageMetadataCache()
 
     private struct Entry {
@@ -771,6 +775,18 @@ final class ImageBrowserStore: ObservableObject {
         objectWillChange.send()
     }
 
+    func updateCanvasVisibility(isMiniaturized: Bool, isFullScreen: Bool,
+                                isTransitioning: Bool, isOccluded: Bool) {
+        // Screen sharing and Spaces can report a full-screen window as occluded
+        // even while its pixels are being presented. Keep its current frame;
+        // ordinary covered windows and all minimized windows still release it.
+        if !isMiniaturized && (isFullScreen || isTransitioning || !isOccluded) {
+            resumeCanvasRendering()
+        } else {
+            suspendCanvasRendering()
+        }
+    }
+
     func suspendCanvasRendering() {
         guard !isCanvasRenderingSuspended else { return }
         isCanvasRenderingSuspended = true
@@ -783,6 +799,25 @@ final class ImageBrowserStore: ObservableObject {
         if let selectedIndex {
             prefetchNavigationNeighbours(around: selectedIndex)
         }
+    }
+
+    /// Closing a window must cancel work immediately, even if an AppKit sheet
+    /// or a pending callback still retains its content and therefore this store.
+    func cancelPendingWork() {
+        folderScanTask?.cancel()
+        folderScanTask = nil
+        scanGeneration += 1
+        pendingNavigationOffset = 0
+        isScanning = false
+        pixelSizeTask?.cancel()
+        pixelSizeTask = nil
+        metadataOperation?.cancel()
+        metadataOperation = nil
+        cancelNavigationPrefetches()
+        printPreparationOperation?.cancel()
+        printPreparationOperation = nil
+        isPreparingPrint = false
+        if status == .preparingPrint { status = nil }
     }
 
     func revealInFinder() {
@@ -963,11 +998,7 @@ final class ImageBrowserStore: ObservableObject {
                 // Cross the worker boundary with immutable pixels; create the
                 // AppKit image only on the main actor that owns the print UI.
                 let image = NSImage(cgImage: bitmap, size: .zero)
-                let printInfo = NSPrintInfo.shared.copy() as! NSPrintInfo
-                printInfo.horizontalPagination = .fit
-                printInfo.verticalPagination = .fit
-                let view = PrintableImageView(image: image, pageSize: printInfo.paperSize)
-                let operation = NSPrintOperation(view: view, printInfo: printInfo)
+                let operation = PrintableImageView.operation(image: image, printInfo: .shared)
                 operation.showsPrintPanel = true
                 operation.showsProgressPanel = true
                 self.status = nil
@@ -983,9 +1014,24 @@ final class ImageBrowserStore: ObservableObject {
     }
 }
 
-/// A one-page, aspect-fit print representation with consistent margins. It intentionally
-/// avoids snapshots of the interactive canvas, including its chrome and status indicator.
-private final class PrintableImageView: NSView {
+/// A single paper-sized page. AppKit must not shrink this view a second time;
+/// the image is fitted once to the printer's actual imageable area.
+final class PrintableImageView: NSView {
+    static func operation(image: NSImage, printInfo: NSPrintInfo) -> NSPrintOperation {
+        let info = printInfo.copy() as! NSPrintInfo
+        info.horizontalPagination = .clip
+        info.verticalPagination = .clip
+        info.scalingFactor = 1
+        info.leftMargin = 0
+        info.rightMargin = 0
+        info.topMargin = 0
+        info.bottomMargin = 0
+        let view = PrintableImageView(image: image, pageSize: info.paperSize)
+        let operation = NSPrintOperation(view: view, printInfo: info)
+        operation.printPanel.options.formUnion([.showsPaperSize, .showsOrientation])
+        return operation
+    }
+
     private let image: NSImage
 
     init(image: NSImage, pageSize: NSSize) {
@@ -995,22 +1041,47 @@ private final class PrintableImageView: NSView {
 
     required init?(coder: NSCoder) { nil }
 
-    override var isFlipped: Bool { true }
+    override func knowsPageRange(_ range: NSRangePointer) -> Bool {
+        range.pointee = NSRange(location: 1, length: 1)
+        updatePaperSize()
+        return true
+    }
+
+    override func rectForPage(_ page: Int) -> NSRect {
+        guard page == 1 else { return .zero }
+        updatePaperSize()
+        return bounds
+    }
+
+    override func locationOfPrintRect(_ rect: NSRect) -> NSPoint { .zero }
+
+    private func updatePaperSize() {
+        // NSPrintOperation owns a copy that changes with the native print panel.
+        if let info = NSPrintOperation.current?.printInfo {
+            setFrameSize(info.paperSize)
+        }
+    }
+
+    static func imageRect(imageSize: NSSize, paperBounds: NSRect, imageableBounds: NSRect) -> NSRect {
+        let clipped = imageableBounds.intersection(paperBounds)
+        // A printer can report bleed outside the paper, or no area for PDF output.
+        let area = clipped.isEmpty ? paperBounds : clipped
+        guard imageSize.width > 0, imageSize.height > 0,
+              imageSize.width.isFinite, imageSize.height.isFinite,
+              area.width > 0, area.height > 0 else { return .zero }
+        let scale = min(area.width / imageSize.width, area.height / imageSize.height)
+        let size = NSSize(width: imageSize.width * scale, height: imageSize.height * scale)
+        return NSRect(x: area.midX - size.width / 2, y: area.midY - size.height / 2,
+                      width: size.width, height: size.height)
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        let printableRect = bounds.insetBy(dx: 32, dy: 32)
-        guard image.size.width > 0, image.size.height > 0,
-              printableRect.width > 0, printableRect.height > 0 else { return }
-
-        let scale = min(printableRect.width / image.size.width, printableRect.height / image.size.height)
-        let size = NSSize(width: image.size.width * scale, height: image.size.height * scale)
-        let destination = NSRect(
-            x: printableRect.midX - size.width / 2,
-            y: printableRect.midY - size.height / 2,
-            width: size.width,
-            height: size.height
-        )
-        image.draw(in: destination, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: [.interpolation: NSImageInterpolation.high])
+        // Both NSView and imageablePageBounds use bottom-left page coordinates.
+        let destination = Self.imageRect(imageSize: image.size, paperBounds: bounds,
+            imageableBounds: NSPrintOperation.current?.printInfo.imageablePageBounds ?? bounds)
+        guard !destination.isEmpty else { return }
+        image.draw(in: destination, from: .zero, operation: .sourceOver, fraction: 1,
+                   respectFlipped: true, hints: [.interpolation: NSImageInterpolation.high])
     }
 }

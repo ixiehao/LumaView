@@ -14,6 +14,7 @@ struct ContentView: View {
     @AppStorage("luma.language") private var languageRaw = AppLanguage.automatic.rawValue
     @AppStorage("luma.appearance") private var appearanceRaw = AppAppearance.system.rawValue
     @State private var isDropTarget = false
+    @State private var dropTask: Task<Void, Never>?
 
     private var language: AppLanguage { AppLanguage(rawValue: languageRaw) ?? .automatic }
     private var appearance: AppAppearance { AppAppearance(rawValue: appearanceRaw) ?? .system }
@@ -37,6 +38,10 @@ struct ContentView: View {
                 .zIndex(1)
         }
         .onDrop(of: [.fileURL], isTargeted: $isDropTarget, perform: receiveDrop(providers:))
+        .onDisappear {
+            dropTask?.cancel()
+            dropTask = nil
+        }
         .overlay {
             if isDropTarget {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -54,8 +59,14 @@ struct ContentView: View {
 
     private func receiveDrop(providers: [NSItemProvider]) -> Bool {
         guard providers.contains(where: { $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) }) else { return false }
-        Task { @MainActor in
+        dropTask?.cancel()
+        let selectionGeneration = browser.selectionGeneration
+        dropTask = Task { @MainActor [weak browser] in
             let urls = await DocumentDrop.fileURLs(from: providers)
+            // A slow provider must not replace a newer drop, a file opened
+            // meanwhile, or reopen documents after its window disappeared.
+            guard !Task.isCancelled, let browser,
+                  browser.selectionGeneration == selectionGeneration else { return }
             if urls.count == 1, let url = urls.first {
                 browser.open(url: url)
             } else {
@@ -110,12 +121,14 @@ enum DocumentDrop {
         var urls: [URL] = []
         var seen = Set<URL>()
         for provider in providers where provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+            guard !Task.isCancelled else { return [] }
             let url: URL? = await withCheckedContinuation { continuation in
                 provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
                     let url = (item as? URL) ?? (item as? Data).flatMap { URL(dataRepresentation: $0, relativeTo: nil) }
                     continuation.resume(returning: url)
                 }
             }
+            guard !Task.isCancelled else { return [] }
             if let url, url.isFileURL {
                 let canonical = url.standardizedFileURL.resolvingSymlinksInPath()
                 if seen.insert(canonical).inserted { urls.append(canonical) }

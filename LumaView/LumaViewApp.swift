@@ -158,21 +158,23 @@ enum MainMenuLocalization {
             // React to that rebuild rather than polling or replacing its delegate.
             menuObservers = [NSMenu.didAddItemNotification, NSMenu.didChangeItemNotification].map { name in
                 NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { notification in
-                    MainActor.assumeIsolated { menuDidChange(notification) }
+                    // Notification carries non-Sendable userInfo. Transfer only
+                    // the menu identity and item index into the main actor.
+                    guard let menu = notification.object as? NSMenu else { return }
+                    let menuID = ObjectIdentifier(menu)
+                    let itemIndex = notification.userInfo?["NSMenuItemIndex"] as? Int
+                    MainActor.assumeIsolated { menuDidChange(menuID: menuID, itemIndex: itemIndex) }
                 }
             }
         }
         scheduleUpdate()
     }
 
-    private static func menuDidChange(_ notification: Notification) {
-        guard !isApplying, let menu = notification.object as? NSMenu,
-              let mainMenu = NSApp?.mainMenu else { return }
-        var root = menu
-        while let parent = root.supermenu { root = parent }
-        guard root === mainMenu else { return }
+    private static func menuDidChange(menuID: ObjectIdentifier, itemIndex: Int?) {
+        guard !isApplying, let mainMenu = NSApp?.mainMenu,
+              let menu = findMenu(menuID, in: mainMenu) else { return }
         if menu !== mainMenu,
-           let index = notification.userInfo?["NSMenuItemIndex"] as? Int,
+           let index = itemIndex,
            menu.items.indices.contains(index) {
             let item = menu.items[index]
             let action = item.action.map(NSStringFromSelector)
@@ -183,6 +185,16 @@ enum MainMenuLocalization {
                key.map({ item.title == currentLocalization.text($0) }) ?? true { return }
         }
         scheduleUpdate()
+    }
+
+    private static func findMenu(_ identity: ObjectIdentifier, in menu: NSMenu) -> NSMenu? {
+        if ObjectIdentifier(menu) == identity { return menu }
+        for item in menu.items {
+            if let submenu = item.submenu, let match = findMenu(identity, in: submenu) {
+                return match
+            }
+        }
+        return nil
     }
 
     private static func scheduleUpdate() {
@@ -638,6 +650,9 @@ final class LumaViewWindowRegistry: ObservableObject {
         // Finder URL can be stale after previous/next navigation, so never focus a
         // window merely because it was initially opened for this file.
         if let existing = controllers.values.first(where: { $0.browser.selectedURL == canonicalURL }) {
+            // Finder can reopen a file edited by another app. Reuse the window,
+            // but advance its selection so metadata and pixels are revalidated.
+            existing.browser.open(url: canonicalURL)
             existing.showAndFocus()
             return
         }
@@ -1013,14 +1028,12 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
 
     private func updateCanvasVisibility() {
         guard let window else { return }
-        // AppKit temporarily occludes a window while moving it between Spaces.
-        // Keep its decoded frame through that animation; actual minimization
-        // still releases the canvas immediately.
-        if !window.isMiniaturized && (isFullScreenTransitionInProgress || window.occlusionState.contains(.visible)) {
-            browser.resumeCanvasRendering()
-        } else {
-            browser.suspendCanvasRendering()
-        }
+        browser.updateCanvasVisibility(
+            isMiniaturized: window.isMiniaturized,
+            isFullScreen: window.styleMask.contains(.fullScreen),
+            isTransitioning: isFullScreenTransitionInProgress,
+            isOccluded: !window.occlusionState.contains(.visible)
+        )
     }
 
     func windowWillEnterFullScreen(_ notification: Notification) {
@@ -1067,6 +1080,7 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
     func windowWillClose(_ notification: Notification) {
         dismissInformationPopover()
         browser.suspendCanvasRendering()
+        browser.cancelPendingWork()
         LumaViewWindowRegistry.shared.remove(self)
     }
 
