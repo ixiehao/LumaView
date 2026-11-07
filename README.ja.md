@@ -4,9 +4,11 @@
 
 画像を 1 枚開けば、同じフォルダ内を続けて閲覧できます。LumaView は画像を中心に据え、日常的な操作をすぐ手の届く場所に置きます。
 
-**[LumaView 1.3.0 ユニバーサル DMG をダウンロード](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg)** · [公式サイト](https://ixiehao.github.io/LumaView/ja/) · [English](README.md) · [简体中文](README.zh-CN.md) · [変更履歴](CHANGELOG.md)
+**LumaView 1.3.1 をダウンロード** — [Apple Silicon 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg) · [Intel 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg) · [公式サイト](https://ixiehao.github.io/LumaView/ja/) · [English](README.md) · [简体中文](README.zh-CN.md) · [変更履歴](CHANGELOG.md)
 
-macOS 12 以降 · Intel + Apple Silicon · ユニバーサル DMG · 約 2.5 MB
+macOS 12 以降 · Apple Silicon / Intel 別のインストーラ · 各約 2 MB
+
+Apple メニュー → **「この Mac について」**で確認できます。M シリーズのチップなら Apple Silicon、Intel プロセッサなら Intel を選んでください。
 
 ## 実際の画面
 
@@ -27,7 +29,7 @@ macOS 12 以降 · Intel + Apple Silicon · ユニバーサル DMG · 約 2.5 MB
 
 ## インストール
 
-1. [ユニバーサル DMG をダウンロード](https://github.com/ixiehao/LumaView/releases/download/v1.3.0/LumaView-1.3.0-universal.dmg)します。
+1. [Apple Silicon 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg)または [Intel 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg)の DMG をダウンロードします。
 2. 開いた DMG から **LumaView.app** を **アプリケーション** フォルダへドラッグします。
 3. 「アプリケーション」から LumaView を開きます。画像を直接開く場合は、Finder で画像を右クリックし、「このアプリケーションで開く」→ **LumaView** を選びます。
 
@@ -70,7 +72,7 @@ DMG はインストーラです。DMG を取り出しても LumaView や画像�
 
 ## ソースからビルド
 
-macOS 13 以降、Xcode 15 以降、Intel または Apple Silicon 搭載 Mac が必要です。
+ビルドには[開発ガイド](docs/DEVELOPMENT.md)に記載の macOS / Xcode 環境を使用してください。ビルドしたアプリは、macOS 12 以降の Apple Silicon および Intel 搭載 Mac で動作します。
 
 ```sh
 open LumaView.xcodeproj

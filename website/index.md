@@ -8,7 +8,7 @@
 
 A minimal native image viewer for Mac.
 
-[Download v1.3.0](https://github.com/ixiehao/LumaView/releases/latest) [View source](https://github.com/ixiehao/LumaView)
+[Download v1.3.1](https://ixiehao.github.io/LumaView/#download) [View source](https://github.com/ixiehao/LumaView)
 
 macOS 12+ · Intel + Apple Silicon
 
@@ -44,9 +44,11 @@ Start viewing
 
 ### Download LumaView for free.
 
-[Download v1.3.0](https://github.com/ixiehao/LumaView/releases/latest)
+Apple menu → About This Mac: choose Apple Silicon for an M-series chip, or Intel for an Intel processor.
 
-macOS 12+ · Universal · About 2.5 MB
+[Apple Silicon](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg) [Intel](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg)
+
+macOS 12+ · About 2 MB each
 
 [LumaView](https://ixiehao.github.io/LumaView/#top)
 

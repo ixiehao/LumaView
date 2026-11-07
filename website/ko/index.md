@@ -8,7 +8,7 @@
 
 심플한 Mac 네이티브 이미지 뷰어.
 
-[v1.3.0 다운로드](https://github.com/ixiehao/LumaView/releases/latest) [소스 코드](https://github.com/ixiehao/LumaView)
+[v1.3.1 다운로드](https://ixiehao.github.io/LumaView/ko/#download) [소스 코드](https://github.com/ixiehao/LumaView)
 
 macOS 12 이상 · Intel + Apple Silicon
 
@@ -44,9 +44,11 @@ JPEG, PNG, HEIC, GIF, TIFF, WebP, RAW, Sketch 미리보기와 여러 페이지 P
 
 ### LumaView를 무료로 다운로드하세요.
 
-[v1.3.0 다운로드](https://github.com/ixiehao/LumaView/releases/latest)
+Apple 메뉴 → 이 Mac에 관하여에서 확인하세요. M 시리즈 칩이면 Apple Silicon, Intel 프로세서이면 Intel을 선택하세요.
 
-macOS 12 이상 · Universal · 설치 파일 약 2.5 MB
+[Apple Silicon](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg) [Intel](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg)
+
+macOS 12 이상 · 설치 파일 각각 약 2 MB
 
 [LumaView](https://ixiehao.github.io/LumaView/ko/#top)
 
