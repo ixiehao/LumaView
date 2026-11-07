@@ -1028,14 +1028,12 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
 
     private func updateCanvasVisibility() {
         guard let window else { return }
-        // AppKit temporarily occludes a window while moving it between Spaces.
-        // Keep its decoded frame through that animation; actual minimization
-        // still releases the canvas immediately.
-        if !window.isMiniaturized && (isFullScreenTransitionInProgress || window.occlusionState.contains(.visible)) {
-            browser.resumeCanvasRendering()
-        } else {
-            browser.suspendCanvasRendering()
-        }
+        browser.updateCanvasVisibility(
+            isMiniaturized: window.isMiniaturized,
+            isFullScreen: window.styleMask.contains(.fullScreen),
+            isTransitioning: isFullScreenTransitionInProgress,
+            isOccluded: !window.occlusionState.contains(.visible)
+        )
     }
 
     func windowWillEnterFullScreen(_ notification: Notification) {

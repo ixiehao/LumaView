@@ -2002,6 +2002,49 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertFalse(browser.isCanvasRenderingSuspended)
     }
 
+    @MainActor
+    func testFullScreenOcclusionKeepsCanvasWhileMinimizationStillSuspendsIt() async throws {
+        let pdf = directory.appendingPathComponent("fullscreen-visibility.pdf")
+        try makePDF(at: pdf)
+        let browser = ImageBrowserStore()
+        defer { browser.cancelPendingWork(); browser.suspendCanvasRendering() }
+        browser.open(file: pdf)
+        try await waitForPageSize(browser, CGSize(width: 600, height: 400))
+        browser.nextPage()
+        try await waitForPageSize(browser, CGSize(width: 400, height: 600))
+        browser.rotate(by: 90)
+        browser.zoom = 1.75
+        let selection = browser.selectedURL
+        let generation = browser.selectionGeneration
+        let rotation = browser.quarterTurn
+        XCTAssertEqual(browser.pdfPageIndex, 1)
+
+        func visibility(_ name: String, minimized: Bool = false, fullScreen: Bool = false,
+                        transitioning: Bool = false, occluded: Bool, suspended: Bool) {
+            browser.updateCanvasVisibility(isMiniaturized: minimized, isFullScreen: fullScreen,
+                isTransitioning: transitioning, isOccluded: occluded)
+            XCTAssertEqual(browser.isCanvasRenderingSuspended, suspended, name)
+            XCTAssertEqual(browser.selectedURL, selection, "\(name): retain the selected document")
+            XCTAssertEqual(browser.selectionGeneration, generation, "\(name): visibility must not reload the document")
+            XCTAssertEqual(browser.pdfPageIndex, 1, "\(name): retain the reading position")
+            XCTAssertEqual(browser.quarterTurn, rotation, "\(name): retain rotation")
+            XCTAssertEqual(browser.zoom, 1.75, "\(name): retain zoom")
+        }
+
+        // Reproduce the late occlusion notification after the full-screen
+        // transition, without creating a Space or taking over the desktop.
+        visibility("Ordinary visible window", occluded: false, suspended: false)
+        visibility("Entering full screen", transitioning: true, occluded: true, suspended: false)
+        visibility("Full-screen transition completed", fullScreen: true, occluded: true, suspended: false)
+        visibility("Late full-screen occlusion", fullScreen: true, occluded: true, suspended: false)
+        visibility("Minimization wins over full screen", minimized: true, fullScreen: true,
+                   transitioning: true, occluded: true, suspended: true)
+        visibility("Restored full-screen window", fullScreen: true, occluded: true, suspended: false)
+        visibility("Exiting full screen", transitioning: true, occluded: true, suspended: false)
+        visibility("Ordinary occluded window", occluded: true, suspended: true)
+        visibility("Ordinary window revealed", occluded: false, suspended: false)
+    }
+
     func testOpeningAFinderFileSelectsItAndKeepsFolderNavigation() async throws {
         try makePNG(at: directory.appendingPathComponent("photo-1.png"), width: 96, height: 64)
         let second = directory.appendingPathComponent("photo-2.png")

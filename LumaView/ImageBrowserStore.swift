@@ -775,6 +775,18 @@ final class ImageBrowserStore: ObservableObject {
         objectWillChange.send()
     }
 
+    func updateCanvasVisibility(isMiniaturized: Bool, isFullScreen: Bool,
+                                isTransitioning: Bool, isOccluded: Bool) {
+        // Screen sharing and Spaces can report a full-screen window as occluded
+        // even while its pixels are being presented. Keep its current frame;
+        // ordinary covered windows and all minimized windows still release it.
+        if !isMiniaturized && (isFullScreen || isTransitioning || !isOccluded) {
+            resumeCanvasRendering()
+        } else {
+            suspendCanvasRendering()
+        }
+    }
+
     func suspendCanvasRendering() {
         guard !isCanvasRenderingSuspended else { return }
         isCanvasRenderingSuspended = true

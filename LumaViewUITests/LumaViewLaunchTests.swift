@@ -328,12 +328,24 @@ final class LumaViewLaunchTests: XCTestCase {
         expectFullScreen(true, in: window)
         rendered.typeKey("]", modifierFlags: .command)
         expect(rendered, accessibilityLabelContaining: "90°")
+        // A late occlusion notification must not release a full-screen frame.
+        let disappeared = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"), object: rendered
+        )
+        disappeared.isInverted = true
+        XCTAssertEqual(XCTWaiter.wait(for: [disappeared], timeout: 3), .completed)
         // Menu coordinates remain stable while AppKit hides the titlebar in a
         // full-screen Space. Wait for the transition to enable its command;
         // screen-sized geometry alone does not establish that it has finished.
         app.activate()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 5))
-        app.menuBars.menuBarItems["View"].click()
+        let viewMenu = app.menuBars.menuBarItems["View"]
+        XCTAssertTrue(viewMenu.waitForExistence(timeout: 5))
+        let menuPosition = viewMenu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        // The CI display auto-hides the menu bar in full screen. Moving to its
+        // real position reveals it; AXPress alone rejects the hidden item.
+        menuPosition.hover()
+        menuPosition.click()
         let exitFullScreen = app.menuItems["Exit Full Screen"]
         let commandReady = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "exists == true AND enabled == true"),
