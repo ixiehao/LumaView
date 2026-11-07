@@ -6,6 +6,13 @@ private struct CanvasRenderTask: Hashable {
     let isSuspended: Bool
 }
 
+// Older AppKit SDKs do not annotate NSImage as Sendable. The decoder finishes
+// constructing this image before publication; neither the canvas nor the cache
+// mutates it afterward. Keep that immutable handoff local to the render path.
+private struct DecodedCanvasImage: @unchecked Sendable {
+    let image: NSImage?
+}
+
 struct ImageCanvasView: View {
     @ObservedObject var browser: ImageBrowserStore
     let l: L10n
@@ -411,14 +418,14 @@ struct ImageCanvasView: View {
         let operationID = ObjectIdentifier(operation)
         operation.addExecutionBlock {
             guard !cancellation.isCancelled else { return }
-            let decoded: NSImage? = autoreleasepool {
+            let decoded = DecodedCanvasImage(image: autoreleasepool {
                 guard !cancellation.isCancelled else { return nil }
                 return ImageDecoder.renderedImage(for: request, isCancelled: {
                     cancellation.isCancelled
                 })
-            }
+            })
             guard !cancellation.isCancelled else { return }
-            let failure = decoded == nil ? request.url.map(ImageDecoder.previewFailure) : nil
+            let failure = decoded.image == nil ? request.url.map(ImageDecoder.previewFailure) : nil
             DispatchQueue.main.async {
                 guard renderOperation.map(ObjectIdentifier.init) == operationID, activeRequest == request,
                       browser.selectionGeneration == request.selectionGeneration,
@@ -426,8 +433,8 @@ struct ImageCanvasView: View {
                       !cancellation.isCancelled else { return }
                 // A failed resolution upgrade should not erase an already
                 // usable image. A new URL still reports its normal decode error.
-                if let decoded {
-                    image = decoded
+                if let decodedImage = decoded.image {
+                    image = decodedImage
                     displayedURL = request.url
                     displayedGeneration = request.selectionGeneration
                     decodedURL = request.url
