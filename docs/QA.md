@@ -66,7 +66,8 @@ can leave another panel or application intercepting input on a multi-display
 desktop. Open/print panel controls must be queried inside their panel; a global
 `Cancel` query can match the Touch Bar instead. Full-screen tests enter through
 the native window control and exit through the View menu. Before clicking Exit
-Full Screen, reveal the auto-hidden menu bar by hovering its resolved position,
+Full Screen, reveal the auto-hidden menu bar by hovering the top edge of its
+resolved frame (its centre can hit the underlying toolbar on macOS 15),
 then wait for the command to become enabled and hittable: screen-sized geometry
 alone does not establish that the AppKit transition has finished. Use the menu
 item's semantic `click()` so XCTest performs its native menu-selection path;
@@ -78,6 +79,10 @@ as separate frames. A display with a camera cutout can reserve its safe area
 in full screen; use `NSScreen.safeAreaInsets` as well as the full screen bounds,
 not an arbitrary height tolerance or the Dock-excluding `visibleFrame`.
 Verify the rotated image's aspect ratio after exiting.
+
+For a focused native-runner diagnosis, dispatch Verify with `test_scope=fullscreen`.
+Its jobs are explicitly labelled diagnostic; they do not replace the full `all`
+suite that still runs on every pull request and main push.
 
 ## LaunchServices coverage boundary
 
