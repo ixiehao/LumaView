@@ -66,10 +66,12 @@ can leave another panel or application intercepting input on a multi-display
 desktop. Open/print panel controls must be queried inside their panel; a global
 `Cancel` query can match the Touch Bar instead. Full-screen tests enter through
 the native window control and exit through the View menu. Before clicking Exit
-Full Screen, wait for its command to become enabled: screen-sized geometry alone
-does not establish that the AppKit transition has finished. A coordinate click
-on the resolved menu item avoids synthesized keyboard events aimed at a stale
-full-screen accessibility element. Verify Control-Command-F separately in the
+Full Screen, reveal the auto-hidden menu bar by hovering its resolved position,
+then wait for the command to become enabled and hittable: screen-sized geometry
+alone does not establish that the AppKit transition has finished. Use the menu
+item's semantic `click()` so XCTest performs its native menu-selection path;
+a raw coordinate click can leave menu tracking active on macOS 15 without
+invoking the command. Verify Control-Command-F separately in the
 running app; menu navigation is not evidence that keyboard delivery succeeded.
 Measure the union of the AX window and its toolbar, since macOS can expose them
 as separate frames. A display with a camera cutout can reserve its safe area

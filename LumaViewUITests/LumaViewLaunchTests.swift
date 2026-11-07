@@ -348,11 +348,14 @@ final class LumaViewLaunchTests: XCTestCase {
         menuPosition.click()
         let exitFullScreen = app.menuItems["Exit Full Screen"]
         let commandReady = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "exists == true AND enabled == true"),
+            predicate: NSPredicate(format: "exists == true AND enabled == true AND hittable == true"),
             object: exitFullScreen
         )
         XCTAssertEqual(XCTWaiter.wait(for: [commandReady], timeout: 5), .completed)
-        exitFullScreen.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        // Use XCTest's menu-selection event path, which hovers/selects the
+        // item before activation. A raw coordinate click can leave the native
+        // full-screen menu tracking on macOS 15 without invoking its action.
+        exitFullScreen.click()
         expectFullScreen(false, in: window)
         expectCanvasAspect(rendered, ratio: 1 / 1.2)
     }
