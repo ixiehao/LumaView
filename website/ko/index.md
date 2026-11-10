@@ -1,16 +1,16 @@
 # LumaView · 심플한 Mac 네이티브 이미지 뷰어
 
-> 심플한 Mac 네이티브 이미지 뷰어입니다.
+> 가벼운 Mac 네이티브 이미지 뷰어. 이미지를 열고 같은 폴더를 편하게 둘러보세요.
 
 <https://ixiehao.github.io/LumaView/ko/>
 
 ## 이미지를 열고, 빠르게 둘러보세요.
 
-심플한 Mac 네이티브 이미지 뷰어.
+가벼운 Mac 네이티브 이미지 뷰어. 이미지를 열고 같은 폴더를 편하게 둘러보세요.
 
 [v1.3.1 다운로드](https://ixiehao.github.io/LumaView/ko/#download) [소스 코드](https://github.com/ixiehao/LumaView)
 
-macOS 12 이상 · Intel + Apple Silicon
+macOS 12 이상 · Apple Silicon / Intel · 설치 파일 각각 약 2 MB
 
 ![탐색, 확대 및 회전 도구가 있는 LumaView 네이티브 윈도우에서 이미지를 보고 있는 모습.](https://ixiehao.github.io/LumaView/assets/lumaview-browse.png?v=20261017-alpha)
 

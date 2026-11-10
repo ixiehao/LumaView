@@ -1,16 +1,16 @@
 # LumaView · 极简的Mac原生看图软件
 
-> 一款极简的Mac原生看图软件。
+> 轻巧的 Mac 原生看图软件，打开图片即可浏览同一文件夹。
 
 <https://ixiehao.github.io/LumaView/zh/>
 
 ## 打开图片， 极速浏览。
 
-一款极简的 Mac 原生看图软件。
+轻巧的 Mac 原生看图软件。打开图片，轻松浏览同一文件夹。
 
 [下载 v1.3.1](https://ixiehao.github.io/LumaView/zh/#download) [查看源码](https://github.com/ixiehao/LumaView)
 
-macOS 12+ · Intel + Apple Silicon
+macOS 12+ · Apple Silicon / Intel · 每个安装包约 2 MB
 
 ![LumaView 在原生窗口中浏览图片，顶部有上一张、下一张、缩放和旋转操作](https://ixiehao.github.io/LumaView/assets/lumaview-browse.png?v=20261017-alpha)
 

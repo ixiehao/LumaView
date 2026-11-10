@@ -1,16 +1,16 @@
 # LumaView · Minimal native image viewer for Mac
 
-> A minimal native image viewer for Mac.
+> A lightweight native image viewer for Mac. Open an image and browse its folder with ease.
 
 <https://ixiehao.github.io/LumaView/>
 
 ## Open an image. Start browsing.
 
-A minimal native image viewer for Mac.
+A lightweight native Mac image viewer. Open a picture and browse its folder with ease.
 
 [Download v1.3.1](https://ixiehao.github.io/LumaView/#download) [View source](https://github.com/ixiehao/LumaView)
 
-macOS 12+ · Intel + Apple Silicon
+macOS 12+ · Apple Silicon / Intel · ~2 MB per installer
 
 ![LumaView browsing an image in its native window, with previous, next, zoom, and rotate controls](https://ixiehao.github.io/LumaView/assets/lumaview-browse.png?v=20261017-alpha)
 

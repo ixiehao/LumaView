@@ -1,6 +1,6 @@
 # LumaView
 
-> A minimal native image viewer for Mac.
+> A lightweight native image viewer for Mac. Open an image and browse its folder with ease.
 
 ## Pages
 

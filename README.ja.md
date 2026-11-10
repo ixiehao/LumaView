@@ -1,8 +1,8 @@
 # LumaView
 
-**高速でミニマルな、Mac ネイティブ画像ビューア。**
+**軽量で使いやすい、Mac ネイティブ画像ビューア。**
 
-画像を 1 枚開けば、同じフォルダ内を続けて閲覧できます。LumaView は画像を中心に据え、日常的な操作をすぐ手の届く場所に置きます。
+画像を開いて、矢印キーで同じフォルダ内を閲覧。よく使う操作もすぐ手元に。
 
 **LumaView 1.3.1 をダウンロード** — [Apple Silicon 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg) · [Intel 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg) · [公式サイト](https://ixiehao.github.io/LumaView/ja/) · [English](README.md) · [简体中文](README.zh-CN.md) · [変更履歴](CHANGELOG.md)
 

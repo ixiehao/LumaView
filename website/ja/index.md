@@ -1,16 +1,16 @@
 # LumaView · ミニマルな Mac ネイティブ画像ビューア
 
-> ミニマルな Mac ネイティブ画像ビューア。
+> 軽量な Mac ネイティブ画像ビューア。画像を開いて、フォルダ内を手軽に閲覧できます。
 
 <https://ixiehao.github.io/LumaView/ja/>
 
 ## 画像を開いて、 すばやく見る。
 
-ミニマルな Mac ネイティブ画像ビューア。
+軽やかに使える Mac ネイティブの画像ビューア。画像を開いて、フォルダ内を手軽に閲覧。
 
 [v1.3.1 を入手](https://ixiehao.github.io/LumaView/ja/#download) [ソースを見る](https://github.com/ixiehao/LumaView)
 
-macOS 12以降 · Intel + Apple Silicon
+macOS 12 以降 · Apple Silicon / Intel · インストーラ各約 2 MB
 
 ![LumaView のネイティブウインドウで画像を表示。上部に前後移動、拡大、回転の操作があります](https://ixiehao.github.io/LumaView/assets/lumaview-browse.png?v=20261017-alpha)
 

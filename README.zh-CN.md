@@ -1,8 +1,8 @@
 # LumaView
 
-**一款极速、极简的 Mac 原生看图软件。**
+**一款轻巧、便捷的 Mac 原生看图软件。**
 
-打开一张图片，直接浏览同一文件夹。LumaView 将画面留在中心，把日常操作放在顺手的位置。
+打开一张图片，用方向键浏览同一文件夹，常用操作顺手就能找到。
 
 **下载 LumaView 1.3.1** — [Apple Silicon 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg) · [Intel 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg) · [官网](https://ixiehao.github.io/LumaView/zh/) · [English](README.md) · [日本語](README.ja.md) · [变更记录](CHANGELOG.md)
 

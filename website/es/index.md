@@ -1,16 +1,16 @@
 # LumaView · Visor de imágenes nativo y minimalista para Mac
 
-> Un visor de imágenes nativo y minimalista para Mac.
+> Visor de imágenes nativo y ligero para Mac. Abre una imagen y recorre su carpeta.
 
 <https://ixiehao.github.io/LumaView/es/>
 
 ## Abre una imagen. Explora al instante.
 
-Un visor de imágenes nativo y minimalista para Mac.
+Un visor de imágenes nativo y ligero para Mac. Abre una imagen y recorre su carpeta fácilmente.
 
 [Descargar v1.3.1](https://ixiehao.github.io/LumaView/es/#download) [Código fuente](https://github.com/ixiehao/LumaView)
 
-macOS 12+ · Intel + Apple Silicon
+macOS 12+ · Apple Silicon / Intel · unos 2 MB por instalador
 
 ![LumaView muestra una imagen en una ventana nativa con controles de navegación, zoom y giro.](https://ixiehao.github.io/LumaView/assets/lumaview-browse.png?v=20261017-alpha)
 

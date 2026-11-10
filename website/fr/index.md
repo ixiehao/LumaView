@@ -1,16 +1,16 @@
 # LumaView · Visionneuse d’images native et minimaliste pour Mac
 
-> Une visionneuse d’images native et minimaliste pour Mac.
+> Visionneuse d’images native et légère pour Mac. Ouvrez une image et parcourez son dossier.
 
 <https://ixiehao.github.io/LumaView/fr/>
 
 ## Ouvrez une image. Parcourez sans attendre.
 
-Une visionneuse d’images native et minimaliste pour Mac.
+Une visionneuse d’images native et légère pour Mac. Ouvrez une image et parcourez facilement son dossier.
 
 [Télécharger v1.3.1](https://ixiehao.github.io/LumaView/fr/#download) [Code source](https://github.com/ixiehao/LumaView)
 
-macOS 12+ · Intel + Apple Silicon
+macOS 12+ · Apple Silicon / Intel · environ 2 Mo par installateur
 
 ![LumaView affiche une image dans une fenêtre native avec les commandes de navigation, de zoom et de rotation.](https://ixiehao.github.io/LumaView/assets/lumaview-browse.png?v=20261017-alpha)
 
