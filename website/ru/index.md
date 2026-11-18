@@ -8,7 +8,7 @@
 
 Лёгкая нативная программа для просмотра изображений на Mac. Откройте снимок и просматривайте папку.
 
-[Скачать v1.3.1](https://ixiehao.github.io/LumaView/ru/#download) [Исходный код](https://github.com/ixiehao/LumaView)
+[Скачать v1.3.2](https://ixiehao.github.io/LumaView/ru/#download) [Исходный код](https://github.com/ixiehao/LumaView)
 
 macOS 12+ · Apple Silicon / Intel · около 2 МБ каждый установщик
 
@@ -46,7 +46,7 @@ macOS 12+ · Apple Silicon / Intel · около 2 МБ каждый устан�
 
 Меню Apple → «Об этом Mac»: для чипа серии M выберите Apple Silicon, для процессора Intel — Intel.
 
-[Apple Silicon](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-arm64.dmg) [Intel](https://github.com/ixiehao/LumaView/releases/download/v1.3.1/LumaView-1.3.1-x86_64.dmg)
+[Apple Silicon](https://github.com/ixiehao/LumaView/releases/download/v1.3.2/LumaView-1.3.2-arm64.dmg) [Intel](https://github.com/ixiehao/LumaView/releases/download/v1.3.2/LumaView-1.3.2-x86_64.dmg)
 
 macOS 12+ · Около 2 МБ на версию
 

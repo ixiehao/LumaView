@@ -2,7 +2,7 @@
 
 ## 定位
 
-LumaView 是一款轻巧、便捷的 Mac 原生看图软件。打开图片，用方向键浏览同一文件夹；需要对比时，打开多个窗口。当前 v1.3.1 的 Apple Silicon 和 Intel 安装包各约 2 MB，支持 macOS 12 及以上。
+LumaView 是一款轻巧、便捷的 Mac 原生看图软件。打开图片，用方向键浏览同一文件夹；需要对比时，打开多个窗口。当前 v1.3.2 的 Apple Silicon 和 Intel 安装包各约 2 MB，支持 macOS 12 及以上。
 
 ## 可直接使用的文案
 
@@ -19,7 +19,7 @@ LumaView 是一款轻巧、便捷的 Mac 原生看图软件。打开图片，用
 LumaView is a lightweight native image viewer for Mac. Open an image, browse its folder with the arrow keys, and compare pictures in separate windows. Each installer is about 2 MB.
 
 - [官网](https://ixiehao.github.io/LumaView/zh/)
-- [下载](https://github.com/ixiehao/LumaView/releases/tag/v1.3.1)
+- [下载](https://github.com/ixiehao/LumaView/releases/tag/v1.3.2)
 - [源码](https://github.com/ixiehao/LumaView)
 
 ## 推广顺序
