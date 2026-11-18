@@ -1,4 +1,5 @@
 import AppKit
+import ImageIO
 import SwiftUI
 
 private struct CanvasRenderTask: Hashable {
@@ -9,8 +10,47 @@ private struct CanvasRenderTask: Hashable {
 // Older AppKit SDKs do not annotate NSImage as Sendable. The decoder finishes
 // constructing this image before publication; neither the canvas nor the cache
 // mutates it afterward. Keep that immutable handoff local to the render path.
-private struct DecodedCanvasImage: @unchecked Sendable {
+struct DecodedCanvasImage: @unchecked Sendable {
     let image: NSImage?
+}
+
+// One reader belongs to one window and keeps only the current decoded frame.
+actor AnimatedImageReader {
+    private let source: CGImageSource
+    let count: Int
+    let loops: Int
+    private let dictionaryKey: String
+
+    init?(url: URL) {
+        let ext = url.pathExtension.lowercased()
+        guard ext == "gif" || ext == "webp",
+              let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              CGImageSourceGetCount(source) > 1 else { return nil }
+        self.source = source
+        self.count = CGImageSourceGetCount(source)
+        self.dictionaryKey = ext == "gif" ? "{GIF}" : "{WebP}"
+        let props = CGImageSourceCopyProperties(source, nil) as? [String: Any]
+        let format = props?[self.dictionaryKey] as? [String: Any]
+        self.loops = (format?["LoopCount"] as? NSNumber)?.intValue ?? 1
+    }
+
+    func delay(at index: Int) -> Double {
+        let props = CGImageSourceCopyPropertiesAtIndex(source, index, nil) as? [String: Any]
+        let format = props?[dictionaryKey] as? [String: Any]
+        let value = ((format?["UnclampedDelayTime"] ?? format?["DelayTime"]) as? NSNumber)?.doubleValue ?? 0.1
+        return value.isFinite && value >= 0.02 ? min(value, 60) : 0.1
+    }
+
+    func frame(at index: Int, maxPixelSize: Int) -> DecodedCanvasImage {
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: min(max(maxPixelSize, 1), 2048)
+        ]
+        let frame = CGImageSourceCreateThumbnailAtIndex(source, index, options as CFDictionary)
+        return DecodedCanvasImage(image: frame.map { NSImage(cgImage: $0, size: .zero) })
+    }
 }
 
 struct ImageCanvasView: View {
@@ -18,6 +58,8 @@ struct ImageCanvasView: View {
     let l: L10n
     @Environment(\.displayScale) private var displayScale
     @State private var image: NSImage?
+    @State private var animatedImage: NSImage?
+    @State private var animatedGeneration: Int?
     @State private var displayedURL: URL?
     @State private var displayedGeneration: Int?
     @State private var decodedURL: URL?
@@ -62,7 +104,7 @@ struct ImageCanvasView: View {
                         .accessibilityHidden(true)
                 } else if isCurrentImage, let image {
                     imageViewport(
-                        image,
+                        animatedGeneration == browser.selectionGeneration ? (animatedImage ?? image) : image,
                         in: geometry.size,
                         rotation: rotation,
                         absoluteZoomPercent: renderedZoomPercent
@@ -116,6 +158,33 @@ struct ImageCanvasView: View {
                 try? await Task.sleep(nanoseconds: 55_000_000)
                 guard !Task.isCancelled else { return }
                 loadImage(for: request)
+            }
+            .task(id: renderTask) {
+                animatedImage = nil
+                animatedGeneration = nil
+                guard !renderTask.isSuspended, let url = request.url,
+                      let reader = AnimatedImageReader(url: url) else { return }
+                let count = reader.count
+                let loops = reader.loops
+                var index = 0
+                var completed = 0
+                while !Task.isCancelled {
+                    let delay = await reader.delay(at: index)
+                    do { try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000)) }
+                    catch { return }
+                    index += 1
+                    if index == count {
+                        completed += 1
+                        if loops > 0 && completed >= loops { return }
+                        index = 0
+                    }
+                    let frame = await reader.frame(at: index, maxPixelSize: request.maxPixelSize)
+                    guard !Task.isCancelled, browser.selectedURL == url,
+                          browser.selectionGeneration == request.selectionGeneration else { return }
+                    guard let next = frame.image else { return }
+                    animatedImage = next
+                    animatedGeneration = request.selectionGeneration
+                }
             }
             .onDisappear { releaseDisplayedImage() }
         }
@@ -402,6 +471,8 @@ struct ImageCanvasView: View {
         renderOperation = nil
         activeRequest = nil
         image = nil
+        animatedImage = nil
+        animatedGeneration = nil
         displayedURL = nil
         displayedGeneration = nil
         decodedURL = nil

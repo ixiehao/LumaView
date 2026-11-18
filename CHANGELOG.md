@@ -4,6 +4,20 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
+## 1.3.2 — 2026-11-18
+
+### English
+
+- Play animated GIF and WebP images.
+
+### 中文
+
+- 支持播放 GIF 和动态 WebP 图片。
+
+### 日本語
+
+- GIF とアニメーション WebP の再生に対応しました。
+
 ## 1.3.1 — 2026-11-07
 
 ### English
