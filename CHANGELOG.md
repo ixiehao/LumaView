@@ -4,6 +4,20 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
+## 1.3.3 — 2026-11-18
+
+### English
+
+- Improved update checks when the GitHub API is unavailable.
+
+### 中文
+
+- 改善 GitHub API 不可用时的更新检查。
+
+### 日本語
+
+- GitHub API を利用できない場合のアップデート確認を改善しました。
+
 ## 1.3.2 — 2026-11-18
 
 ### English

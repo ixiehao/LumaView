@@ -76,6 +76,7 @@ enum LumaViewProjectLinks {
     static let issues = URL(string: "https://github.com/\(repositorySlug)/issues/new/choose")!
     static let releases = URL(string: "https://github.com/\(repositorySlug)/releases")!
     static let latestReleaseAPI = URL(string: "https://api.github.com/repos/\(repositorySlug)/releases/latest")!
+    static let latestReleasePage = URL(string: "https://github.com/\(repositorySlug)/releases/latest")!
 }
 
 @MainActor
@@ -161,20 +162,39 @@ final class UpdateChecker: ObservableObject {
 
         do {
             let (data, response) = try await session.data(for: request)
-            guard let response = response as? HTTPURLResponse,
-                  (200..<300).contains(response.statusCode) else {
+            if let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode),
+               let release = try? JSONDecoder().decode(GitHubRelease.self, from: data) {
+                availableUpdate = release.update(newerThan: currentVersion, expectedRepositoryPath: expectedRepositoryPath)
+                outcome = availableUpdate == nil ? .upToDate : .available
                 return
             }
+        } catch {
+            // Try the official release-page redirect below if the API is unavailable.
+        }
 
-            let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
-            availableUpdate = release.update(
-                newerThan: currentVersion,
-                expectedRepositoryPath: expectedRepositoryPath
-            )
+        // GitHub's unauthenticated API can be rate-limited independently of the
+        // website. Follow only the official repository's latest-release redirect;
+        // an unavailable or unexpected page is never reported as up to date.
+        guard releaseURL == LumaViewProjectLinks.latestReleaseAPI,
+              expectedRepositoryPath == LumaViewProjectLinks.repositorySlug else { return }
+        var fallback = URLRequest(url: LumaViewProjectLinks.latestReleasePage)
+        fallback.httpMethod = "HEAD"
+        fallback.timeoutInterval = 10
+        fallback.setValue("LumaView update checker", forHTTPHeaderField: "User-Agent")
+        do {
+            let (_, response) = try await session.data(for: fallback)
+            guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode),
+                  let url = response.url,
+                  url.scheme == "https", url.host == "github.com", url.port == nil,
+                  url.user == nil, url.password == nil, url.query == nil, url.fragment == nil else { return }
+            let prefix = "/\(expectedRepositoryPath)/releases/tag/"
+            guard url.path.hasPrefix(prefix) else { return }
+            let tag = String(url.path.dropFirst(prefix.count))
+            guard !tag.contains("/"), let version = ReleaseVersion(tag: tag) else { return }
+            availableUpdate = currentVersion < version ? AvailableUpdate(version: tag, downloadURL: url) : nil
             outcome = availableUpdate == nil ? .upToDate : .available
         } catch {
-            // Offline and transient API failures never interfere with viewing.
-
+            // Offline or inaccessible services must not interrupt image viewing.
         }
     }
 

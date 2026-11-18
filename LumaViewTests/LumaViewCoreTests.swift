@@ -1837,6 +1837,37 @@ final class LumaViewCoreTests: XCTestCase {
     }
 
     @MainActor
+    func testUpdateFallsBackToOfficialLatestReleaseWhenAPIIsUnavailable() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [UpdateFallbackURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let suite = "LumaViewTests.update-fallback.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let checker = UpdateChecker(currentVersion: ReleaseVersion(tag: "1.0.0"), session: session, defaults: defaults)
+        await checker.checkForUpdate(force: true, announceResult: true)
+        XCTAssertEqual(checker.notice, .available)
+        XCTAssertEqual(checker.availableUpdate?.version, "v1.3.2")
+        XCTAssertEqual(checker.availableUpdate?.downloadURL.absoluteString, "https://github.com/ixiehao/LumaView/releases/tag/v1.3.2")
+    }
+
+    @MainActor
+    func testUpdateFallbackRejectsUnexpectedRedirect() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [UnsafeUpdateFallbackURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let suite = "LumaViewTests.update-unsafe.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let checker = UpdateChecker(currentVersion: ReleaseVersion(tag: "1.0.0"), session: session, defaults: defaults)
+        await checker.checkForUpdate(force: true, announceResult: true)
+        XCTAssertEqual(checker.notice, .unavailable)
+        XCTAssertNil(checker.availableUpdate)
+    }
+
+    @MainActor
     func testUpdateIntervalPersistsAcrossCheckerInstances() async throws {
         let suiteName = "LumaViewTests.update-interval.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -2277,6 +2308,24 @@ final class LumaViewCoreTests: XCTestCase {
         }
         XCTFail("Timed out waiting for adjacent-image prefetch")
     }
+}
+
+private class UpdateFallbackURLProtocol: URLProtocol {
+    class var resultURL: URL { URL(string: "https://github.com/ixiehao/LumaView/releases/tag/v1.3.2")! }
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let isAPI = request.url?.host == "api.github.com"
+        let response = HTTPURLResponse(url: isAPI ? request.url! : type(of: self).resultURL,
+                                       statusCode: isAPI ? 403 : 200, httpVersion: "HTTP/1.1", headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
+}
+
+private final class UnsafeUpdateFallbackURLProtocol: UpdateFallbackURLProtocol {
+    override class var resultURL: URL { URL(string: "https://example.com/ixiehao/LumaView/releases/tag/v9.0.0")! }
 }
 
 private final class UpdateCheckURLProtocol: URLProtocol {
