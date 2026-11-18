@@ -4,7 +4,7 @@
 
 画像を開いて、矢印キーで同じフォルダ内を閲覧。よく使う操作もすぐ手元に。
 
-**LumaView 1.3.2 をダウンロード** — [Apple Silicon 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.2/LumaView-1.3.2-arm64.dmg) · [Intel 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.2/LumaView-1.3.2-x86_64.dmg) · [公式サイト](https://ixiehao.github.io/LumaView/ja/) · [English](README.md) · [简体中文](README.zh-CN.md) · [変更履歴](CHANGELOG.md)
+**LumaView 1.3.3 をダウンロード** — [Apple Silicon 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.3/LumaView-1.3.3-arm64.dmg) · [Intel 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.3/LumaView-1.3.3-x86_64.dmg) · [公式サイト](https://ixiehao.github.io/LumaView/ja/) · [English](README.md) · [简体中文](README.zh-CN.md) · [変更履歴](CHANGELOG.md)
 
 macOS 12 以降 · Apple Silicon / Intel 別のインストーラ · 各約 2 MB
 
@@ -29,7 +29,7 @@ Apple メニュー → **「この Mac について」**で確認できます。
 
 ## インストール
 
-1. [Apple Silicon 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.2/LumaView-1.3.2-arm64.dmg)または [Intel 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.2/LumaView-1.3.2-x86_64.dmg)の DMG をダウンロードします。
+1. [Apple Silicon 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.3/LumaView-1.3.3-arm64.dmg)または [Intel 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.3/LumaView-1.3.3-x86_64.dmg)の DMG をダウンロードします。
 2. 開いた DMG から **LumaView.app** を **アプリケーション** フォルダへドラッグします。
 3. 「アプリケーション」から LumaView を開きます。画像を直接開く場合は、Finder で画像を右クリックし、「このアプリケーションで開く」→ **LumaView** を選びます。
 

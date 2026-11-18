@@ -4,7 +4,7 @@
 
 打开一张图片，用方向键浏览同一文件夹，常用操作顺手就能找到。
 
-**下载 LumaView 1.3.2** — [Apple Silicon 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.2/LumaView-1.3.2-arm64.dmg) · [Intel 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.2/LumaView-1.3.2-x86_64.dmg) · [官网](https://ixiehao.github.io/LumaView/zh/) · [English](README.md) · [日本語](README.ja.md) · [变更记录](CHANGELOG.md)
+**下载 LumaView 1.3.3** — [Apple Silicon 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.3/LumaView-1.3.3-arm64.dmg) · [Intel 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.3/LumaView-1.3.3-x86_64.dmg) · [官网](https://ixiehao.github.io/LumaView/zh/) · [English](README.md) · [日本語](README.ja.md) · [变更记录](CHANGELOG.md)
 
 macOS 12+ · Apple Silicon / Intel 独立安装包 · 每个约 2 MB
 
@@ -29,7 +29,7 @@ macOS 12+ · Apple Silicon / Intel 独立安装包 · 每个约 2 MB
 
 ## 安装
 
-1. 下载对应的 [Apple Silicon 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.2/LumaView-1.3.2-arm64.dmg)或 [Intel 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.2/LumaView-1.3.2-x86_64.dmg) DMG。
+1. 下载对应的 [Apple Silicon 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.3/LumaView-1.3.3-arm64.dmg)或 [Intel 版](https://github.com/ixiehao/LumaView/releases/download/v1.3.3/LumaView-1.3.3-x86_64.dmg) DMG。
 2. 打开它，将 **LumaView.app** 拖进“应用程序”。
 3. 从“应用程序”打开 LumaView；也可在访达中右键图片，选择“打开方式” → **LumaView**。
 
