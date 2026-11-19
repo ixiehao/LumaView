@@ -65,6 +65,7 @@ enum UpdateCheckNotice: Equatable {
     case available
     case upToDate
     case unavailable
+    case downloadUnavailable
 }
 
 /// Keep these endpoints in one place. `repositorySlug` must be changed when
@@ -97,6 +98,8 @@ final class UpdateChecker: ObservableObject {
     private var shouldAnnounceResult = false
     private(set) weak var noticeWindow: NSWindow?
     private var lastCheckedAt: Date?
+    private let openURL: (URL) -> Bool
+    private let quitApplication: () -> Void
 
     private static let checkInterval: TimeInterval = 12 * 60 * 60
     nonisolated static let defaultLastCheckedDefaultsKey = "luma.update.last-checked-at"
@@ -108,7 +111,9 @@ final class UpdateChecker: ObservableObject {
         expectedRepositoryPath: String = LumaViewProjectLinks.repositorySlug,
         defaults: UserDefaults = .standard,
         lastCheckedDefaultsKey: String = UpdateChecker.defaultLastCheckedDefaultsKey,
-        now: @escaping () -> Date = Date.init
+        now: @escaping () -> Date = Date.init,
+        openURL: ((URL) -> Bool)? = nil,
+        quitApplication: (() -> Void)? = nil
     ) {
         self.currentVersion = currentVersion ?? Self.installedVersion
         self.session = session
@@ -117,6 +122,8 @@ final class UpdateChecker: ObservableObject {
         self.defaults = defaults
         self.lastCheckedDefaultsKey = lastCheckedDefaultsKey
         self.now = now
+        self.openURL = openURL ?? { NSWorkspace.shared.open($0) }
+        self.quitApplication = quitApplication ?? { NSApp.terminate(nil) }
         self.lastCheckedAt = defaults.object(forKey: lastCheckedDefaultsKey) as? Date
     }
 
@@ -202,9 +209,16 @@ final class UpdateChecker: ObservableObject {
         notice = nil
     }
 
-    func openDownloadPage() {
-        guard let downloadURL = availableUpdate?.downloadURL else { return }
-        NSWorkspace.shared.open(downloadURL)
+    @discardableResult
+    func openDownloadAndQuit() -> Bool {
+        guard let downloadURL = availableUpdate?.downloadURL else { return false }
+        guard openURL(downloadURL) else {
+            notice = .downloadUnavailable
+            noticeHandler?(.downloadUnavailable)
+            return false
+        }
+        quitApplication()
+        return true
     }
 
     private static var installedVersion: ReleaseVersion {
@@ -225,9 +239,10 @@ struct UpdateAvailableBanner: View {
                     .font(.system(size: 12.5, weight: .semibold, design: .rounded))
                     .lineLimit(1)
                 Spacer(minLength: 12)
-                Button(l.text("button.downloadUpdate")) {
-                    checker.openDownloadPage()
+                Button(l.text("button.downloadAndQuit")) {
+                    checker.openDownloadAndQuit()
                 }
+                .help(l.text("update.quitHint"))
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
                 Button(l.text("update.later")) { checker.dismissBanner() }
@@ -258,7 +273,6 @@ final class UpdateNoticePresenter {
         let window = checker.noticeWindow
         let update = checker.availableUpdate
         Task { @MainActor in
-            defer { presenting = false }
             // A check can finish while an Open dialog is still on screen.
             while NSApp.modalWindow != nil || window?.attachedSheet != nil {
                 try? await Task.sleep(nanoseconds: 200_000_000)
@@ -269,14 +283,17 @@ final class UpdateNoticePresenter {
             alert.messageText = l.text("update.check.title")
             switch notice {
             case .available:
-                alert.informativeText = l.text("update.available", update?.version ?? "")
-                alert.addButton(withTitle: l.text("button.downloadUpdate"))
+                alert.informativeText = l.text("update.available", update?.version ?? "") + "\n\n" + l.text("update.quitHint")
+                alert.addButton(withTitle: l.text("button.downloadAndQuit"))
                 alert.addButton(withTitle: l.text("update.later"))
             case .upToDate:
                 alert.informativeText = l.text("update.check.upToDate")
                 alert.addButton(withTitle: l.text("button.ok"))
             case .unavailable:
                 alert.informativeText = l.text("update.check.unavailable")
+                alert.addButton(withTitle: l.text("button.ok"))
+            case .downloadUnavailable:
+                alert.informativeText = l.text("update.downloadUnavailable")
                 alert.addButton(withTitle: l.text("button.ok"))
             }
             checker.dismissNotice()
@@ -288,7 +305,8 @@ final class UpdateNoticePresenter {
             } else {
                 response = alert.runModal()
             }
-            if notice == .available, response == .alertFirstButtonReturn, let update { NSWorkspace.shared.open(update.downloadURL) }
+            presenting = false
+            if notice == .available, response == .alertFirstButtonReturn { checker.openDownloadAndQuit() }
         }
     }
 }

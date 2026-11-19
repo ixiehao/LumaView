@@ -4,6 +4,23 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
+## 1.3.5 — 2026-11-20
+
+### English
+
+- Open the download page and quit for easier upgrades; installer reminders in seven languages.
+- Add a 0.8-second interval between deletions to prevent accidental rapid removal.
+
+### 中文
+
+- 新增“前往下载并退出”，安装包补充七语言升级提示。
+- 连续删除间隔 0.8 秒，减少误删。
+
+### 日本語
+
+- ダウンロードページを開いて終了する更新操作と、インストーラの7言語の案内を追加。
+- 誤操作を防ぐため、削除の間隔を0.8秒に設定。
+
 ## 1.3.4 — 2026-11-20
 
 ### English

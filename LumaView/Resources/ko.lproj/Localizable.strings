@@ -17,7 +17,7 @@
 "about.license" = "MIT 라이선스 · Tabler Icons";
 "update.available" = "LumaView %@ 버전을 사용할 수 있습니다.";
 "update.about.available" = "새 버전 사용 가능: %@";
-"update.menu.available" = "새 버전 · %@ 다운로드";
+"update.menu.available" = "%@ 다운로드 후 종료";
 "update.menu.check" = "업데이트 확인…";
 "update.check.title" = "소프트웨어 업데이트";
 "update.check.upToDate" = "최신 버전의 LumaView를 사용 중입니다.";
@@ -158,5 +158,11 @@
 "menu.moveToTrash" = "휴지통으로 이동";
 "button.cancel" = "취소";
 "trash.confirmTitle" = "이 파일을 휴지통으로 이동할까요?";
-"trash.confirmMessage" = "“%@” 파일이 휴지통으로 이동합니다. Finder에서 복원할 수 있습니다. 이번에 확인한 후에는 Delete 키를 누르면 현재 파일이 바로 휴지통으로 이동합니다. 키를 길게 눌러도 다른 파일은 삭제되지 않습니다.";
+"trash.confirmMessage" = "“%@” 파일이 휴지통으로 이동합니다. Finder에서 복원할 수 있습니다. 이번에 확인한 후에는 Delete 키를 누르면 현재 파일이 바로 휴지통으로 이동합니다. 키를 길게 눌러도 다른 파일은 삭제되지 않습니다. 다음 파일을 삭제하려면 0.8초 이상 기다려야 합니다.";
 "trash.failed" = "파일을 휴지통으로 이동할 수 없습니다";
+
+"button.downloadAndQuit" = "다운로드 페이지로 이동 후 종료";
+
+"update.quitHint" = "다운로드 페이지를 연 다음 LumaView와 모든 보기 윈도우를 닫습니다. 앱이 종료된 후에 교체하세요.";
+
+"update.downloadUnavailable" = "다운로드 페이지를 열 수 없습니다. LumaView는 종료되지 않습니다. 다시 시도해 주세요.";

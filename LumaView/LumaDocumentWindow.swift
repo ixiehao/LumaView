@@ -54,8 +54,9 @@ class LumaDocumentWindow: NSWindow {
         // A sheet can outlive its original selection or document window.
         guard browser?.selectedURL == url, browser?.canMoveToTrash == true else { return }
         do {
-            try browser?.moveSelectedFileToTrash()
-            trashNoticeDefaults.set(true, forKey: "luma.trashNoticeAccepted")
+            if try browser?.moveSelectedFileToTrash() != nil {
+                trashNoticeDefaults.set(true, forKey: "luma.trashNoticeAccepted")
+            }
         } catch {
             let alert = NSAlert()
             alert.messageText = l.text("trash.failed")

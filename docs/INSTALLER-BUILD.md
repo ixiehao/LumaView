@@ -79,3 +79,5 @@ Git. They are packaging infrastructure, not application dependencies. For a
 visual acceptance check, eject any older LumaView installer volume, open the
 new DMG in a fresh Finder window, and confirm that the app is dragged from left
 to right into Applications.
+
+The installer background reads its short upgrade reminders from `website/content.json` for all seven languages. The artwork generator measures every reminder before drawing it, so a clipped translation fails packaging. App and Applications remain the only two visible installer icons.

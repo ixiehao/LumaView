@@ -58,6 +58,8 @@ Visionneuse d’images native et locale · par ixiehao
 
 ### Installer et ouvrir LumaView
 
+Avant une mise à jour, quittez LumaView avec ⌘Q, puis remplacez l’app. Fermer une fenêtre ne quitte pas l’app.
+
 Ouvrez le DMG téléchargé, glissez  **LumaView.app**  dans  **Applications** , puis ouvrez l’app depuis ce dossier.
 
 #### Si macOS ne peut pas vérifier le développeur

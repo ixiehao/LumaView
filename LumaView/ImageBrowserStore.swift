@@ -333,6 +333,19 @@ struct PDFReadingHistory {
     }
 }
 
+/// Shared across windows; monotonic time avoids clock changes bypassing the guard.
+@MainActor
+final class TrashCooldown {
+    static let shared = TrashCooldown()
+    static let interval: TimeInterval = 0.8
+    private let now: () -> TimeInterval
+    private var lastRemoval: TimeInterval?
+
+    init(now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) { self.now = now }
+    var isReady: Bool { lastRemoval.map { now() - $0 >= Self.interval } ?? true }
+    func recordRemoval() { lastRemoval = now() }
+}
+
 @MainActor
 final class ImageBrowserStore: ObservableObject {
     @Published private(set) var folderURL: URL?
@@ -378,8 +391,10 @@ final class ImageBrowserStore: ObservableObject {
     private static let fileTrashed = Notification.Name("com.lumaview.fileTrashed")
     private var trashObserver: AnyCancellable?
     private var removedDuringScan: Set<URL> = []
+    private let trashCooldown: TrashCooldown
 
-    init() {
+    init(trashCooldown: TrashCooldown? = nil) {
+        self.trashCooldown = trashCooldown ?? .shared
         // All stores and trash operations run on the main actor. Notify other
         // windows too, so none keeps browsing a file that this app just removed.
         trashObserver = NotificationCenter.default.publisher(for: Self.fileTrashed).sink { [weak self] note in
@@ -841,11 +856,12 @@ final class ImageBrowserStore: ObservableObject {
 
     @discardableResult
     func moveSelectedFileToTrash() throws -> URL? {
-        guard canMoveToTrash, let url = selectedURL else { return nil }
+        guard canMoveToTrash, trashCooldown.isReady, let url = selectedURL else { return nil }
         // Use macOS Trash semantics, including external-volume Trash and errors.
         // Never fall back to permanent removal if the volume cannot trash a file.
         var result: NSURL?
         try FileManager.default.trashItem(at: url, resultingItemURL: &result)
+        trashCooldown.recordRemoval()
         NotificationCenter.default.post(name: Self.fileTrashed, object: url)
         return result as URL?
     }

@@ -58,6 +58,8 @@ A local native image viewer · by ixiehao
 
 ### Install and open LumaView
 
+Upgrading? Quit LumaView with ⌘Q before replacing the app. Closing a window does not quit the app.
+
 Open the downloaded DMG, drag  **LumaView.app**  into  **Applications** , then open it from Applications.
 
 #### If macOS cannot verify the developer

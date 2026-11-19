@@ -40,6 +40,8 @@ Decoding depends on the macOS version, installed codecs and the individual file.
 2. Open it and drag **LumaView.app** to **Applications**.
 3. Open LumaView from Applications. To open an image directly, Control-click it in Finder and choose **Open With → LumaView**.
 
+When upgrading, quit LumaView with `⌘Q` before replacing the app. Closing its windows does not quit it. The in-app **Go to Download and Quit** action opens the download page and then quits LumaView.
+
 ### If macOS blocks the first launch
 
 Messages vary by macOS version: the developer may be unverified, or Apple may be unable to check the app for malicious software. If you trust the copy downloaded from this project's GitHub Releases or supplied by the developer for testing:

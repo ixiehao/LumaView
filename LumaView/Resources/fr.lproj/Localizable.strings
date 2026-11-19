@@ -17,7 +17,7 @@
 "about.license" = "Licence MIT · Tabler Icons";
 "update.available" = "LumaView %@ est disponible.";
 "update.about.available" = "Une nouvelle version est disponible : %@";
-"update.menu.available" = "Nouvelle version · Télécharger %@";
+"update.menu.available" = "Télécharger %@ et quitter";
 "update.menu.check" = "Rechercher des mises à jour…";
 "update.check.title" = "Mise à jour de logiciels";
 "update.check.upToDate" = "Vous utilisez la dernière version de LumaView.";
@@ -158,5 +158,11 @@
 "menu.moveToTrash" = "Placer dans la corbeille";
 "button.cancel" = "Annuler";
 "trash.confirmTitle" = "Placer ce fichier dans la corbeille ?";
-"trash.confirmMessage" = "« %@ » sera placé dans la corbeille. Vous pourrez le restaurer dans le Finder. Après cette première confirmation, la touche Supprimer placera immédiatement le fichier actuel dans la corbeille. Maintenir la touche enfoncée ne supprimera pas d’autres fichiers.";
+"trash.confirmMessage" = "« %@ » sera placé dans la corbeille. Vous pourrez le restaurer dans le Finder. Après cette première confirmation, la touche Supprimer placera immédiatement le fichier actuel dans la corbeille. Maintenir la touche enfoncée ne supprimera pas d’autres fichiers. Attendez au moins 0,8 seconde entre deux suppressions.";
 "trash.failed" = "Impossible de placer le fichier dans la corbeille";
+
+"button.downloadAndQuit" = "Télécharger et quitter";
+
+"update.quitHint" = "Ouvre la page de téléchargement, puis quitte LumaView et ferme toutes les fenêtres. Attendez la fermeture de l’app avant de la remplacer.";
+
+"update.downloadUnavailable" = "Impossible d’ouvrir la page de téléchargement. LumaView reste ouvert. Veuillez réessayer.";

@@ -158,16 +158,34 @@ arrowHead.stroke()
 
 drawText(
     "Drag LumaView to Applications to install",
-    in: NSRect(x: 130, y: 126, width: 720, height: 24),
+    in: NSRect(x: 130, y: 166, width: 720, height: 24),
     font: .systemFont(ofSize: 15, weight: .medium),
     color: color(0.25, 0.30, 0.39, 0.86)
 )
 drawText(
     "\(architectureLabel) · macOS 12 or later",
-    in: NSRect(x: 130, y: 94, width: 720, height: 19),
+    in: NSRect(x: 130, y: 140, width: 720, height: 19),
     font: .systemFont(ofSize: 12, weight: .regular),
     color: color(0.40, 0.45, 0.54, 0.70)
 )
+
+// A static DMG cannot select a language at runtime. Keep the two native icons
+// and show the short upgrade reminder in all seven languages, without a helper.
+let projectURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+let content = try JSONDecoder().decode([String: [String: String]].self,
+    from: Data(contentsOf: projectURL.appendingPathComponent("website/content.json")))
+for (index, language) in ["en", "zh", "fr", "ru", "es", "ja", "ko"].enumerated() {
+    guard let reminder = content[language]?["installUpgradeShort"] else { throw InstallerArtworkError.invalidArguments }
+    let font = NSFont.systemFont(ofSize: 14)
+    let width: CGFloat = index == 6 ? 800 : 420
+    guard (reminder as NSString).size(withAttributes: [.font: font]).width <= width else {
+        throw InstallerArtworkError.invalidArguments
+    }
+    drawText(reminder,
+        in: NSRect(x: index == 6 ? 90 : (index % 2 == 0 ? 60 : 500),
+                   y: 104 - CGFloat(index / 2) * 24, width: width, height: 20),
+        font: font, color: color(0.29, 0.34, 0.44, 0.90))
+}
 
 NSGraphicsContext.restoreGraphicsState()
 

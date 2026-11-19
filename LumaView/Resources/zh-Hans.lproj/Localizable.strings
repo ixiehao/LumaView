@@ -17,7 +17,7 @@
 "about.license" = "MIT 开源许可 · Tabler Icons";
 "update.available" = "LumaView %@ 已可更新。";
 "update.about.available" = "有新版本啦：%@";
-"update.menu.available" = "新版本 · 下载 %@";
+"update.menu.available" = "下载 %@ 并退出";
 "update.menu.check" = "检查更新…";
 "update.check.title" = "软件更新";
 "update.check.upToDate" = "你正在使用 LumaView 的最新版本。";
@@ -158,5 +158,11 @@
 "menu.moveToTrash" = "移到废纸篓";
 "button.cancel" = "取消";
 "trash.confirmTitle" = "将此文件移到废纸篓？";
-"trash.confirmMessage" = "“%@”将被移到废纸篓，可在访达中恢复。本次确认后，再按 Delete 键会直接将当前文件移到废纸篓。按住按键不会连续删除。";
+"trash.confirmMessage" = "“%@”将被移到废纸篓，可在访达中恢复。本次确认后，再按 Delete 键会直接将当前文件移到废纸篓。按住按键不会连续删除。 两次删除至少间隔 0.8 秒。";
 "trash.failed" = "无法将文件移到废纸篓";
+
+"button.downloadAndQuit" = "前往下载并退出";
+
+"update.quitHint" = "打开下载页面后退出 LumaView，并关闭所有浏览窗口。请在应用退出后再覆盖安装。";
+
+"update.downloadUnavailable" = "无法打开下载页面。LumaView 会保持运行，请稍后重试。";

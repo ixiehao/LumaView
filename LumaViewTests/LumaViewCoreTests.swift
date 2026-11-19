@@ -55,7 +55,9 @@ final class LumaViewCoreTests: XCTestCase {
         let urls = (1...3).map { directory.appendingPathComponent("trash-test-\($0)-\(UUID().uuidString).png") }
         for url in urls { try Data([0]).write(to: url) }
         try FileManager.default.createSymbolicLink(at: directory.appendingPathComponent("duplicate.png"), withDestinationURL: urls[1])
-        let first = ImageBrowserStore(), second = ImageBrowserStore()
+        var uptime: TimeInterval = 0
+        let cooldown = TrashCooldown(now: { uptime })
+        let first = ImageBrowserStore(trashCooldown: cooldown), second = ImageBrowserStore(trashCooldown: cooldown)
         defer { first.cancelPendingWork(); second.cancelPendingWork() }
         first.open(file: urls[1]); second.open(file: urls[1])
         try await Self.waitForScan(first)
@@ -72,9 +74,11 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertEqual(second.files.map(\.url), [urls[0], urls[2]])
 
         first.select(index: 0)
+        uptime += 1
         trashed.append(try XCTUnwrap(first.moveSelectedFileToTrash()))
         XCTAssertEqual(second.selectedURL, urls[2], "Removing a preceding file must not change another window's selection")
         XCTAssertEqual(second.selectedIndex, 0)
+        uptime += 1
         trashed.append(try XCTUnwrap(first.moveSelectedFileToTrash()))
         for store in [first, second] {
             XCTAssertTrue(store.files.isEmpty)
@@ -83,6 +87,33 @@ final class LumaViewCoreTests: XCTestCase {
             XCTAssertFalse(store.canMoveToTrash)
             XCTAssertEqual(store.pdfPageCount, 0)
         }
+    }
+
+    @MainActor
+    func testRapidTrashRequestsAreIgnoredAcrossWindowsUntilCooldownEnds() async throws {
+        let urls = (1...3).map { directory.appendingPathComponent("cooldown-\($0)-\(UUID().uuidString).png") }
+        for url in urls { try Data([0]).write(to: url) }
+        var uptime: TimeInterval = 0
+        let cooldown = TrashCooldown(now: { uptime })
+        let first = ImageBrowserStore(trashCooldown: cooldown), second = ImageBrowserStore(trashCooldown: cooldown)
+        defer { first.cancelPendingWork(); second.cancelPendingWork() }
+        first.open(file: urls[0]); second.open(file: urls[0])
+        try await Self.waitForScan(first); try await Self.waitForScan(second)
+        var trashed: [URL] = []
+        defer { for url in trashed { try? FileManager.default.removeItem(at: url) } }
+        trashed.append(try XCTUnwrap(first.moveSelectedFileToTrash()))
+        XCTAssertNil(try second.moveSelectedFileToTrash())
+        uptime = 0.79
+        XCTAssertNil(try first.moveSelectedFileToTrash())
+        XCTAssertTrue(FileManager.default.fileExists(atPath: urls[1].path))
+        XCTAssertEqual(first.selectedURL, urls[1])
+        uptime = 0.81
+        trashed.append(try XCTUnwrap(second.moveSelectedFileToTrash()))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: urls[1].path))
+        XCTAssertEqual(first.selectedURL, urls[2])
+        uptime = 1.59
+        XCTAssertNil(try first.moveSelectedFileToTrash(), "Ignored presses must not queue a later deletion")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: urls[2].path))
     }
 
     @MainActor
@@ -1980,6 +2011,35 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertEqual(checker.notice, .available)
         XCTAssertEqual(checker.availableUpdate?.version, "v1.3.2")
         XCTAssertEqual(checker.availableUpdate?.downloadURL.absoluteString, "https://github.com/ixiehao/LumaView/releases/tag/v1.3.2")
+    }
+
+    @MainActor
+    func testDownloadAndQuitRequiresAnUpdateAndSuccessfulBrowserHandoff() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [UpdateFallbackURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let suite = "LumaViewTests.download-quit.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var events: [String] = []
+        var acceptsURL = false
+        let checker = UpdateChecker(currentVersion: ReleaseVersion(tag: "1.0.0"), session: session,
+            defaults: defaults, openURL: { url in
+                XCTAssertEqual(url.absoluteString, "https://github.com/ixiehao/LumaView/releases/tag/v1.3.2")
+                events.append("open")
+                return acceptsURL
+            }, quitApplication: { events.append("quit") })
+        XCTAssertFalse(checker.openDownloadAndQuit())
+        XCTAssertTrue(events.isEmpty)
+        await checker.checkForUpdate(force: true)
+        XCTAssertFalse(checker.openDownloadAndQuit())
+        XCTAssertEqual(events, ["open"], "Failed handoff must preserve all viewer windows")
+        XCTAssertEqual(checker.notice, .downloadUnavailable)
+        acceptsURL = true
+        events.removeAll()
+        XCTAssertTrue(checker.openDownloadAndQuit())
+        XCTAssertEqual(events, ["open", "quit"], "Quit normally only after the browser accepts the page")
     }
 
     @MainActor

@@ -1577,7 +1577,7 @@ struct LumaViewApp: App {
                        ? l.text("update.menu.available", updateChecker.availableUpdate?.version ?? "")
                        : l.text(updateChecker.isChecking ? "update.checking" : "update.menu.check")) {
                     if updateChecker.hasUpdate {
-                        updateChecker.openDownloadPage()
+                        updateChecker.openDownloadAndQuit()
                     } else {
                         Task { await updateChecker.checkForUpdate(force: true, announceResult: true) }
                     }

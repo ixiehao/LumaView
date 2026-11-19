@@ -17,7 +17,7 @@
 "about.license" = "Licencia MIT · Tabler Icons";
 "update.available" = "LumaView %@ está disponible.";
 "update.about.available" = "Hay una nueva versión disponible: %@";
-"update.menu.available" = "Nueva versión · Descargar %@";
+"update.menu.available" = "Descargar %@ y salir";
 "update.menu.check" = "Buscar actualizaciones…";
 "update.check.title" = "Actualización de software";
 "update.check.upToDate" = "Estás usando la última versión de LumaView.";
@@ -158,5 +158,11 @@
 "menu.moveToTrash" = "Trasladar a la papelera";
 "button.cancel" = "Cancelar";
 "trash.confirmTitle" = "¿Trasladar este archivo a la papelera?";
-"trash.confirmMessage" = "«%@» se trasladará a la papelera. Puedes restaurarlo desde el Finder. Tras esta primera confirmación, al pulsar Suprimir se trasladará el archivo actual a la papelera de inmediato. Mantener pulsada la tecla no eliminará más archivos.";
+"trash.confirmMessage" = "«%@» se trasladará a la papelera. Puedes restaurarlo desde el Finder. Tras esta primera confirmación, al pulsar Suprimir se trasladará el archivo actual a la papelera de inmediato. Mantener pulsada la tecla no eliminará más archivos. Espera al menos 0,8 segundos entre eliminaciones.";
 "trash.failed" = "No se ha podido trasladar el archivo a la papelera";
+
+"button.downloadAndQuit" = "Descargar y salir";
+
+"update.quitHint" = "Abre la página de descarga y después cierra LumaView y todas las ventanas de visualización. Sustituye la app solo cuando se haya cerrado.";
+
+"update.downloadUnavailable" = "No se ha podido abrir la página de descarga. LumaView seguirá abierto. Vuelve a intentarlo.";

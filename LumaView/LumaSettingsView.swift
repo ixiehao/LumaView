@@ -96,7 +96,8 @@ struct LumaSettingsView: View {
                     HStack {
                         Text(l.text("update.available", update.version))
                         Spacer(minLength: 12)
-                        Button(l.text("button.downloadUpdate")) { updateChecker.openDownloadPage() }
+                        Button(l.text("button.downloadAndQuit")) { updateChecker.openDownloadAndQuit() }
+                            .help(l.text("update.quitHint"))
                     }
                 }
                 Text(l.text("settings.updatePrivacy"))

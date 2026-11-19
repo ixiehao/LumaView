@@ -47,7 +47,9 @@
     "languageLabel": "Language",
     "chipHelp": "Apple menu → About This Mac: choose Apple Silicon for an M-series chip, or Intel for an Intel processor.",
     "downloadAppleSiliconLabel": "Download for Apple Silicon",
-    "downloadIntelLabel": "Download for Intel"
+    "downloadIntelLabel": "Download for Intel",
+    "installUpgrade": "Upgrading? Quit LumaView with ⌘Q before replacing the app. Closing a window does not quit the app.",
+    "installUpgradeShort": "Before upgrading, quit LumaView (⌘Q)."
   },
   "zh": {
     "navExperience": "看图功能",
@@ -97,7 +99,9 @@
     "languageLabel": "语言",
     "chipHelp": "苹果菜单 → 关于本机：M 系列芯片选 Apple Silicon，Intel 处理器选 Intel。",
     "downloadAppleSiliconLabel": "下载 Apple Silicon 版",
-    "downloadIntelLabel": "下载 Intel 版"
+    "downloadIntelLabel": "下载 Intel 版",
+    "installUpgrade": "升级前，请按 ⌘Q 退出 LumaView，再覆盖安装。仅关闭窗口不会退出应用。",
+    "installUpgradeShort": "升级前请先退出 LumaView（⌘Q）。"
   },
   "fr": {
     "navExperience": "Fonctions",
@@ -147,7 +151,9 @@
     "languageLabel": "Langue",
     "chipHelp": "Menu Apple → À propos de ce Mac : choisissez Apple Silicon pour une puce M, ou Intel pour un processeur Intel.",
     "downloadAppleSiliconLabel": "Télécharger pour Apple Silicon",
-    "downloadIntelLabel": "Télécharger pour Intel"
+    "downloadIntelLabel": "Télécharger pour Intel",
+    "installUpgrade": "Avant une mise à jour, quittez LumaView avec ⌘Q, puis remplacez l’app. Fermer une fenêtre ne quitte pas l’app.",
+    "installUpgradeShort": "Avant la mise à jour, quittez LumaView (⌘Q)."
   },
   "ru": {
     "navExperience": "Возможности",
@@ -197,7 +203,9 @@
     "languageLabel": "Язык",
     "chipHelp": "Меню Apple → «Об этом Mac»: для чипа серии M выберите Apple Silicon, для процессора Intel — Intel.",
     "downloadAppleSiliconLabel": "Скачать для Apple Silicon",
-    "downloadIntelLabel": "Скачать для Intel"
+    "downloadIntelLabel": "Скачать для Intel",
+    "installUpgrade": "Перед обновлением завершите LumaView сочетанием ⌘Q, затем замените приложение. Закрытие окна не завершает приложение.",
+    "installUpgradeShort": "Перед обновлением выйдите из LumaView (⌘Q)."
   },
   "es": {
     "navExperience": "Funciones",
@@ -247,7 +255,9 @@
     "languageLabel": "Idioma",
     "chipHelp": "Menú Apple → Acerca de este Mac: elige Apple Silicon si tiene un chip de la serie M, o Intel si tiene un procesador Intel.",
     "downloadAppleSiliconLabel": "Descargar para Apple Silicon",
-    "downloadIntelLabel": "Descargar para Intel"
+    "downloadIntelLabel": "Descargar para Intel",
+    "installUpgrade": "Antes de actualizar, sal de LumaView con ⌘Q y luego sustituye la app. Cerrar una ventana no cierra la app.",
+    "installUpgradeShort": "Antes de actualizar, sal de LumaView (⌘Q)."
   },
   "ja": {
     "navExperience": "機能",
@@ -297,7 +307,9 @@
     "languageLabel": "言語",
     "chipHelp": "Apple メニュー →「この Mac について」で確認できます。M シリーズのチップなら Apple Silicon、Intel プロセッサなら Intel を選んでください。",
     "downloadAppleSiliconLabel": "Apple Silicon 版をダウンロード",
-    "downloadIntelLabel": "Intel 版をダウンロード"
+    "downloadIntelLabel": "Intel 版をダウンロード",
+    "installUpgrade": "更新時は ⌘Q で LumaView を終了してから、アプリを置き換えてください。ウインドウを閉じるだけでは終了しません。",
+    "installUpgradeShort": "更新前に LumaView を終了（⌘Q）。"
   },
   "ko": {
     "navExperience": "기능",
@@ -347,6 +359,8 @@
     "languageLabel": "언어",
     "chipHelp": "Apple 메뉴 → 이 Mac에 관하여에서 확인하세요. M 시리즈 칩이면 Apple Silicon, Intel 프로세서이면 Intel을 선택하세요.",
     "downloadAppleSiliconLabel": "Apple Silicon용 다운로드",
-    "downloadIntelLabel": "Intel용 다운로드"
+    "downloadIntelLabel": "Intel용 다운로드",
+    "installUpgrade": "업데이트하려면 ⌘Q로 LumaView를 종료한 다음 앱을 교체하세요. 윈도우를 닫는 것만으로는 앱이 종료되지 않습니다.",
+    "installUpgradeShort": "업데이트 전 LumaView를 종료하세요(⌘Q)."
   }
 }
