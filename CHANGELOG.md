@@ -4,10 +4,18 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
-## Unreleased
+## 1.3.4 — 2026-11-20
 
-- Move the current file to Trash with Delete, with a notice on first use.
+### English
+
+- Press Delete to move the current file to Trash, with confirmation on first use.
+
+### 中文
+
 - 按 Delete 将当前文件移到废纸篓，首次使用会提示。
+
+### 日本語
+
 - Delete キーで現在のファイルをゴミ箱に移動。初回は確認を表示します。
 
 ## 1.3.3 — 2026-11-18
