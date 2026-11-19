@@ -5,7 +5,7 @@
 Open an image and browse its folder with the arrow keys. Everyday controls stay
 close at hand.
 
-**LumaView 1.3.3** — [Apple Silicon DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.3/LumaView-1.3.3-arm64.dmg) · [Intel DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.3/LumaView-1.3.3-x86_64.dmg) · [Website](https://ixiehao.github.io/LumaView/) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Changelog](CHANGELOG.md)
+**LumaView 1.3.4** — [Apple Silicon DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.4/LumaView-1.3.4-arm64.dmg) · [Intel DMG](https://github.com/ixiehao/LumaView/releases/download/v1.3.4/LumaView-1.3.4-x86_64.dmg) · [Website](https://ixiehao.github.io/LumaView/) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [Changelog](CHANGELOG.md)
 
 macOS 12+ · Separate Apple Silicon and Intel installers · ~2 MB each
 
@@ -36,7 +36,7 @@ Decoding depends on the macOS version, installed codecs and the individual file.
 
 ## Install
 
-1. Download the DMG for [Apple Silicon](https://github.com/ixiehao/LumaView/releases/download/v1.3.3/LumaView-1.3.3-arm64.dmg) or [Intel](https://github.com/ixiehao/LumaView/releases/download/v1.3.3/LumaView-1.3.3-x86_64.dmg).
+1. Download the DMG for [Apple Silicon](https://github.com/ixiehao/LumaView/releases/download/v1.3.4/LumaView-1.3.4-arm64.dmg) or [Intel](https://github.com/ixiehao/LumaView/releases/download/v1.3.4/LumaView-1.3.4-x86_64.dmg).
 2. Open it and drag **LumaView.app** to **Applications**.
 3. Open LumaView from Applications. To open an image directly, Control-click it in Finder and choose **Open With → LumaView**.
 
@@ -76,7 +76,7 @@ The DMG is only the installer. Removing it never removes LumaView or your images
 | Fit image | `⌘ 0` |
 | Rotate left / right | `⌘ [` / `⌘ ]` |
 | Print current image | `⌘ P` |
-| Move current file to Trash (next release) | `Delete` (confirmation on first use) |
+| Move current file to Trash | `Delete` (confirmation on first use) |
 
 ## Build from source
 

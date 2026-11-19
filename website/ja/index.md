@@ -8,7 +8,7 @@
 
 軽やかに使える Mac ネイティブの画像ビューア。画像を開いて、フォルダ内を手軽に閲覧。
 
-[v1.3.3 を入手](https://ixiehao.github.io/LumaView/ja/#download) [ソースを見る](https://github.com/ixiehao/LumaView)
+[v1.3.4 を入手](https://ixiehao.github.io/LumaView/ja/#download) [ソースを見る](https://github.com/ixiehao/LumaView)
 
 macOS 12 以降 · Apple Silicon / Intel · インストーラ各約 2 MB
 
@@ -46,7 +46,7 @@ JPEG、PNG、HEIC、HEIF、GIF・アニメーション WebP、TIFF、BMP、ICO�
 
 Apple メニュー →「この Mac について」で確認できます。M シリーズのチップなら Apple Silicon、Intel プロセッサなら Intel を選んでください。
 
-[Apple Silicon](https://github.com/ixiehao/LumaView/releases/download/v1.3.3/LumaView-1.3.3-arm64.dmg) [Intel](https://github.com/ixiehao/LumaView/releases/download/v1.3.3/LumaView-1.3.3-x86_64.dmg)
+[Apple Silicon](https://github.com/ixiehao/LumaView/releases/download/v1.3.4/LumaView-1.3.4-arm64.dmg) [Intel](https://github.com/ixiehao/LumaView/releases/download/v1.3.4/LumaView-1.3.4-x86_64.dmg)
 
 macOS 12 以降 · 各インストーラ約 2 MB
 
