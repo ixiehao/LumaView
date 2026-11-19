@@ -1,6 +1,6 @@
-# LumaView · 심플한 Mac 네이티브 이미지 뷰어
+# LumaView · Mac용 가벼운 이미지 뷰어 · GIF·WebP 지원
 
-> 가벼운 Mac 네이티브 이미지 뷰어. 이미지를 열고 같은 폴더를 편하게 둘러보세요.
+> Mac용 가벼운 이미지 뷰어. JPEG, PNG, GIF, WebP 등과 애니메이션, 여러 윈도우 비교, PDF를 지원합니다.
 
 <https://ixiehao.github.io/LumaView/ko/>
 
@@ -38,7 +38,7 @@ macOS 12 이상 · Apple Silicon / Intel · 설치 파일 각각 약 2 MB
 
 #### 주요 이미지 형식
 
-JPEG, PNG, HEIC, GIF, TIFF, WebP, RAW, Sketch 미리보기와 여러 페이지 PDF를 지원합니다.
+JPEG, PNG, HEIC, HEIF, GIF 및 애니메이션 WebP, TIFF, BMP, ICO, ICNS, JPEG 2000, RAW, 여러 페이지 PDF와 Sketch 미리보기를 지원합니다. AVIF와 JPEG XL은 macOS 지원 여부에 따라 다릅니다.
 
 지금 시작하세요
 

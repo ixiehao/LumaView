@@ -1,6 +1,6 @@
-# LumaView · Visionneuse d’images native et minimaliste pour Mac
+# LumaView · Visionneuse légère pour Mac, GIF et WebP
 
-> Visionneuse d’images native et légère pour Mac. Ouvrez une image et parcourez son dossier.
+> Visionneuse légère pour Mac : JPEG, PNG, GIF, WebP et autres formats, animations, dossiers, comparaison et PDF.
 
 <https://ixiehao.github.io/LumaView/fr/>
 
@@ -38,7 +38,7 @@ Adaptez l’image à la fenêtre, zoomez, déplacez-la ou faites-la pivoter. Le 
 
 #### Les formats courants
 
-JPEG, PNG, HEIC, GIF, TIFF, WebP, RAW, aperçus Sketch et PDF multipages sont pris en charge.
+JPEG, PNG, HEIC, HEIF, animations GIF et WebP, TIFF, BMP, ICO, ICNS, JPEG 2000, RAW, PDF multipages et aperçus Sketch. AVIF et JPEG XL dépendent de macOS.
 
 À vous de regarder
 

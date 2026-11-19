@@ -57,7 +57,8 @@ def generate(source, copy, language, page_path=None):
     alternates = '\n    '.join(f'<meta property="og:locale:alternate" content="{data[1]}" />' for key,data in LOCALES.items() if key != language)
     text = text.replace('    <meta property="og:image"', '    '+alternates+'\n    <meta property="og:image"', 1)
     schema_match = re.search(r'(<script id="software-schema"[^>]*>)([\s\S]*?)(</script>)', text)
-    schema = json.loads(schema_match[2]);schema.update(url=url, description=copy['seoDescription'], inLanguage=code)
+    schema = json.loads(schema_match[2]);schema.update(url=url, description=copy['seoDescription'], inLanguage=code,
+        featureList=[copy[key] for key in ('featureOneBody', 'featureTwoBody', 'featureThreeBody', 'windowsLede')])
     text = text[:schema_match.start()] + schema_match[1]+'\n'+json.dumps(schema,ensure_ascii=False,indent=2)+'\n    '+schema_match[3]+text[schema_match.end():]
     prefix = '../' if page_path else './'
     options = '\n'.join(

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f6f8fc" />
-    <meta id="meta-description" name="description" content="軽量な Mac ネイティブ画像ビューア。画像を開いて、フォルダ内を手軽に閲覧できます。" />
+    <meta id="meta-description" name="description" content="Mac 向け軽量画像ビューア。JPEG、PNG、GIF、WebP などの閲覧、アニメーション再生、複数ウインドウ、PDF に対応。" />
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <meta name="author" content="ixiehao" />
     <link id="canonical-url" rel="canonical" href="https://ixiehao.github.io/LumaView/ja/" />
@@ -19,8 +19,8 @@
     <link rel="icon" type="image/png" sizes="512x512" href="../assets/lumaview-app-icon.png" />
     <link rel="apple-touch-icon" sizes="512x512" href="../assets/lumaview-app-icon.png" />
     <link rel="manifest" href="../manifest.webmanifest" />
-    <meta id="og-title" property="og:title" content="LumaView · ミニマルな Mac ネイティブ画像ビューア" />
-    <meta id="og-description" property="og:description" content="複数ウインドウでの比較、フォルダ内の画像閲覧、拡大、回転、プリント。" />
+    <meta id="og-title" property="og:title" content="LumaView · Mac 向け軽量画像ビューア・GIF・WebP 対応" />
+    <meta id="og-description" property="og:description" content="Mac 向け軽量画像ビューア。JPEG、PNG、GIF、WebP などの閲覧、アニメーション再生、複数ウインドウ、PDF に対応。" />
     <meta property="og:type" content="website" />
     <meta id="og-url" property="og:url" content="https://ixiehao.github.io/LumaView/ja/" />
     <meta property="og:site_name" content="LumaView" />
@@ -38,11 +38,11 @@
     <meta property="og:image:height" content="640" />
     <meta id="og-image-alt" property="og:image:alt" content="LumaView のネイティブウインドウで画像を表示。上部に前後移動、拡大、回転の操作があります" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta id="twitter-title" name="twitter:title" content="LumaView · ミニマルな Mac ネイティブ画像ビューア" />
-    <meta id="twitter-description" name="twitter:description" content="複数ウインドウでの比較、フォルダ内の画像閲覧、拡大、回転、プリント。" />
+    <meta id="twitter-title" name="twitter:title" content="LumaView · Mac 向け軽量画像ビューア・GIF・WebP 対応" />
+    <meta id="twitter-description" name="twitter:description" content="Mac 向け軽量画像ビューア。JPEG、PNG、GIF、WebP などの閲覧、アニメーション再生、複数ウインドウ、PDF に対応。" />
     <meta name="twitter:image" content="https://ixiehao.github.io/LumaView/assets/social-preview.jpg?v=20261017-canvas-fill" />
     <meta id="twitter-image-alt" name="twitter:image:alt" content="LumaView のネイティブウインドウで画像を表示。上部に前後移動、拡大、回転の操作があります" />
-    <title>LumaView · ミニマルな Mac ネイティブ画像ビューア</title>
+    <title>LumaView · Mac 向け軽量画像ビューア・GIF・WebP 対応</title>
     <script id="software-schema" type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -72,7 +72,13 @@
     "name": "ixiehao",
     "url": "https://github.com/ixiehao"
   },
-  "description": "軽量な Mac ネイティブ画像ビューア。画像を開いて、フォルダ内を手軽に閲覧できます。"
+  "description": "Mac 向け軽量画像ビューア。JPEG、PNG、GIF、WebP などの閲覧、アニメーション再生、複数ウインドウ、PDF に対応。",
+  "featureList": [
+    "ツールバーまたは矢印キーで、同じフォルダ内の画像を前後に移動できます。",
+    "ウインドウに合わせる、拡大、パン、回転に対応。下部に現在の拡大率を表示します。",
+    "JPEG、PNG、HEIC、HEIF、GIF・アニメーション WebP、TIFF、BMP、ICO、ICNS、JPEG 2000、RAW、複数ページ PDF、Sketch のプレビューに対応。AVIF と JPEG XL は macOS の対応状況によります。",
+    "画像ごとにウインドウが開き、拡大率や閲覧位置も個別に保たれます。並べて表示すれば、細部を見比べられます。"
+  ]
 }
     </script>
     <link rel="stylesheet" href="../styles.css?v=79db0ac2ab68" />
@@ -162,7 +168,7 @@
             </article>
             <article class="feature reveal">
               <svg class="feature-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 8h.01" /><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12" /><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" /><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" /></svg>
-              <div><h3 data-i18n="featureThreeTitle">主な画像形式に対応</h3><p data-i18n="featureThreeBody">JPEG、PNG、HEIC、GIF、TIFF、WebP、RAW、Sketch のプレビュー、複数ページの PDF に対応。</p></div>
+              <div><h3 data-i18n="featureThreeTitle">主な画像形式に対応</h3><p data-i18n="featureThreeBody">JPEG、PNG、HEIC、HEIF、GIF・アニメーション WebP、TIFF、BMP、ICO、ICNS、JPEG 2000、RAW、複数ページ PDF、Sketch のプレビューに対応。AVIF と JPEG XL は macOS の対応状況によります。</p></div>
             </article>
           </div>
         </div>

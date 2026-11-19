@@ -1,6 +1,6 @@
-# LumaView · Минималистичный просмотрщик изображений для Mac
+# LumaView · Лёгкий просмотрщик для Mac, GIF и WebP
 
-> Лёгкий нативный просмотрщик изображений для Mac. Откройте снимок и просматривайте папку.
+> Лёгкий просмотрщик изображений для Mac: JPEG, PNG, GIF, WebP, анимация, сравнение окон и PDF.
 
 <https://ixiehao.github.io/LumaView/ru/>
 
@@ -38,7 +38,7 @@ macOS 12+ · Apple Silicon / Intel · около 2 МБ каждый устан�
 
 #### Популярные форматы
 
-Поддерживаются JPEG, PNG, HEIC, GIF, TIFF, WebP, RAW, предпросмотр Sketch и многостраничные PDF.
+JPEG, PNG, HEIC, HEIF, анимация GIF и WebP, TIFF, BMP, ICO, ICNS, JPEG 2000, RAW, многостраничные PDF и предпросмотр Sketch. AVIF и JPEG XL зависят от macOS.
 
 Начните просмотр
 

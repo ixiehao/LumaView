@@ -1,6 +1,6 @@
-# LumaView · Visor de imágenes nativo y minimalista para Mac
+# LumaView · Visor ligero para Mac, GIF y WebP
 
-> Visor de imágenes nativo y ligero para Mac. Abre una imagen y recorre su carpeta.
+> Visor ligero de imágenes para Mac: JPEG, PNG, GIF, WebP y más, con animaciones, carpetas, comparación y PDF.
 
 <https://ixiehao.github.io/LumaView/es/>
 
@@ -38,7 +38,7 @@ Ajusta la imagen a la ventana, amplía, desplaza y gira. El nivel de zoom aparec
 
 #### Formatos habituales
 
-Compatible con JPEG, PNG, HEIC, GIF, TIFF, WebP, RAW, vistas previas de Sketch y PDF de varias páginas.
+JPEG, PNG, HEIC, HEIF, animaciones GIF y WebP, TIFF, BMP, ICO, ICNS, JPEG 2000, RAW, PDF de varias páginas y vistas previas de Sketch. AVIF y JPEG XL dependen de macOS.
 
 Empieza a ver tus imágenes
 

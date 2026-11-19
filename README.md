@@ -19,14 +19,20 @@ Apple menu → **About This Mac**: choose Apple Silicon for an M-series chip, or
 
 ## Highlights
 
-- **Browse naturally** — open from Finder, choose a file, or drag it in; use `←` / `→` or the toolbar for the previous and next image in the folder.
-- **See the image clearly** — fit, zoom, pan, rotate, and print; the status bar shows the actual zoom level.
-- **Inspect only when needed** — one toolbar button reveals file facts and the EXIF data embedded in the current image, without a separate folder-wide metadata scan or library.
-- **Open the formats you meet every day** — JPEG, PNG, HEIC, GIF, TIFF, BMP, ICO, WebP, PDF, many macOS-supported RAW files, and `.sketch` previews.
-- **Built for the Mac** — native SwiftUI, English, Chinese, French, Russian, Spanish, Japanese, and Korean; Light / Dark / System appearance; Intel and Apple Silicon support.
+- **Browse folders** — open from Finder, choose a file or drag it in; use `←` / `→` for the previous and next image.
+- **See the details** — fit, zoom, pan, rotate, print and inspect embedded EXIF information.
+- **Play and read** — play animated GIF and WebP; use `↑` / `↓` to turn PDF pages and keep your reading position.
+- **Compare images** — open separate windows, each with its own zoom and browsing position.
+- **Built for the Mac** — native SwiftUI, seven languages, Light / Dark / System appearance, and default-app settings.
 
-- **Read PDFs** — turn pages with `↑` / `↓`; keep your page, zoom and rotation while reading.
-- **Choose default formats** — set LumaView as the default viewer from Settings.
+## Supported formats
+
+- **Images:** JPEG (`.jpg`, `.jpeg`), PNG, HEIC / HEIF, GIF, WebP, TIFF (`.tif`, `.tiff`), BMP, ICO, ICNS and JPEG 2000 (`.jp2`, `.j2k`). Animated GIF and WebP can play.
+- **Camera RAW:** `.raw`, DNG, CR2, NEF, ARW, ORF, RW2 and other formats supported by macOS.
+- **Documents:** multi-page PDF and the embedded preview of a Sketch (`.sketch`) document.
+- **System-dependent:** AVIF and JPEG XL (`.jxl`), as well as other image formats recognized by macOS.
+
+Decoding depends on the macOS version, installed codecs and the individual file. Recognizing a file extension does not guarantee that every file can be opened. Sketch displays its preview, not editable layers.
 
 ## Install
 

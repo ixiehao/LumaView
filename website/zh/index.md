@@ -1,6 +1,6 @@
-# LumaView · 极简的Mac原生看图软件
+# LumaView · 轻量 Mac 看图软件，支持 GIF 与动态 WebP
 
-> 轻巧的 Mac 原生看图软件，打开图片即可浏览同一文件夹。
+> 轻巧的 Mac 原生看图软件，支持 JPEG、PNG、GIF、动态 WebP 等格式，浏览文件夹、多窗口对比和阅读 PDF。
 
 <https://ixiehao.github.io/LumaView/zh/>
 
@@ -38,7 +38,7 @@ macOS 12+ · Apple Silicon / Intel · 每个安装包约 2 MB
 
 #### 常见格式
 
-支持 JPEG、PNG、HEIC、GIF、TIFF、WebP、RAW、Sketch 预览和多页 PDF。
+支持 JPEG、PNG、HEIC、HEIF、GIF 与动态 WebP、TIFF、BMP、ICO、ICNS、JPEG 2000、RAW、多页 PDF 和 Sketch 预览。AVIF、JPEG XL 取决于系统支持。
 
 现在开始看图
 
