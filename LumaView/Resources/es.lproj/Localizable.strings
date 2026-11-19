@@ -153,3 +153,10 @@
 "update.later" = "Más tarde";
 
 "defaults.otherCopy" = "%@ (otra copia)";
+
+/* Move current file to macOS Trash */
+"menu.moveToTrash" = "Trasladar a la papelera";
+"button.cancel" = "Cancelar";
+"trash.confirmTitle" = "¿Trasladar este archivo a la papelera?";
+"trash.confirmMessage" = "«%@» se trasladará a la papelera. Puedes restaurarlo desde el Finder. Tras esta primera confirmación, al pulsar Suprimir se trasladará el archivo actual a la papelera de inmediato. Mantener pulsada la tecla no eliminará más archivos.";
+"trash.failed" = "No se ha podido trasladar el archivo a la papelera";

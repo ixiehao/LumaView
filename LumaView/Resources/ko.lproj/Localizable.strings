@@ -153,3 +153,10 @@
 "update.later" = "나중에";
 
 "defaults.otherCopy" = "%@ (다른 사본)";
+
+/* Move current file to macOS Trash */
+"menu.moveToTrash" = "휴지통으로 이동";
+"button.cancel" = "취소";
+"trash.confirmTitle" = "이 파일을 휴지통으로 이동할까요?";
+"trash.confirmMessage" = "“%@” 파일이 휴지통으로 이동합니다. Finder에서 복원할 수 있습니다. 이번에 확인한 후에는 Delete 키를 누르면 현재 파일이 바로 휴지통으로 이동합니다. 키를 길게 눌러도 다른 파일은 삭제되지 않습니다.";
+"trash.failed" = "파일을 휴지통으로 이동할 수 없습니다";

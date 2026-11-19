@@ -153,3 +153,10 @@
 "update.later" = "稍后";
 
 "defaults.otherCopy" = "%@（另一副本）";
+
+/* Move current file to macOS Trash */
+"menu.moveToTrash" = "移到废纸篓";
+"button.cancel" = "取消";
+"trash.confirmTitle" = "将此文件移到废纸篓？";
+"trash.confirmMessage" = "“%@”将被移到废纸篓，可在访达中恢复。本次确认后，再按 Delete 键会直接将当前文件移到废纸篓。按住按键不会连续删除。";
+"trash.failed" = "无法将文件移到废纸篓";

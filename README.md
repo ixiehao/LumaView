@@ -76,6 +76,7 @@ The DMG is only the installer. Removing it never removes LumaView or your images
 | Fit image | `⌘ 0` |
 | Rotate left / right | `⌘ [` / `⌘ ]` |
 | Print current image | `⌘ P` |
+| Move current file to Trash (next release) | `Delete` (confirmation on first use) |
 
 ## Build from source
 

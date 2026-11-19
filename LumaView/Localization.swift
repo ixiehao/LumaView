@@ -16,6 +16,7 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     var id: String { rawValue }
 
     static let requiredLocalizationKeys = [
+        "menu.moveToTrash", "button.cancel", "trash.confirmTitle", "trash.confirmMessage", "trash.failed",
         "menu.openNewWindows", "menu.keepStatusVisible", "preview.passwordRequired", "preview.fileTooLarge", "preview.unreadable", "preview.cannotDecode", "update.checking", "update.later", "defaults.otherCopy",
         "settings.general", "settings.defaultApplications", "defaults.description", "defaults.format", "defaults.extensions",
         "defaults.currentApplication", "defaults.none", "defaults.selectImages", "defaults.clear", "defaults.apply",

@@ -375,6 +375,18 @@ final class ImageBrowserStore: ObservableObject {
     private var navigationPrefetchOperations: [Operation] = []
     private var printPreparationOperation: Operation?
     private var pdfReadingHistory = PDFReadingHistory()
+    private static let fileTrashed = Notification.Name("com.lumaview.fileTrashed")
+    private var trashObserver: AnyCancellable?
+    private var removedDuringScan: Set<URL> = []
+
+    init() {
+        // All stores and trash operations run on the main actor. Notify other
+        // windows too, so none keeps browsing a file that this app just removed.
+        trashObserver = NotificationCenter.default.publisher(for: Self.fileTrashed).sink { [weak self] note in
+            guard let url = note.object as? URL else { return }
+            self?.removeTrashedFile(url)
+        }
+    }
 
     deinit {
         folderScanTask?.cancel()
@@ -391,6 +403,7 @@ final class ImageBrowserStore: ObservableObject {
     }
 
     var selectedURL: URL? { selectedFile?.url }
+    var canMoveToTrash: Bool { selectedURL != nil && !isScanning }
     var isPDF: Bool { selectedURL?.pathExtension.lowercased() == "pdf" }
     var hasMultiplePDFPages: Bool { isPDF && pdfPageCount > 1 }
     var hasPreviousPage: Bool { isPDF && pdfPageIndex > 0 }
@@ -493,6 +506,7 @@ final class ImageBrowserStore: ObservableObject {
         let canonicalURL = url.standardizedFileURL.resolvingSymlinksInPath()
         folderURL = canonicalURL
         isScanning = true
+        removedDuringScan.removeAll(keepingCapacity: false)
         status = nil
         folderScanErrorMessage = nil
         imageLoadFailed = false
@@ -825,6 +839,46 @@ final class ImageBrowserStore: ObservableObject {
         NSWorkspace.shared.activateFileViewerSelecting([selectedURL])
     }
 
+    @discardableResult
+    func moveSelectedFileToTrash() throws -> URL? {
+        guard canMoveToTrash, let url = selectedURL else { return nil }
+        // Use macOS Trash semantics, including external-volume Trash and errors.
+        // Never fall back to permanent removal if the volume cannot trash a file.
+        var result: NSURL?
+        try FileManager.default.trashItem(at: url, resultingItemURL: &result)
+        NotificationCenter.default.post(name: Self.fileTrashed, object: url)
+        return result as URL?
+    }
+
+    private func removeTrashedFile(_ url: URL) {
+        if isScanning, url.deletingLastPathComponent() == folderURL { removedDuringScan.insert(url) }
+        guard let index = files.firstIndex(where: { $0.url == url }) else { return }
+        let activeURL = selectedURL
+        files.removeAll { $0.url == url }
+        if activeURL != url {
+            selectedIndex = files.firstIndex(where: { $0.url == activeURL })
+            if let selectedIndex { prefetchNavigationNeighbours(around: selectedIndex) }
+        } else if !files.isEmpty {
+            select(index: min(index, files.count - 1))
+        } else {
+            pixelSizeTask?.cancel()
+            metadataOperation?.cancel()
+            printPreparationOperation?.cancel()
+            printPreparationOperation = nil
+            isPreparingPrint = false
+            cancelNavigationPrefetches()
+            selectedIndex = nil
+            originalPixelSize = nil
+            pdfPageIndex = 0
+            pdfPageCount = 0
+            resetViewport()
+            status = nil
+            previewFailure = nil
+            imageLoadFailed = false
+            selectionGeneration += 1
+        }
+    }
+
     /// There is no sidebar and no persistent thumbnail strip. Instead, retain only the
     /// two likely next destinations as small, memory-bounded bridge frames. It keeps
     /// previous/next navigation perceptibly immediate while the full display-sized decode
@@ -882,6 +936,8 @@ final class ImageBrowserStore: ObservableObject {
         folderScanTask = nil
         switch result {
         case .success(var discovered):
+            discovered.removeAll { removedDuringScan.contains($0.url) }
+            removedDuringScan.removeAll(keepingCapacity: false)
             // Directory browsing skips hidden files. An explicitly opened file
             // still belongs to this window even when enumeration omits it.
             if let selected = selectedFile, !discovered.contains(where: { $0.url == selected.url }) {

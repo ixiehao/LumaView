@@ -610,6 +610,7 @@ fileprivate enum ViewerCommand {
     case rotateLeft
     case rotateRight
     case revealInFinder
+    case moveToTrash
     case print
 }
 
@@ -969,6 +970,8 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             return browser.selectedURL != nil
         case .print:
             return browser.selectedURL != nil && !browser.isPreparingPrint
+        case .moveToTrash:
+            return browser.canMoveToTrash
         }
     }
 
@@ -1005,6 +1008,8 @@ private final class LumaViewWindowController: NSWindowController, NSWindowDelega
             browser.revealInFinder()
         case .print:
             browser.printSelectedImage(from: window)
+        case .moveToTrash:
+            (window as? LumaDocumentWindow)?.moveSelectedFileToTrash(localization)
         }
     }
 
@@ -1515,6 +1520,8 @@ struct LumaViewApp: App {
                 Button(l.text("menu.reveal")) { windowRegistry.perform(.revealInFinder, localization: l) }
                     .keyboardShortcut("r", modifiers: [.command, .shift])
                     .disabled(!windowRegistry.canPerform(.revealInFinder))
+                Button(l.text("menu.moveToTrash")) { windowRegistry.perform(.moveToTrash, localization: l) }
+                    .disabled(!windowRegistry.canPerform(.moveToTrash))
             }
 
             // Keep image controls separate from AppKit's standard "View" menu.

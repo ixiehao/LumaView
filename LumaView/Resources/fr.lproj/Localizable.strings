@@ -153,3 +153,10 @@
 "update.later" = "Plus tard";
 
 "defaults.otherCopy" = "%@ (autre copie)";
+
+/* Move current file to macOS Trash */
+"menu.moveToTrash" = "Placer dans la corbeille";
+"button.cancel" = "Annuler";
+"trash.confirmTitle" = "Placer ce fichier dans la corbeille ?";
+"trash.confirmMessage" = "« %@ » sera placé dans la corbeille. Vous pourrez le restaurer dans le Finder. Après cette première confirmation, la touche Supprimer placera immédiatement le fichier actuel dans la corbeille. Maintenir la touche enfoncée ne supprimera pas d’autres fichiers.";
+"trash.failed" = "Impossible de placer le fichier dans la corbeille";

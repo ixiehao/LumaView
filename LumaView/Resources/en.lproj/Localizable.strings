@@ -153,3 +153,10 @@
 "update.later" = "Later";
 
 "defaults.otherCopy" = "%@ (another copy)";
+
+/* Move current file to macOS Trash */
+"menu.moveToTrash" = "Move to Trash";
+"button.cancel" = "Cancel";
+"trash.confirmTitle" = "Move this file to Trash?";
+"trash.confirmMessage" = "“%@” will be moved to Trash. You can restore it in Finder. After this first confirmation, pressing Delete moves the current file to Trash immediately. Holding the key will not delete more files.";
+"trash.failed" = "Couldn’t move the file to Trash";

@@ -9,6 +9,136 @@ import XCTest
 final class LumaViewCoreTests: XCTestCase {
     private var directory: URL!
 
+    @MainActor
+    func testFirstTrashNoticeCanBeCancelledAndCannotDeleteAChangedSelection() async throws {
+        let a = directory.appendingPathComponent("a.png"), b = directory.appendingPathComponent("b.png")
+        try Data([0]).write(to: a); try Data([0]).write(to: b)
+        let store = ImageBrowserStore()
+        defer { store.cancelPendingWork() }
+        store.open(file: a)
+        try await Self.waitForScan(store)
+        let window = TrashNoticeTestWindow(contentRect: NSRect(x: 0, y: 0, width: 300, height: 200),
+            styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.browser = store
+        let suite = "LumaViewTrashTests-\(UUID().uuidString)"
+        window.trashNoticeDefaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { window.trashNoticeDefaults.removePersistentDomain(forName: suite); window.close() }
+        let l = L10n(language: .english)
+        window.moveSelectedFileToTrash(l)
+        XCTAssertEqual(window.alerts.count, 1)
+        XCTAssertTrue(window.alerts[0].informativeText.contains("a.png"))
+        window.response?(.alertSecondButtonReturn)
+        XCTAssertFalse(window.trashNoticeDefaults.bool(forKey: "luma.trashNoticeAccepted"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: a.path))
+
+        window.moveSelectedFileToTrash(l)
+        XCTAssertEqual(window.alerts.count, 2, "Cancel must not suppress the first-use notice")
+        store.next()
+        window.response?(.alertFirstButtonReturn)
+        XCTAssertFalse(window.trashNoticeDefaults.bool(forKey: "luma.trashNoticeAccepted"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: a.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: b.path))
+
+        // Failure must keep both selection and first-use guidance intact.
+        window.moveSelectedFileToTrash(l)
+        try FileManager.default.removeItem(at: b)
+        window.response?(.alertFirstButtonReturn)
+        XCTAssertEqual(window.alerts.last?.messageText, l.text("trash.failed"))
+        XCTAssertEqual(store.selectedURL, b)
+        XCTAssertFalse(window.trashNoticeDefaults.bool(forKey: "luma.trashNoticeAccepted"))
+        XCTAssertFalse(window.isVisible)
+    }
+
+    @MainActor
+    func testTrashMovesRealFilesAndSynchronizesWindows() async throws {
+        let urls = (1...3).map { directory.appendingPathComponent("trash-test-\($0)-\(UUID().uuidString).png") }
+        for url in urls { try Data([0]).write(to: url) }
+        try FileManager.default.createSymbolicLink(at: directory.appendingPathComponent("duplicate.png"), withDestinationURL: urls[1])
+        let first = ImageBrowserStore(), second = ImageBrowserStore()
+        defer { first.cancelPendingWork(); second.cancelPendingWork() }
+        first.open(file: urls[1]); second.open(file: urls[1])
+        try await Self.waitForScan(first)
+        try await Self.waitForScan(second)
+        var trashed: [URL] = []
+        defer { for url in trashed { try? FileManager.default.removeItem(at: url) } }
+
+        let location = try XCTUnwrap(first.moveSelectedFileToTrash())
+        trashed.append(location)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: urls[1].path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: location.path), "The file must remain recoverable in Trash")
+        XCTAssertEqual(first.selectedURL, urls[2])
+        XCTAssertEqual(second.selectedURL, urls[2])
+        XCTAssertEqual(second.files.map(\.url), [urls[0], urls[2]])
+
+        first.select(index: 0)
+        trashed.append(try XCTUnwrap(first.moveSelectedFileToTrash()))
+        XCTAssertEqual(second.selectedURL, urls[2], "Removing a preceding file must not change another window's selection")
+        XCTAssertEqual(second.selectedIndex, 0)
+        trashed.append(try XCTUnwrap(first.moveSelectedFileToTrash()))
+        for store in [first, second] {
+            XCTAssertTrue(store.files.isEmpty)
+            XCTAssertNil(store.selectedURL)
+            XCTAssertNil(store.originalPixelSize)
+            XCTAssertFalse(store.canMoveToTrash)
+            XCTAssertEqual(store.pdfPageCount, 0)
+        }
+    }
+
+    @MainActor
+    func testTrashFailureKeepsSelectionAndFolderIndex() async throws {
+        let url = directory.appendingPathComponent("missing-after-open.png")
+        try Data([0]).write(to: url)
+        let store = ImageBrowserStore()
+        defer { store.cancelPendingWork() }
+        store.open(file: url)
+        XCTAssertFalse(store.canMoveToTrash, "Wait until folder indexing finishes")
+        try await Self.waitForScan(store)
+        try FileManager.default.removeItem(at: url)
+        XCTAssertThrowsError(try store.moveSelectedFileToTrash())
+        XCTAssertEqual(store.selectedURL, url)
+        XCTAssertEqual(store.files.count, 1)
+    }
+
+    @MainActor
+    func testDeleteShortcutIsScopedAndIgnoresKeyRepeatAndTextEditing() async throws {
+        let url = directory.appendingPathComponent("keyboard-trash.png")
+        try Data([0]).write(to: url)
+        let store = ImageBrowserStore()
+        defer { store.cancelPendingWork() }
+        store.open(file: url)
+        try await Self.waitForScan(store)
+        let window = TrashKeyboardTestWindow(contentRect: NSRect(x: 0, y: 0, width: 300, height: 200),
+            styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.browser = store
+        defer { window.close() }
+        func key(_ code: UInt16 = 51, flags: NSEvent.ModifierFlags = [], repeats: Bool = false, number: Int? = nil) throws -> NSEvent {
+            try XCTUnwrap(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags,
+                timestamp: 0, windowNumber: number ?? window.windowNumber, context: nil,
+                characters: "\u{7f}", charactersIgnoringModifiers: "\u{7f}", isARepeat: repeats, keyCode: code))
+        }
+        XCTAssertFalse(window.isVisible, "No desktop focus or global key events")
+        window.sendEvent(try key())
+        XCTAssertEqual(window.trashRequests, 1)
+        XCTAssertTrue(window.handleTrashShortcut(try key(repeats: true)))
+        XCTAssertEqual(window.trashRequests, 1)
+        for flag: NSEvent.ModifierFlags in [.command, .option, .control, .shift] {
+            XCTAssertFalse(window.handleTrashShortcut(try key(flags: flag)))
+        }
+        XCTAssertFalse(window.handleTrashShortcut(try key(117)), "Forward Delete is not the requested shortcut")
+        XCTAssertFalse(window.handleTrashShortcut(try key(number: window.windowNumber + 1)))
+        window.receivesTestKeys = false
+        XCTAssertFalse(window.handleTrashShortcut(try key()))
+        window.receivesTestKeys = true
+        let editor = NSTextView(frame: NSRect(x: 0, y: 0, width: 100, height: 40))
+        window.contentView = editor
+        XCTAssertTrue(window.makeFirstResponder(editor))
+        XCTAssertFalse(window.handleTrashShortcut(try key()))
+        XCTAssertEqual(window.trashRequests, 1)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+    }
+
     override func setUpWithError() throws {
         directory = FileManager.default.temporaryDirectory.appendingPathComponent("LumaViewTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -2365,6 +2495,24 @@ private final class UpdateCheckURLProtocol: URLProtocol {
 private final class PDFKeyboardTestWindow: LumaDocumentWindow {
     var receivesTestKeys = true
     override var isKeyWindow: Bool { receivesTestKeys }
+}
+
+@MainActor
+private final class TrashKeyboardTestWindow: LumaDocumentWindow {
+    var receivesTestKeys = true
+    var trashRequests = 0
+    override var isKeyWindow: Bool { receivesTestKeys }
+    override func moveSelectedFileToTrash(_ l: L10n) { trashRequests += 1 }
+}
+
+@MainActor
+private final class TrashNoticeTestWindow: LumaDocumentWindow {
+    var alerts: [NSAlert] = []
+    var response: ((NSApplication.ModalResponse) -> Void)?
+    override func presentTrashAlert(_ alert: NSAlert, completion: @escaping (NSApplication.ModalResponse) -> Void) {
+        alerts.append(alert)
+        response = completion
+    }
 }
 
 @MainActor

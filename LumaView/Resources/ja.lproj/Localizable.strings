@@ -153,3 +153,10 @@
 "update.later" = "後で";
 
 "defaults.otherCopy" = "%@（別のコピー）";
+
+/* Move current file to macOS Trash */
+"menu.moveToTrash" = "ゴミ箱に入れる";
+"button.cancel" = "キャンセル";
+"trash.confirmTitle" = "このファイルをゴミ箱に入れますか？";
+"trash.confirmMessage" = "「%@」をゴミ箱に移動します。Finder で元に戻せます。今回の確認後は、Delete キーを押すと現在のファイルがすぐにゴミ箱に移動します。キーを押し続けても、ほかのファイルは削除されません。";
+"trash.failed" = "ファイルをゴミ箱に移動できませんでした";
