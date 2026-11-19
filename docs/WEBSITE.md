@@ -35,7 +35,7 @@ Check images, favicon, navigation, official download destinations, desktop and n
 
 ## Automated responsive checks
 
-Website changes and pull requests run Playwright before Pages deployment. CI reads the actual language list from `website-test.config.mjs`, runs Chromium and WebKit for each language, and publishes only when every matrix job passes. Pull requests never deploy; a failure keeps the existing public site.
+Website changes and pull requests run Playwright before Pages deployment. CI reads the actual language list from `website-test.config.mjs`, runs Chromium on Ubuntu and native WebKit on macOS for each language, and publishes only when every matrix job passes. Using macOS for WebKit avoids repeated Ubuntu multimedia-package download timeouts. Pull requests never deploy; a failure keeps the existing public site.
 
 From the repository root:
 

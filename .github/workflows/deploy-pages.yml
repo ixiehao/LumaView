@@ -56,7 +56,8 @@ jobs:
   validate:
     name: Website (${{ matrix.browser }}, ${{ matrix.language }})
     needs: plan
-    runs-on: ubuntu-24.04
+    # Native WebKit avoids recurring Ubuntu multimedia-package download timeouts.
+    runs-on: ${{ matrix.browser == 'webkit' && 'macos-15' || 'ubuntu-24.04' }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
