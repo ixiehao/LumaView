@@ -70,7 +70,7 @@ struct LumaSettingsView: View {
                 }
                 row("app.language") {
                     Picker(l.text("app.language"), selection: $languageRaw) {
-                        ForEach(AppLanguage.allCases) { option in
+                        ForEach(AppLanguage.menuOrder) { option in
                             Text(l.languageName(option)).tag(option.rawValue)
                         }
                     }

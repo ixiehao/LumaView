@@ -17,7 +17,7 @@
 "about.license" = "MIT 开源许可 · Tabler Icons";
 "update.available" = "LumaView %@ 已可更新。";
 "update.about.available" = "有新版本啦：%@";
-"update.menu.available" = "下载 %@ 并退出";
+"update.menu.available" = "查看新版本 %@";
 "update.menu.check" = "检查更新…";
 "update.check.title" = "软件更新";
 "update.check.upToDate" = "你正在使用 LumaView 的最新版本。";
@@ -166,3 +166,4 @@
 "update.quitHint" = "打开下载页面后退出 LumaView，并关闭所有浏览窗口。请在应用退出后再覆盖安装。";
 
 "update.downloadUnavailable" = "无法打开下载页面。LumaView 会保持运行，请稍后重试。";
+"language.followSystem" = "跟随系统";

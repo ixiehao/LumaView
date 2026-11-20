@@ -17,7 +17,7 @@
 "about.license" = "MITライセンス · Tabler Icons";
 "update.available" = "LumaView %@ が利用可能です。";
 "update.about.available" = "新しいバージョンを利用できます：%@";
-"update.menu.available" = "%@ をダウンロードして終了";
+"update.menu.available" = "新しいバージョン %@ を表示";
 "update.menu.check" = "アップデートを確認…";
 "update.check.title" = "ソフトウェア・アップデート";
 "update.check.upToDate" = "LumaViewは最新です。";
@@ -166,3 +166,4 @@
 "update.quitHint" = "ダウンロードページを開いてから LumaView を終了し、すべての閲覧ウインドウを閉じます。終了後にアプリを置き換えてください。";
 
 "update.downloadUnavailable" = "ダウンロードページを開けませんでした。LumaView は終了しません。もう一度お試しください。";
+"language.followSystem" = "システムに従う";

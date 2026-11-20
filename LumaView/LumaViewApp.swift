@@ -33,6 +33,7 @@ private enum AboutCredits {
 
         appendBody("\(l.text("about.description"))\n\n")
         appendBody("\(l.text("about.developer")) · ixiehao\n")
+        appendLink("ixiehao.github.io/LumaView\n", destination: LumaViewProjectLinks.website(for: l.language))
         appendLink("github.com/\(LumaViewProjectLinks.repositorySlug)\n", destination: LumaViewProjectLinks.repository)
         appendLink(l.text("about.feedback"), destination: LumaViewProjectLinks.issues)
         if let availableUpdate {
@@ -420,9 +421,14 @@ final class LumaViewAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func showAboutPanel(l: L10n, updateChecker: UpdateChecker) {
-        NSApplication.shared.orderFrontStandardAboutPanel(options: [
+        var options: [NSApplication.AboutPanelOptionKey: Any] = [
             .credits: AboutCredits.make(l: l, availableUpdate: updateChecker.availableUpdate)
-        ])
+        ]
+        if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+           version == Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String {
+            options[.version] = ""
+        }
+        NSApplication.shared.orderFrontStandardAboutPanel(options: options)
         NSApplication.shared.activate(ignoringOtherApps: true)
     }
 
@@ -1562,24 +1568,24 @@ struct LumaViewApp: App {
             }
 
             CommandMenu(l.text("app.language")) {
-                ForEach(AppLanguage.allCases) { option in
-                    Button {
-                        languageRaw = option.rawValue
-                    } label: {
-                        Text((language == option ? "✓  " : "    ") + l.languageName(option))
+                Picker(l.text("app.language"), selection: $languageRaw) {
+                    ForEach(AppLanguage.menuOrder) { option in
+                        Text(l.languageName(option)).tag(option.rawValue)
                     }
                 }
+                .pickerStyle(.inline)
+                .labelsHidden()
             }
 
             // Preserve macOS Help and its command search; these are extra app links.
             CommandGroup(after: .help) {
-                Button(updateChecker.hasUpdate
-                       ? l.text("update.menu.available", updateChecker.availableUpdate?.version ?? "")
-                       : l.text(updateChecker.isChecking ? "update.checking" : "update.menu.check")) {
-                    if updateChecker.hasUpdate {
-                        updateChecker.openDownloadAndQuit()
-                    } else {
-                        Task { await updateChecker.checkForUpdate(force: true, announceResult: true) }
+                Button(l.text("update.menu.check")) {
+                    Task { await updateChecker.checkForUpdate(force: true, announceResult: true) }
+                }
+                .disabled(updateChecker.isChecking)
+                if let update = updateChecker.availableUpdate {
+                    Button(l.text("update.menu.available", update.version)) {
+                        updateChecker.openDownloadPage()
                     }
                 }
                 Divider()

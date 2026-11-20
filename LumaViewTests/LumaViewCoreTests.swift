@@ -1698,6 +1698,20 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertEqual(AppLanguage.preferredLanguage(in: []), .english)
     }
 
+    func testLanguageMenusAndLocalizedWebsiteUseTheSameSupportedChoices() {
+        XCTAssertEqual(AppLanguage.menuOrder, [.automatic, .english, .chinese, .french, .russian, .spanish, .japanese, .korean])
+        let routes: [(AppLanguage, String)] = [(.english, ""), (.chinese, "zh/"), (.french, "fr/"),
+            (.russian, "ru/"), (.spanish, "es/"), (.japanese, "ja/"), (.korean, "ko/")]
+        for (language, route) in routes {
+            XCTAssertEqual(LumaViewProjectLinks.website(for: language).absoluteString, "https://ixiehao.github.io/LumaView/" + route)
+            let l = L10n(language: language)
+            XCTAssertEqual(l.languageName(.automatic), l.text("language.followSystem"))
+            XCTAssertEqual(l.languageName(.chinese), "简体中文")
+        }
+        XCTAssertEqual(LumaViewProjectLinks.website(for: .automatic),
+            LumaViewProjectLinks.website(for: AppLanguage.automatic.resolvedLanguage))
+    }
+
     @MainActor
     func testNativeMenuTitlesCanSwitchBetweenEverySupportedLanguage() {
         let menu = NSMenu()
@@ -2037,6 +2051,9 @@ final class LumaViewCoreTests: XCTestCase {
         XCTAssertEqual(events, ["open"], "Failed handoff must preserve all viewer windows")
         XCTAssertEqual(checker.notice, .downloadUnavailable)
         acceptsURL = true
+        events.removeAll()
+        XCTAssertTrue(checker.openDownloadPage())
+        XCTAssertEqual(events, ["open"], "Viewing a release must preserve all viewer windows")
         events.removeAll()
         XCTAssertTrue(checker.openDownloadAndQuit())
         XCTAssertEqual(events, ["open", "quit"], "Quit normally only after the browser accepts the page")

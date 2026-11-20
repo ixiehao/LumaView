@@ -15,6 +15,8 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
 
+    static var menuOrder: [Self] { [.automatic] + allCases.filter { $0 != .automatic } }
+
     static let requiredLocalizationKeys = [
         "button.downloadAndQuit", "update.quitHint", "update.downloadUnavailable",
         "menu.moveToTrash", "button.cancel", "trash.confirmTitle", "trash.confirmMessage", "trash.failed",
@@ -23,7 +25,7 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
         "defaults.currentApplication", "defaults.none", "defaults.selectImages", "defaults.clear", "defaults.apply",
         "defaults.installFirst", "defaults.applied", "defaults.failed", "defaults.cancelled", "defaults.finderHint",
         "pdf.previousPage", "pdf.nextPage", "pdf.pagePosition", "pdf.printPage", "metadata.page", "metadata.pageSize",
-        "app.appearance", "app.language", "language.automatic", "appearance.light", "appearance.dark",
+        "app.appearance", "app.language", "language.automatic", "language.followSystem", "appearance.light", "appearance.dark",
         "settings.title", "settings.interface", "settings.updates", "settings.currentVersion", "settings.updatePrivacy",
         "about.menu", "about.description", "about.developer", "about.project", "about.feedback", "about.privacy", "about.license",
         "update.available", "update.about.available", "update.menu.available", "update.menu.check", "update.check.title", "update.check.upToDate", "update.check.unavailable", "button.downloadUpdate", "button.ok",
@@ -62,7 +64,7 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
         Self.localizationBundles[resolvedLanguage] ?? .module
     }
 
-    private var resolvedLanguage: AppLanguage {
+    var resolvedLanguage: AppLanguage {
         self == .automatic ? Self.preferredLanguage(in: Locale.preferredLanguages) : self
     }
 
@@ -102,8 +104,8 @@ struct L10n {
 
     func languageName(_ option: AppLanguage) -> String {
         switch option {
-        case .automatic: text("language.automatic")
-        case .chinese: "中文"
+        case .automatic: text("language.followSystem")
+        case .chinese: "简体中文"
         case .english: "English"
         case .french: "Français"
         case .russian: "Русский"

@@ -78,6 +78,14 @@ enum LumaViewProjectLinks {
     static let releases = URL(string: "https://github.com/\(repositorySlug)/releases")!
     static let latestReleaseAPI = URL(string: "https://api.github.com/repos/\(repositorySlug)/releases/latest")!
     static let latestReleasePage = URL(string: "https://github.com/\(repositorySlug)/releases/latest")!
+
+    static func website(for language: AppLanguage) -> URL {
+        let root = "https://ixiehao.github.io/LumaView/"
+        let language = language.resolvedLanguage
+        if language == .english { return URL(string: root)! }
+        let route = language == .chinese ? "zh" : language.localizationCode ?? "en"
+        return URL(string: root + route + "/")!
+    }
 }
 
 @MainActor
@@ -210,13 +218,19 @@ final class UpdateChecker: ObservableObject {
     }
 
     @discardableResult
-    func openDownloadAndQuit() -> Bool {
+    func openDownloadPage() -> Bool {
         guard let downloadURL = availableUpdate?.downloadURL else { return false }
         guard openURL(downloadURL) else {
             notice = .downloadUnavailable
             noticeHandler?(.downloadUnavailable)
             return false
         }
+        return true
+    }
+
+    @discardableResult
+    func openDownloadAndQuit() -> Bool {
+        guard openDownloadPage() else { return false }
         quitApplication()
         return true
     }

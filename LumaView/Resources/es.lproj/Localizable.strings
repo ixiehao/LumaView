@@ -17,7 +17,7 @@
 "about.license" = "Licencia MIT · Tabler Icons";
 "update.available" = "LumaView %@ está disponible.";
 "update.about.available" = "Hay una nueva versión disponible: %@";
-"update.menu.available" = "Descargar %@ y salir";
+"update.menu.available" = "Ver la versión %@";
 "update.menu.check" = "Buscar actualizaciones…";
 "update.check.title" = "Actualización de software";
 "update.check.upToDate" = "Estás usando la última versión de LumaView.";
@@ -166,3 +166,4 @@
 "update.quitHint" = "Abre la página de descarga y después cierra LumaView y todas las ventanas de visualización. Sustituye la app solo cuando se haya cerrado.";
 
 "update.downloadUnavailable" = "No se ha podido abrir la página de descarga. LumaView seguirá abierto. Vuelve a intentarlo.";
+"language.followSystem" = "Seguir el sistema";

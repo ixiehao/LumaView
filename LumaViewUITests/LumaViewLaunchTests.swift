@@ -489,6 +489,15 @@ final class LumaViewLaunchTests: XCTestCase {
             ("spanish", "light", "Imagen anterior", "Información de la imagen", "Imprimir imagen", "Archivo"),
             ("korean", "dark", "이전 이미지", "이미지 정보", "이미지 프린트", "파일")
         ]
+        let menuLabels = [
+            "english": ("Follow System", "Check for Updates…"),
+            "chinese": ("跟随系统", "检查更新…"),
+            "french": ("Suivre le système", "Rechercher les mises à jour…"),
+            "russian": ("Как в системе", "Проверить обновления…"),
+            "spanish": ("Seguir el sistema", "Buscar actualizaciones…"),
+            "japanese": ("システムに従う", "アップデートを確認…"),
+            "korean": ("시스템 설정 따르기", "업데이트 확인…")
+        ]
         for configuration in configurations {
             let app = launchApp(
                 opening: image,
@@ -500,6 +509,17 @@ final class LumaViewLaunchTests: XCTestCase {
             XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", configuration.information)).firstMatch.waitForExistence(timeout: 5))
             XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", configuration.print)).firstMatch.exists)
             XCTAssertTrue(app.menuBars.menuBarItems[configuration.fileMenu].waitForExistence(timeout: 5))
+            let labels = try XCTUnwrap(menuLabels[configuration.language])
+            let languageTitles = ["Language", "语言", "Langue", "Язык", "Idioma", "言語", "언어"]
+            app.menuBars.menuBarItems.matching(NSPredicate(format: "title IN %@ OR label IN %@", languageTitles, languageTitles)).firstMatch.click()
+            for title in [labels.0, "English", "简体中文", "Français", "Русский", "Español", "日本語", "한국어"] {
+                XCTAssertTrue(app.menuItems.matching(NSPredicate(format: "title == %@ OR label == %@", title, title)).firstMatch.waitForExistence(timeout: 3), title)
+            }
+            app.typeKey(.escape, modifierFlags: [])
+            let helpTitles = ["Help", "帮助", "Aide", "Справка", "Ayuda", "ヘルプ", "도움말"]
+            app.menuBars.menuBarItems.matching(NSPredicate(format: "title IN %@ OR label IN %@", helpTitles, helpTitles)).firstMatch.click()
+            XCTAssertTrue(app.menuItems.matching(NSPredicate(format: "title == %@ OR label == %@", labels.1, labels.1)).firstMatch.waitForExistence(timeout: 3))
+            app.typeKey(.escape, modifierFlags: [])
             app.terminate()
         }
     }

@@ -39,7 +39,9 @@ Follow [QA](QA.md) for browsing, unsupported files, large images, navigation and
 
 ## Localization
 
-The app supports English (`en`), Simplified Chinese (`zh-Hans`), French (`fr`), Russian (`ru`), Spanish (`es`), Japanese (`ja`) and Korean (`ko`). `AppLanguage.allCases` is the shared menu/settings order, with English first and Automatic last. Automatic remains the default preference; it follows the system language preference order and falls back to English.
+The app supports English (`en`), Simplified Chinese (`zh-Hans`), French (`fr`), Russian (`ru`), Spanish (`es`), Japanese (`ja`) and Korean (`ko`). `AppLanguage.menuOrder` is shared by the native language menu and Settings: Follow System comes first, then the seven languages with English first. The existing automatic preference remains the default; it follows the system language preference order and falls back to English.
+
+Help always retains Check for Updates. When an update is available, a separate View Version action opens the release page without quitting or closing document windows. Download and Quit remains an explicitly labelled action in the update dialog, banner and Settings. About links to the website edition matching the resolved application language.
 
 Each language needs a real `.lproj/Localizable.strings` resource registered in the Xcode variant group and `knownRegions`. Keep key sets and format placeholders identical, use native language names in the selector, and verify actual toolbar/menu labels in the built app. Core tests also check region matching and repeated menu language changes.
 

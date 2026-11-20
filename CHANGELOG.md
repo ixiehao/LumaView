@@ -4,6 +4,23 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
+## 1.3.6 — 2026-11-20
+
+### English
+
+- Keep Check for Updates in Help; View Version opens the release page without closing windows.
+- Add Follow System to the language menu and Settings, and a localized website link to About.
+
+### 中文
+
+- 帮助菜单保留“检查更新…”，“查看新版本”打开发布页并保留窗口。
+- 语言菜单与设置统一“跟随系统”，“关于”增加对应语言的官网链接。
+
+### 日本語
+
+- ヘルプに更新確認を常設し、新バージョンのページを開いてもウインドウを保持。
+- 言語メニューと設定に「システムに従う」を統一し、「このアプリについて」に言語別の公式サイトリンクを追加。
+
 ## 1.3.5 — 2026-11-20
 
 ### English
