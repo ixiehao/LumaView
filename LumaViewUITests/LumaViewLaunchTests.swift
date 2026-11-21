@@ -511,14 +511,16 @@ final class LumaViewLaunchTests: XCTestCase {
             XCTAssertTrue(app.menuBars.menuBarItems[configuration.fileMenu].waitForExistence(timeout: 5))
             let labels = try XCTUnwrap(menuLabels[configuration.language])
             let languageTitles = ["Language", "语言", "Langue", "Язык", "Idioma", "言語", "언어"]
-            app.menuBars.menuBarItems.matching(NSPredicate(format: "title IN %@ OR label IN %@", languageTitles, languageTitles)).firstMatch.click()
+            let languageMenu = app.menuBars.menuBarItems.matching(NSPredicate(format: "title IN %@ OR label IN %@", languageTitles, languageTitles)).firstMatch
+            languageMenu.click()
             for title in [labels.0, "English", "简体中文", "Français", "Русский", "Español", "日本語", "한국어"] {
-                XCTAssertTrue(app.menuItems.matching(NSPredicate(format: "title == %@ OR label == %@", title, title)).firstMatch.waitForExistence(timeout: 3), title)
+                XCTAssertTrue(languageMenu.descendants(matching: .menuItem).matching(NSPredicate(format: "title == %@ OR label == %@", title, title)).firstMatch.waitForExistence(timeout: 3), title)
             }
             app.typeKey(.escape, modifierFlags: [])
             let helpTitles = ["Help", "帮助", "Aide", "Справка", "Ayuda", "ヘルプ", "도움말"]
-            app.menuBars.menuBarItems.matching(NSPredicate(format: "title IN %@ OR label IN %@", helpTitles, helpTitles)).firstMatch.click()
-            XCTAssertTrue(app.menuItems.matching(NSPredicate(format: "title == %@ OR label == %@", labels.1, labels.1)).firstMatch.waitForExistence(timeout: 3))
+            let helpMenu = app.menuBars.menuBarItems.matching(NSPredicate(format: "title IN %@ OR label IN %@", helpTitles, helpTitles)).firstMatch
+            helpMenu.click()
+            XCTAssertTrue(helpMenu.descendants(matching: .menuItem).matching(NSPredicate(format: "title == %@ OR label == %@", labels.1, labels.1)).firstMatch.waitForExistence(timeout: 3))
             app.typeKey(.escape, modifierFlags: [])
             app.terminate()
         }
@@ -561,7 +563,13 @@ final class LumaViewLaunchTests: XCTestCase {
         let language = app.descendants(matching: .any).matching(identifier: "settings.language").firstMatch
         XCTAssertTrue(language.waitForExistence(timeout: 5))
         language.click()
-        app.menuItems["Français"].click()
+        // The native Language menu legitimately contains the same title.
+        // Scope this selection to Settings' popup, not the whole application.
+        let french = language.descendants(matching: .menuItem).matching(NSPredicate(
+            format: "title == %@ OR label == %@", "Français", "Français"
+        ))
+        XCTAssertEqual(french.count, 1)
+        french.element(boundBy: 0).click()
         app.typeKey("w", modifierFlags: .command)
 
         let message = "Ce Mac ne peut pas décoder ce fichier"
@@ -587,7 +595,7 @@ final class LumaViewLaunchTests: XCTestCase {
         )).firstMatch
         XCTAssertTrue(menu.waitForExistence(timeout: 5))
         menu.click()
-        app.menuItems.matching(NSPredicate(
+        menu.descendants(matching: .menuItem).matching(NSPredicate(
             format: "title ENDSWITH %@ OR label ENDSWITH %@", name, name
         )).firstMatch.click()
     }

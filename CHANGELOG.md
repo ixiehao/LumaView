@@ -4,7 +4,7 @@ All notable user-facing changes are recorded here. Version numbers follow
 `MAJOR.MINOR.PATCH`; a release tag must be `vX.Y.Z` and match the app's
 marketing version.
 
-## 1.3.6 — 2026-11-20
+## 1.3.6 — 2026-11-21
 
 ### English
 
